@@ -251,7 +251,7 @@ struct PlayerDetailView: View {
                     .frame(width: 40, height: 5)
                     .padding(.top, 16)
                 
-                Spacer()
+                Spacer(minLength: 8)
                 
                 // Big Artwork Vinyl
                 if let track = playerService.currentTrack {
@@ -262,16 +262,18 @@ struct PlayerDetailView: View {
                         } placeholder: {
                             ProgressView()
                         }
-                        .frame(width: 300, height: 300)
+                        .frame(height: UIScreen.main.bounds.height * 0.3)
+                        .aspectRatio(1, contentMode: .fit)
                         .cornerRadius(20)
                         .shadow(radius: 15)
                         .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
                         .animation(playerService.isPlaying ? Animation.linear(duration: 25).repeatForever(autoreverses: false) : .default, value: playerService.isPlaying)
                     } else {
                         Image(systemName: "music.note")
-                            .font(.system(size: 80))
+                            .font(.system(size: UIScreen.main.bounds.height * 0.08))
                             .foregroundColor(.secondary)
-                            .frame(width: 300, height: 300)
+                            .frame(height: UIScreen.main.bounds.height * 0.3)
+                            .aspectRatio(1, contentMode: .fit)
                             .background(Color(.secondarySystemBackground))
                             .cornerRadius(20)
                             .shadow(radius: 10)
@@ -288,10 +290,10 @@ struct PlayerDetailView: View {
                             .font(.headline)
                             .foregroundColor(.secondary)
                     }
-                    .padding(.top, 32)
+                    .padding(.top, 16)
                 }
                 
-                Spacer()
+                Spacer(minLength: 8)
                 
                 // Progress Slider
                 VStack(spacing: 8) {
@@ -355,7 +357,7 @@ struct PlayerDetailView: View {
                     }
                 }
                 .foregroundColor(.primary)
-                .padding(.vertical, 24)
+                .padding(.vertical, 16)
                 
                 // Volume Control
                 HStack(spacing: 12) {
@@ -369,9 +371,9 @@ struct PlayerDetailView: View {
                         .foregroundColor(.secondary)
                 }
                 .padding(.horizontal, 32)
-                .padding(.bottom, 24)
+                .padding(.bottom, 16)
                 
-                Spacer()
+                Spacer(minLength: 8)
             }
         }
     }
