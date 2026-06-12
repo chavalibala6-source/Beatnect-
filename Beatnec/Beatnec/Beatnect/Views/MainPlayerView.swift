@@ -235,47 +235,46 @@ struct PlayerDetailView: View {
     @State private var sliderValue: Double = 0
     
     var body: some View {
-        GeometryReader { geometry in
-            let isSmallScreen = geometry.size.height < 720
-            
-            ZStack {
-                // Blurred Artwork Background (Ignores safe areas to provide complete screen coverage like Apple Music)
-                if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
-                    AsyncImage(url: url) { image in
-                        image.resizable()
-                             .aspectRatio(contentMode: .fill)
-                             .frame(width: geometry.size.width, height: geometry.size.height)
-                             .clipped()
-                    } placeholder: {
-                        Color.clear
-                            .frame(width: geometry.size.width, height: geometry.size.height)
-                    }
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .clipped()
-                    .blur(radius: 40)
-                    .opacity(0.4)
+        ZStack {
+            // Blurred Artwork Background (Ignores safe areas to provide complete screen coverage like Apple Music)
+            if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
+                AsyncImage(url: url) { image in
+                    image.resizable()
+                         .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Color.clear
                 }
-                
-                // Clear overlay layer to capture swipe-to-dismiss gesture on empty spaces (without blocking foreground buttons/sliders)
-                Color.clear
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture()
-                            .onEnded { value in
-                                if value.translation.height > 60 {
-                                    withAnimation {
-                                        isPresented = false
-                                    }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .blur(radius: 40)
+                .opacity(0.4)
+                .ignoresSafeArea()
+            }
+            
+            // Clear overlay layer to capture swipe-to-dismiss gesture on empty spaces (without blocking foreground buttons/sliders)
+            Color.clear
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture()
+                        .onEnded { value in
+                            if value.translation.height > 60 {
+                                withAnimation {
+                                    isPresented = false
                                 }
                             }
-                    )
+                        }
+                )
+                .ignoresSafeArea()
+            
+            // Foreground Content (Respects safe areas automatically)
+            GeometryReader { geometry in
+                let isSmallScreen = geometry.size.height < 720
                 
                 if verticalSizeClass == .compact {
                     // Landscape Layout: Image left side, controls right side
                     VStack(spacing: 0) {
                         // Top Capsule Handle for Landscape
                         Capsule()
-                            .fill(Color.secondary)
+                            .fill(Color.primary.opacity(0.4))
                             .frame(width: 40, height: 5)
                             .padding(.top, 8)
                             .contentShape(Rectangle())
@@ -475,20 +474,15 @@ struct PlayerDetailView: View {
                         .padding(.horizontal, 24)
                         .frame(width: geometry.size.width, height: geometry.size.height - 20)
                     }
-                    .padding(.top, geometry.safeAreaInsets.top)
-                    .padding(.bottom, geometry.safeAreaInsets.bottom)
-                    .padding(.leading, geometry.safeAreaInsets.leading)
-                    .padding(.trailing, geometry.safeAreaInsets.trailing)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 } else {
                     // Portrait Layout
-                    let safeHeight = geometry.size.height - geometry.safeAreaInsets.top - geometry.safeAreaInsets.bottom
-                    let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, safeHeight - 340.0)))
+                    let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, geometry.size.height - 340.0)))
                     
                     VStack {
                         // Top Pill Capsule Handle bar (for minimizing, just like previously in the sheet)
                         Capsule()
-                            .fill(Color.secondary)
+                            .fill(Color.primary.opacity(0.4))
                             .frame(width: 40, height: 5)
                             .padding(.top, isSmallScreen ? 8 : 16)
                             .contentShape(Rectangle())
@@ -692,16 +686,10 @@ struct PlayerDetailView: View {
                         .padding(.horizontal, 12)
                         .padding(.bottom, isSmallScreen ? 8 : 16)
                     }
-                    .padding(.top, geometry.safeAreaInsets.top)
-                    .padding(.bottom, geometry.safeAreaInsets.bottom)
-                    .padding(.leading, geometry.safeAreaInsets.leading)
-                    .padding(.trailing, geometry.safeAreaInsets.trailing)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
-            .frame(width: geometry.size.width, height: geometry.size.height)
         }
-        .ignoresSafeArea()
     }
     
     private func formatTime(_ seconds: Double) -> String {
