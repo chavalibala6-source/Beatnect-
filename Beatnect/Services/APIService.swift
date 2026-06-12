@@ -10,8 +10,8 @@ class APIService: ObservableObject {
     }
     
     private init() {
-        // Fallback to localhost (simulator) or frame.com local domain
-        self.serverAddress = UserDefaults.standard.string(forKey: "gmp_server_address") ?? "http://localhost:5001"
+        // Fallback to noteslook.shop production server URL
+        self.serverAddress = UserDefaults.standard.string(forKey: "gmp_server_address") ?? "https://noteslook.shop"
     }
     
     func fetchTracks(completion: @escaping (Result<[Track], Error>) -> Void) {

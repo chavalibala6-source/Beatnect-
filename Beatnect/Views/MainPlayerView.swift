@@ -184,7 +184,7 @@ struct SettingsSheetView: View {
         NavigationView {
             Form {
                 Section(header: Text("Flask Server Settings")) {
-                    TextField("Server Address (e.g. http://192.168.1.100:5001)", text: $serverInput)
+                    TextField("Server Address (e.g. https://noteslook.shop)", text: $serverInput)
                         .keyboardType(.URL)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
