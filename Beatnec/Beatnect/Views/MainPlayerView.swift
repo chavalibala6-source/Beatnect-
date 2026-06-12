@@ -6,78 +6,184 @@ struct MainPlayerView: View {
     
     @State private var serverInput: String = ""
     @State private var documentInput: String = ""
+    @State private var searchInput: String = ""
     @State private var errorMessage: String?
     @State private var isShowingSettings = false
     @State private var isShowingPlayerDetail = false
     
+    // Grid layout for recent items
+    private let columns = [
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16)
+    ]
+    
+    var filteredTracks: [Track] {
+        if searchInput.isEmpty {
+            return playerService.tracks
+        } else {
+            return playerService.tracks.filter {
+                $0.displayName.localizedCaseInsensitiveContains(searchInput) ||
+                $0.displayArtist.localizedCaseInsensitiveContains(searchInput)
+            }
+        }
+    }
+    
     var body: some View {
         NavigationView {
             ZStack {
-                // Background Gradient
-                LinearGradient(gradient: Gradient(colors: [Color(.systemBackground), Color(.secondarySystemBackground)]),
-                               startPoint: .top,
-                               endPoint: .bottom)
+                Color(.systemGroupedBackground)
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Library Listing
-                    if playerService.tracks.isEmpty {
-                        VStack(spacing: 16) {
-                            Image(systemName: "music.note.list")
-                                .font(.system(size: 64))
-                                .foregroundColor(.secondary)
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
                             
-                            Text("Beatnect Library is Empty")
-                                .font(.headline)
-                            
-                            Text("Connect to your Flask server to load tracks")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            Button(action: { isShowingSettings = true }) {
-                                Text("Configure Server")
-                                    .fontWeight(.bold)
-                                    .padding()
-                                    .frame(minWidth: 200)
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(10)
+                            // Search Bar
+                            HStack {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(.secondary)
+                                TextField("Artists, Songs, Lyrics, and More", text: $searchInput)
+                                    .font(.system(size: 16, design: .rounded))
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
                             }
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        List {
-                            ForEach(Array(playerService.tracks.enumerated()), id: \.element.id) { index, track in
-                                Button(action: {
-                                    playerService.setPlaylist(tracks: playerService.tracks, startAtIndex: index)
-                                }) {
-                                    TrackRowView(track: track,
-                                                 isCurrent: playerService.currentTrackIndex == index,
-                                                 isPlaying: playerService.isPlaying)
+                            .padding(10)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                            
+                            // Recently Added / Featured section
+                            if !playerService.tracks.isEmpty {
+                                VStack(alignment: .leading, spacing: 14) {
+                                    Text("Recently Added")
+                                        .font(.system(.title2, design: .rounded))
+                                        .fontWeight(.bold)
+                                        .padding(.horizontal)
+                                    
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 16) {
+                                            ForEach(Array(playerService.tracks.prefix(5).enumerated()), id: \.element.id) { index, track in
+                                                Button(action: {
+                                                    playerService.setPlaylist(tracks: playerService.tracks, startAtIndex: index)
+                                                }) {
+                                                    VStack(alignment: .leading, spacing: 6) {
+                                                        // Artwork Tile
+                                                        if let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
+                                                            AsyncImage(url: url) { image in
+                                                                image.resizable()
+                                                                     .aspectRatio(contentMode: .fill)
+                                                            } placeholder: {
+                                                                Color(.secondarySystemBackground)
+                                                            }
+                                                            .frame(width: 140, height: 140)
+                                                            .cornerRadius(12)
+                                                            .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 3)
+                                                            .clipped()
+                                                        } else {
+                                                            Image(systemName: "music.note")
+                                                                .font(.system(size: 40))
+                                                                .foregroundColor(.secondary)
+                                                                .frame(width: 140, height: 140)
+                                                                .background(Color(.secondarySystemGroupedBackground))
+                                                                .cornerRadius(12)
+                                                                .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+                                                        }
+                                                        
+                                                        Text(track.displayName)
+                                                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                                                            .foregroundColor(.primary)
+                                                            .lineLimit(1)
+                                                            .frame(width: 140, alignment: .leading)
+                                                        
+                                                        Text(track.displayArtist)
+                                                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                                                            .foregroundColor(.secondary)
+                                                            .lineLimit(1)
+                                                            .frame(width: 140, alignment: .leading)
+                                                    }
+                                                }
+                                                .buttonStyle(PlainButtonStyle())
+                                            }
+                                        }
+                                        .padding(.horizontal)
+                                    }
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                            }
+                            
+                            // Library List section
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("All Tracks")
+                                    .font(.system(.title2, design: .rounded))
+                                    .fontWeight(.bold)
+                                    .padding(.horizontal)
+                                
+                                if filteredTracks.isEmpty {
+                                    VStack(spacing: 12) {
+                                        Spacer()
+                                        Image(systemName: "music.note.list")
+                                            .font(.system(size: 48))
+                                            .foregroundColor(.secondary)
+                                        Text("No Music Available")
+                                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                                        Text("Verify server address in Settings")
+                                            .font(.system(size: 14, design: .rounded))
+                                            .foregroundColor(.secondary)
+                                            .multilineTextAlignment(.center)
+                                        Spacer()
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 40)
+                                } else {
+                                    VStack(spacing: 0) {
+                                        ForEach(Array(filteredTracks.enumerated()), id: \.element.id) { index, track in
+                                            Button(action: {
+                                                playerService.setPlaylist(tracks: playerService.tracks, startAtIndex: index)
+                                            }) {
+                                                VStack(spacing: 0) {
+                                                    TrackRowView(track: track,
+                                                                 isCurrent: playerService.currentTrackIndex == index,
+                                                                 isPlaying: playerService.isPlaying)
+                                                        .padding(.horizontal)
+                                                        .padding(.vertical, 8)
+                                                        .background(Color(.secondarySystemGroupedBackground))
+                                                    
+                                                    if index < filteredTracks.count - 1 {
+                                                        Divider()
+                                                            .padding(.leading, 72)
+                                                    }
+                                                }
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
+                                    }
+                                    .cornerRadius(12)
+                                    .padding(.horizontal)
+                                }
                             }
                         }
-                        .listStyle(PlainListStyle())
+                        .padding(.vertical)
                     }
                     
-                    // Mini Player Bar (Persistent at bottom)
+                    // Floating Apple-Style Mini Player Pill
                     if let currentTrack = playerService.currentTrack {
                         MiniPlayerBar(track: currentTrack,
                                       isPlaying: playerService.isPlaying,
                                       onToggle: { playerService.togglePlayPause() },
                                       onTap: { isShowingPlayerDetail = true })
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
                     }
                 }
             }
-            .navigationTitle("Beatnect")
+            .navigationTitle("Listen Now")
             .navigationBarItems(
                 leading: Button(action: reloadLibrary) {
                     Image(systemName: "arrow.clockwise")
+                        .foregroundColor(.pink)
                 },
                 trailing: Button(action: { isShowingSettings = true }) {
-                    Image(systemName: "gearshape")
+                    Image(systemName: "gearshape.fill")
+                        .foregroundColor(.pink)
                 }
             )
             .sheet(isPresented: $isShowingSettings) {
@@ -87,6 +193,7 @@ struct MainPlayerView: View {
                 PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail)
             }
         }
+        .accentColor(.pink) // Apple Music style Pink tint
         .navigationViewStyle(StackNavigationViewStyle())
         .onAppear {
             serverInput = apiService.serverAddress
@@ -115,7 +222,7 @@ struct MainPlayerView: View {
     }
 }
 
-// MARK: - Mini Player Bar
+// MARK: - Floating Apple-Style Mini Player Pill
 
 struct MiniPlayerBar: View {
     let track: Track
@@ -133,18 +240,18 @@ struct MiniPlayerBar: View {
                 } placeholder: {
                     ProgressView()
                 }
-                .frame(width: 48, height: 48)
-                .cornerRadius(8)
+                .frame(width: 42, height: 42)
+                .cornerRadius(6)
                 .clipped()
             } else {
                 Image(systemName: "music.note")
                     .foregroundColor(.secondary)
-                    .frame(width: 48, height: 48)
+                    .frame(width: 42, height: 42)
                     .background(Color(.secondarySystemBackground))
-                    .cornerRadius(8)
+                    .cornerRadius(6)
             }
             
-            // Info
+            // Track Info
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.displayName)
                     .font(.system(size: 14, weight: .bold, design: .rounded))
@@ -158,20 +265,32 @@ struct MiniPlayerBar: View {
             
             Spacer()
             
-            // Play/Pause Button
-            Button(action: onToggle) {
-                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.primary)
-                    .frame(width: 44, height: 44)
+            // Play / Pause controls
+            HStack(spacing: 8) {
+                Button(action: onToggle) {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.primary)
+                        .frame(width: 36, height: 36)
+                }
+                
+                Button(action: { AudioPlayerService.shared.nextTrack() }) {
+                    Image(systemName: "forward.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.primary)
+                        .frame(width: 36, height: 36)
+                }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(
-            Color(.tertiarySystemBackground)
-                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: -4)
+            Color(.secondarySystemGroupedBackground)
+                .opacity(0.95)
+                .background(.ultraThinMaterial)
         )
+        .cornerRadius(14)
+        .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 5)
         .onTapGesture(perform: onTap)
     }
 }
@@ -213,6 +332,7 @@ struct SettingsSheetView: View {
                     onSave()
                     isPresented = false
                 }
+                .foregroundColor(.pink)
                 .fontWeight(.bold)
             )
         }
@@ -227,72 +347,140 @@ struct PlayerDetailView: View {
     
     @State private var isDraggingSlider = false
     @State private var sliderValue: Double = 0
+    @State private var animateBackground = false
     
     var body: some View {
         ZStack {
-            // Blurred Artwork Background
-            if let track = playerService.currentTrack, let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
-                AsyncImage(url: url) { image in
-                    image.resizable()
-                         .aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    Color.clear
+            // Apple Music Animated Mesh/Glow Background
+            ZStack {
+                Color(.black)
+                    .ignoresSafeArea()
+                
+                if let track = playerService.currentTrack, let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
+                    AsyncImage(url: url) { image in
+                        image.resizable()
+                             .aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Color.clear
+                    }
+                    .blur(radius: 40)
+                    .opacity(0.35)
+                    .ignoresSafeArea()
                 }
-                .blur(radius: 40)
-                .opacity(0.4)
-                .ignoresSafeArea()
+                
+                // Breath glow effects
+                Circle()
+                    .fill(Color.pink.opacity(0.18))
+                    .frame(width: 380, height: 380)
+                    .offset(x: animateBackground ? -80 : 80, y: animateBackground ? -120 : 120)
+                    .blur(radius: 80)
+                
+                Circle()
+                    .fill(Color.blue.opacity(0.15))
+                    .frame(width: 320, height: 320)
+                    .offset(x: animateBackground ? 100 : -100, y: animateBackground ? 80 : -80)
+                    .blur(radius: 60)
+            }
+            .ignoresSafeArea()
+            .onAppear {
+                withAnimation(Animation.easeInOut(duration: 12).repeatForever(autoreverses: true)) {
+                    animateBackground.toggle()
+                }
             }
             
+            // Content
             VStack {
-                // Handle bar
+                // Drag handle bar
                 Capsule()
-                    .fill(Color.secondary)
-                    .frame(width: 40, height: 5)
+                    .fill(Color.white.opacity(0.25))
+                    .frame(width: 36, height: 5)
                     .padding(.top, 16)
                 
                 Spacer()
                 
-                // Big Artwork Vinyl
+                // Apple Music Tactile Scaling Card
                 if let track = playerService.currentTrack {
-                    if let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
-                        AsyncImage(url: url) { image in
-                            image.resizable()
-                                 .aspectRatio(contentMode: .fit)
-                        } placeholder: {
-                            ProgressView()
+                    VStack(spacing: 0) {
+                        if let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
+                            AsyncImage(url: url) { image in
+                                image.resizable()
+                                     .aspectRatio(contentMode: .fit)
+                            } placeholder: {
+                                ProgressView()
+                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            }
+                            .frame(maxWidth: 300, maxHeight: 300)
+                            .cornerRadius(18)
+                            .shadow(color: playerService.isPlaying ? Color.pink.opacity(0.4) : Color.black.opacity(0.4),
+                                    radius: playerService.isPlaying ? 28 : 12,
+                                    x: 0,
+                                    y: playerService.isPlaying ? 16 : 8)
+                            .scaleEffect(playerService.isPlaying ? 1.0 : 0.82)
+                            .animation(.spring(response: 0.55, dampingFraction: 0.82, blendDuration: 0), value: playerService.isPlaying)
+                        } else {
+                            Image(systemName: "music.note")
+                                 .font(.system(size: 80))
+                                 .foregroundColor(.secondary)
+                                 .frame(width: 250, height: 250)
+                                 .background(Color(.systemGray6))
+                                 .cornerRadius(18)
+                                 .shadow(radius: 10)
+                                 .scaleEffect(playerService.isPlaying ? 1.0 : 0.82)
+                                 .animation(.spring(response: 0.55, dampingFraction: 0.82, blendDuration: 0), value: playerService.isPlaying)
                         }
-                        .frame(width: 260, height: 260)
-                        .cornerRadius(20)
-                        .shadow(radius: 15)
-                        .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
-                        .animation(playerService.isPlaying ? Animation.linear(duration: 25).repeatForever(autoreverses: false) : .default, value: playerService.isPlaying)
-                    } else {
-                        Image(systemName: "music.note")
-                            .font(.system(size: 80))
-                            .foregroundColor(.secondary)
-                            .frame(width: 260, height: 260)
-                            .background(Color(.secondarySystemBackground))
-                            .cornerRadius(20)
-                            .shadow(radius: 10)
                     }
+                    .frame(height: 320)
                     
-                    VStack(spacing: 4) {
-                        Text(track.displayName)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+                    // Metadata & Explicit badges
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(track.displayName)
+                                .font(.system(size: 22, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                            
+                            Text(track.displayArtist)
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                            
+                            // Apple style Dolby/Lossless tags
+                            HStack(spacing: 6) {
+                                Text("Lossless")
+                                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 3)
+                                    .background(Color.white.opacity(0.12))
+                                    .cornerRadius(4)
+                                
+                                Text("Dolby Atmos")
+                                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 3)
+                                    .background(Color.white.opacity(0.12))
+                                    .cornerRadius(4)
+                            }
+                            .padding(.top, 4)
+                        }
                         
-                        Text(track.displayArtist)
-                            .font(.headline)
-                            .foregroundColor(.secondary)
+                        Spacer()
+                        
+                        // Menu Button
+                        Button(action: {}) {
+                            Image(systemName: "ellipsis.circle.fill")
+                                 .font(.system(size: 26))
+                                 .foregroundColor(.secondary)
+                        }
                     }
-                    .padding(.top, 32)
+                    .padding(.horizontal, 32)
+                    .padding(.top, 24)
                 }
                 
                 Spacer()
                 
-                // Progress Slider
+                // Seek Slider
                 VStack(spacing: 8) {
                     Slider(value: Binding(get: {
                         isDraggingSlider ? sliderValue : playerService.currentTime
@@ -304,45 +492,91 @@ struct PlayerDetailView: View {
                             playerService.seek(to: sliderValue)
                         }
                     })
-                    .accentColor(.blue)
+                    .accentColor(.white)
                     
                     HStack {
                         Text(formatTime(playerService.currentTime))
-                            .font(.caption)
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
                         Spacer()
                         Text(formatTime(playerService.duration))
-                            .font(.caption)
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 32)
                 
-                // Player Controls
+                // Audio Transport Controls
                 HStack(spacing: 48) {
-                    // Prev
+                    // Backward
                     Button(action: { playerService.previousTrack() }) {
                         Image(systemName: "backward.fill")
-                            .font(.system(size: 32))
+                            .font(.system(size: 28))
+                            .foregroundColor(.white)
                     }
                     
-                    // Play/Pause
+                    // Play / Pause Circle
                     Button(action: { playerService.togglePlayPause() }) {
-                        Image(systemName: playerService.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 72))
-                            .foregroundColor(.blue)
+                        Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 42))
+                            .foregroundColor(.white)
+                            .frame(width: 88, height: 88)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(44)
                     }
                     
-                    // Next
+                    // Forward
                     Button(action: { playerService.nextTrack() }) {
                         Image(systemName: "forward.fill")
-                            .font(.system(size: 32))
+                            .font(.system(size: 28))
+                            .foregroundColor(.white)
                     }
                 }
-                .foregroundColor(.primary)
-                .padding(.vertical, 24)
+                .padding(.vertical, 16)
                 
                 Spacer()
+                
+                // Volume Controls (Apple Music style speaker keys)
+                HStack(spacing: 12) {
+                    Image(systemName: "speaker.fill")
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 12))
+                    
+                    Slider(value: Binding(
+                        get: { Double(playerService.volume) },
+                        set: { playerService.volume = Float($0) }
+                    ), in: 0...1)
+                    .accentColor(.white)
+                    
+                    Image(systemName: "speaker.wave.3.fill")
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 12))
+                }
+                .padding(.horizontal, 32)
+                
+                Spacer()
+                
+                // Subaction Bottom Bar (Lyrics, AirPlay, Queue)
+                HStack(spacing: 64) {
+                    Button(action: {}) {
+                        Image(systemName: "quote.bubble")
+                             .font(.system(size: 18))
+                             .foregroundColor(.secondary)
+                    }
+                    
+                    Button(action: {}) {
+                        Image(systemName: "airplayaudio")
+                             .font(.system(size: 20))
+                             .foregroundColor(.secondary)
+                    }
+                    
+                    Button(action: {}) {
+                        Image(systemName: "list.bullet")
+                             .font(.system(size: 18))
+                             .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.bottom, 24)
             }
         }
     }

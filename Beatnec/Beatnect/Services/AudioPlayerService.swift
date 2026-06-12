@@ -16,6 +16,11 @@ class AudioPlayerService: ObservableObject {
     @Published var isPlaying = false
     @Published var currentTime: Double = 0
     @Published var duration: Double = 0
+    @Published var volume: Float = 1.0 {
+        didSet {
+            player?.volume = volume
+        }
+    }
     
     var currentTrack: Track? {
         guard let index = currentTrackIndex, index < tracks.count else { return nil }
@@ -66,6 +71,7 @@ class AudioPlayerService: ObservableObject {
         } else {
             player?.replaceCurrentItem(with: playerItem)
         }
+        player?.volume = volume
         
         // Set up time observer
         timeObserverToken = player?.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC)), queue: .main) { [weak self] time in
