@@ -262,18 +262,16 @@ struct PlayerDetailView: View {
                         } placeholder: {
                             ProgressView()
                         }
-                        .frame(height: UIScreen.main.bounds.height * 0.3)
-                        .aspectRatio(1, contentMode: .fit)
+                        .frame(width: 300, height: 300)
                         .cornerRadius(20)
                         .shadow(radius: 15)
                         .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
                         .animation(playerService.isPlaying ? Animation.linear(duration: 25).repeatForever(autoreverses: false) : .default, value: playerService.isPlaying)
                     } else {
                         Image(systemName: "music.note")
-                            .font(.system(size: UIScreen.main.bounds.height * 0.08))
+                            .font(.system(size: 80))
                             .foregroundColor(.secondary)
-                            .frame(height: UIScreen.main.bounds.height * 0.3)
-                            .aspectRatio(1, contentMode: .fit)
+                            .frame(width: 300, height: 300)
                             .background(Color(.secondarySystemBackground))
                             .cornerRadius(20)
                             .shadow(radius: 10)
