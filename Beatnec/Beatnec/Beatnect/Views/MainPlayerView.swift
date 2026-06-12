@@ -405,13 +405,13 @@ struct PlayerDetailView: View {
                             .foregroundColor(.primary)
                             
                             // Volume Control
-                            HStack(spacing: 10) {
+                            HStack(alignment: .center, spacing: 10) {
                                 Image(systemName: "speaker.fill")
                                     .font(.system(size: 10))
                                     .foregroundColor(.secondary)
                                 
                                 VolumeSlider()
-                                    .frame(height: 32)
+                                    .frame(height: 22)
                                 
                                 Image(systemName: "speaker.wave.3.fill")
                                     .font(.system(size: 10))
@@ -502,7 +502,7 @@ struct PlayerDetailView: View {
                                     .foregroundColor(.secondary)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 12)
                         
                         // Player Controls
                         HStack(spacing: isSmallScreen ? 16 : 24) {
@@ -570,17 +570,21 @@ struct PlayerDetailView: View {
                         .padding(.vertical, isSmallScreen ? 8 : 16)
                         
                         // Volume Control
-                        HStack(spacing: 12) {
+                        HStack(alignment: .center, spacing: 8) {
                             Image(systemName: "speaker.fill")
+                                .font(.system(size: 14))
                                 .foregroundColor(.secondary)
+                                .frame(width: 20, height: 20)
                             
                             VolumeSlider()
-                                .frame(height: isSmallScreen ? 32 : 40)
+                                .frame(height: 22)
                             
                             Image(systemName: "speaker.wave.3.fill")
+                                .font(.system(size: 14))
                                 .foregroundColor(.secondary)
+                                .frame(width: 20, height: 20)
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 12)
                         .padding(.bottom, isSmallScreen ? 4 : 8)
                         
                         Spacer(minLength: isSmallScreen ? 2 : 4)
@@ -602,6 +606,7 @@ struct PlayerDetailView: View {
 struct VolumeSlider: UIViewRepresentable {
     func makeUIView(context: Context) -> MPVolumeView {
         let volumeView = MPVolumeView(frame: .zero)
+        volumeView.showsRouteButton = false
         return volumeView
     }
     
