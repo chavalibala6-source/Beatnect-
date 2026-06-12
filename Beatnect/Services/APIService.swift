@@ -9,9 +9,16 @@ class APIService: ObservableObject {
         }
     }
     
+    @Published var documentName: String {
+        didSet {
+            UserDefaults.standard.set(documentName, forKey: "gmp_document_name")
+        }
+    }
+    
     private init() {
         // Fallback to noteslook.shop production server URL
         self.serverAddress = UserDefaults.standard.string(forKey: "gmp_server_address") ?? "https://noteslook.shop"
+        self.documentName = UserDefaults.standard.string(forKey: "gmp_document_name") ?? "global"
     }
     
     func fetchTracks(completion: @escaping (Result<[Track], Error>) -> Void) {
@@ -21,8 +28,9 @@ class APIService: ObservableObject {
             cleanAddress = "http://" + cleanAddress
         }
         
-        guard let url = URL(string: "\(cleanAddress)/music_tracks") else {
-            completion(.failure(NSError(domain: "APIService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Server URL"])))
+        guard let encodedDocName = documentName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(cleanAddress)/music_tracks?doc=\(encodedDocName)") else {
+            completion(.failure(NSError(domain: "APIService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid Server or Document URL"])))
             return
         }
         

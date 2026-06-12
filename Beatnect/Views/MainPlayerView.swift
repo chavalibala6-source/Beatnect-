@@ -5,6 +5,7 @@ struct MainPlayerView: View {
     @StateObject private var playerService = AudioPlayerService.shared
     
     @State private var serverInput: String = ""
+    @State private var documentInput: String = ""
     @State private var errorMessage: String?
     @State private var isShowingSettings = false
     @State private var isShowingPlayerDetail = false
@@ -80,7 +81,7 @@ struct MainPlayerView: View {
                 }
             )
             .sheet(isPresented: $isShowingSettings) {
-                SettingsSheetView(serverInput: $serverInput, isPresented: $isShowingSettings, onSave: saveServerSettings)
+                SettingsSheetView(serverInput: $serverInput, documentInput: $documentInput, isPresented: $isShowingSettings, onSave: saveServerSettings)
             }
             .sheet(isPresented: $isShowingPlayerDetail) {
                 PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail)
@@ -89,6 +90,7 @@ struct MainPlayerView: View {
         .navigationViewStyle(StackNavigationViewStyle())
         .onAppear {
             serverInput = apiService.serverAddress
+            documentInput = apiService.documentName
             reloadLibrary()
         }
     }
@@ -108,6 +110,7 @@ struct MainPlayerView: View {
     
     private func saveServerSettings() {
         apiService.serverAddress = serverInput
+        apiService.documentName = documentInput
         reloadLibrary()
     }
 }
@@ -177,6 +180,7 @@ struct MiniPlayerBar: View {
 
 struct SettingsSheetView: View {
     @Binding var serverInput: String
+    @Binding var documentInput: String
     @Binding var isPresented: Bool
     let onSave: () -> Void
     
@@ -186,6 +190,12 @@ struct SettingsSheetView: View {
                 Section(header: Text("Flask Server Settings")) {
                     TextField("Server Address (e.g. https://noteslook.shop)", text: $serverInput)
                         .keyboardType(.URL)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                }
+                
+                Section(header: Text("Document Filter")) {
+                    TextField("Document Name (e.g. global or file1)", text: $documentInput)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
                 }
