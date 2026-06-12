@@ -19,7 +19,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         loadTracks()
     }
     
-    func templateApplicationScene(_ templateApplicationScene: CPTemplateApplicationScene, didDisconnect interfaceController: CPInterfaceController) {
+    func templateApplicationScene(_ templateApplicationScene: CPTemplateApplicationScene, didDisconnectInterfaceController interfaceController: CPInterfaceController) {
         self.interfaceController = nil
         self.listTemplate = nil
     }
@@ -48,12 +48,11 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
             }
             
             // Load artwork icon asynchronously if available
-            if let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
+            if let url = track.fullArtworkUrl {
                 URLSession.shared.dataTask(with: url) { data, _, _ in
                     if let data = data, let image = UIImage(data: data) {
-                        let artwork = CPImageSet(lightContentImage: image, darkContentImage: image)
                         DispatchQueue.main.async {
-                            item.setImageSet(artwork)
+                            item.setImage(image)
                         }
                     }
                 }.resume()
