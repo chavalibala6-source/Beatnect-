@@ -502,7 +502,7 @@ struct PlayerDetailView: View {
                                     .foregroundColor(.secondary)
                             }
                         }
-                        .padding(.horizontal, isSmallScreen ? 24 : 32)
+                        .padding(.horizontal, 16)
                         
                         // Player Controls
                         HStack(spacing: isSmallScreen ? 16 : 24) {
@@ -580,10 +580,10 @@ struct PlayerDetailView: View {
                             Image(systemName: "speaker.wave.3.fill")
                                 .foregroundColor(.secondary)
                         }
-                        .padding(.horizontal, isSmallScreen ? 24 : 32)
-                        .padding(.bottom, isSmallScreen ? 8 : 16)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, isSmallScreen ? 4 : 8)
                         
-                        Spacer(minLength: isSmallScreen ? 4 : 8)
+                        Spacer(minLength: isSmallScreen ? 2 : 4)
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 }
