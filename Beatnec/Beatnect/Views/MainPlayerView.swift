@@ -263,8 +263,10 @@ struct PlayerDetailView: View {
                                 AsyncImage(url: url) { image in
                                     image.resizable()
                                          .aspectRatio(contentMode: .fit)
+                                         .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
                                 } placeholder: {
                                     ProgressView()
+                                        .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
                                 }
                                 .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
                                 .cornerRadius(16)
@@ -435,8 +437,10 @@ struct PlayerDetailView: View {
                                 AsyncImage(url: url) { image in
                                     image.resizable()
                                          .aspectRatio(contentMode: .fit)
+                                         .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                 } placeholder: {
                                     ProgressView()
+                                        .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                 }
                                 .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                 .cornerRadius(20)
