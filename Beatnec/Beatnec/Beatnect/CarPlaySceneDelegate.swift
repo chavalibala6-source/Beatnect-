@@ -48,7 +48,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
             }
             
             // Load artwork icon asynchronously if available
-            if let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
+            if let url = track.fullArtworkUrl {
                 URLSession.shared.dataTask(with: url) { data, _, _ in
                     if let data = data, let image = UIImage(data: data) {
                         DispatchQueue.main.async {

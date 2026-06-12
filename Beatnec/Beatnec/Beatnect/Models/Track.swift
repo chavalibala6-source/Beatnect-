@@ -38,4 +38,17 @@ struct Track: Identifiable, Codable, Equatable {
     var displayAlbum: String {
         return album ?? "Unknown Album"
     }
+    
+    var fullArtworkUrl: URL? {
+        guard let artworkUrl = artworkUrl else { return nil }
+        if artworkUrl.hasPrefix("http://") || artworkUrl.hasPrefix("https://") {
+            return URL(string: artworkUrl)
+        }
+        var cleanAddress = APIService.shared.serverAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !cleanAddress.hasPrefix("http://") && !cleanAddress.hasPrefix("https://") {
+            cleanAddress = "http://" + cleanAddress
+        }
+        let prefix = artworkUrl.hasPrefix("/") ? "" : "/"
+        return URL(string: "\(cleanAddress)\(prefix)\(artworkUrl)")
+    }
 }

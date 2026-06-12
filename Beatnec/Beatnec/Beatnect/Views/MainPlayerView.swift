@@ -1,4 +1,5 @@
 import SwiftUI
+import MediaPlayer
 
 struct MainPlayerView: View {
     @StateObject private var apiService = APIService.shared
@@ -126,7 +127,7 @@ struct MiniPlayerBar: View {
     var body: some View {
         HStack(spacing: 12) {
             // Artwork
-            if let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
+            if let url = track.fullArtworkUrl {
                 AsyncImage(url: url) { image in
                     image.resizable()
                          .aspectRatio(contentMode: .fill)
@@ -231,7 +232,7 @@ struct PlayerDetailView: View {
     var body: some View {
         ZStack {
             // Blurred Artwork Background
-            if let track = playerService.currentTrack, let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
+            if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
                 AsyncImage(url: url) { image in
                     image.resizable()
                          .aspectRatio(contentMode: .fill)
@@ -254,7 +255,7 @@ struct PlayerDetailView: View {
                 
                 // Big Artwork Vinyl
                 if let track = playerService.currentTrack {
-                    if let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
+                    if let url = track.fullArtworkUrl {
                         AsyncImage(url: url) { image in
                             image.resizable()
                                  .aspectRatio(contentMode: .fit)
@@ -319,7 +320,14 @@ struct PlayerDetailView: View {
                 .padding(.horizontal, 24)
                 
                 // Player Controls
-                HStack(spacing: 48) {
+                HStack(spacing: 28) {
+                    // Shuffle
+                    Button(action: { playerService.toggleShuffle() }) {
+                        Image(systemName: "shuffle")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(playerService.isShuffleEnabled ? .blue : .secondary)
+                    }
+                    
                     // Prev
                     Button(action: { playerService.previousTrack() }) {
                         Image(systemName: "backward.fill")
@@ -338,9 +346,30 @@ struct PlayerDetailView: View {
                         Image(systemName: "forward.fill")
                             .font(.system(size: 32))
                     }
+                    
+                    // Repeat
+                    Button(action: { playerService.toggleRepeat() }) {
+                        Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(playerService.isRepeatEnabled ? .blue : .secondary)
+                    }
                 }
                 .foregroundColor(.primary)
                 .padding(.vertical, 24)
+                
+                // Volume Control
+                HStack(spacing: 12) {
+                    Image(systemName: "speaker.fill")
+                        .foregroundColor(.secondary)
+                    
+                    VolumeSlider()
+                        .frame(height: 40)
+                    
+                    Image(systemName: "speaker.wave.3.fill")
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
                 
                 Spacer()
             }
@@ -353,4 +382,13 @@ struct PlayerDetailView: View {
         let secs = Int(seconds) % 60
         return String(format: "%d:%02d", mins, secs)
     }
+}
+
+struct VolumeSlider: UIViewRepresentable {
+    func makeUIView(context: Context) -> MPVolumeView {
+        let volumeView = MPVolumeView(frame: .zero)
+        return volumeView
+    }
+    
+    func updateUIView(_ uiView: MPVolumeView, context: Context) {}
 }

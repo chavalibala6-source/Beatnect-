@@ -8,7 +8,7 @@ struct TrackRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             // Artwork Image
-            if let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
+            if let url = track.fullArtworkUrl {
                 AsyncImage(url: url) { image in
                     image.resizable()
                          .aspectRatio(contentMode: .fill)

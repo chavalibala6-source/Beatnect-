@@ -16,6 +16,8 @@ class AudioPlayerService: NSObject, ObservableObject {
     @Published var isPlaying = false
     @Published var currentTime: Double = 0
     @Published var duration: Double = 0
+    @Published var isShuffleEnabled = false
+    @Published var isRepeatEnabled = false
     
     var currentTrack: Track? {
         guard let index = currentTrackIndex, index < tracks.count else { return nil }
@@ -100,15 +102,35 @@ class AudioPlayerService: NSObject, ObservableObject {
     }
     
     func nextTrack() {
-        guard let currentIndex = currentTrackIndex else { return }
-        let nextIndex = (currentIndex + 1) % tracks.count
-        playTrack(at: nextIndex)
+        guard !tracks.isEmpty else { return }
+        if isShuffleEnabled {
+            let randomIndex = Int.random(in: 0..<tracks.count)
+            playTrack(at: randomIndex)
+        } else {
+            guard let currentIndex = currentTrackIndex else { return }
+            let nextIndex = (currentIndex + 1) % tracks.count
+            playTrack(at: nextIndex)
+        }
     }
     
     func previousTrack() {
-        guard let currentIndex = currentTrackIndex else { return }
-        let prevIndex = (currentIndex - 1 + tracks.count) % tracks.count
-        playTrack(at: prevIndex)
+        guard !tracks.isEmpty else { return }
+        if isShuffleEnabled {
+            let randomIndex = Int.random(in: 0..<tracks.count)
+            playTrack(at: randomIndex)
+        } else {
+            guard let currentIndex = currentTrackIndex else { return }
+            let prevIndex = (currentIndex - 1 + tracks.count) % tracks.count
+            playTrack(at: prevIndex)
+        }
+    }
+    
+    func toggleShuffle() {
+        isShuffleEnabled.toggle()
+    }
+    
+    func toggleRepeat() {
+        isRepeatEnabled.toggle()
     }
     
     func seek(to seconds: Double) {
@@ -130,7 +152,7 @@ class AudioPlayerService: NSObject, ObservableObject {
         nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = track.displayAlbum
         
         // Load artwork asynchronously
-        if let artworkUrlString = track.artworkUrl, let url = URL(string: artworkUrlString) {
+        if let url = track.fullArtworkUrl {
             URLSession.shared.dataTask(with: url) { data, _, _ in
                 if let data = data, let image = UIImage(data: data) {
                     let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
@@ -205,6 +227,26 @@ class AudioPlayerService: NSObject, ObservableObject {
             }
             return .commandFailed
         }
+        
+        commandCenter.changeShuffleModeCommand.isEnabled = true
+        commandCenter.changeShuffleModeCommand.addTarget { [weak self] event in
+            guard let self = self,
+                  let shuffleEvent = event as? MPChangeShuffleModeCommandEvent else {
+                return .commandFailed
+            }
+            self.isShuffleEnabled = shuffleEvent.shuffleType != .off
+            return .success
+        }
+        
+        commandCenter.changeRepeatModeCommand.isEnabled = true
+        commandCenter.changeRepeatModeCommand.addTarget { [weak self] event in
+            guard let self = self,
+                  let repeatEvent = event as? MPChangeRepeatModeCommandEvent else {
+                return .commandFailed
+            }
+            self.isRepeatEnabled = repeatEvent.repeatType != .off
+            return .success
+        }
     }
     
     // MARK: - Notification Selectors
@@ -217,7 +259,12 @@ class AudioPlayerService: NSObject, ObservableObject {
     }
     
     @objc private func playerItemDidPlayToEndTime(notification: Notification) {
-        nextTrack()
+        if isRepeatEnabled {
+            seek(to: 0)
+            play()
+        } else {
+            nextTrack()
+        }
     }
     
     // MARK: - KVO Observer
