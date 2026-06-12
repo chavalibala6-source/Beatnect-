@@ -235,23 +235,26 @@ struct PlayerDetailView: View {
     @State private var sliderValue: Double = 0
     
     var body: some View {
-        ZStack {
-            // Blurred Artwork Background (Ignores safe areas to provide complete screen coverage like Apple Music)
-            if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
-                AsyncImage(url: url) { image in
-                    image.resizable()
-                         .aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    Color.clear
-                }
-                .blur(radius: 40)
-                .opacity(0.4)
-                .ignoresSafeArea()
-            }
+        GeometryReader { geometry in
+            let isSmallScreen = geometry.size.height < 720
             
-            // Foreground Content (Respects safe areas automatically)
-            GeometryReader { geometry in
-                let isSmallScreen = geometry.size.height < 720
+            ZStack {
+                // Blurred Artwork Background (Ignores safe areas to provide complete screen coverage like Apple Music)
+                if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
+                    AsyncImage(url: url) { image in
+                        image.resizable()
+                             .aspectRatio(contentMode: .fill)
+                             .frame(width: geometry.size.width, height: geometry.size.height)
+                             .clipped()
+                    } placeholder: {
+                        Color.clear
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
+                    .blur(radius: 40)
+                    .opacity(0.4)
+                }
                 
                 if verticalSizeClass == .compact {
                     // Landscape Layout: Image left side, controls right side
@@ -439,10 +442,15 @@ struct PlayerDetailView: View {
                         .padding(.leading, 44) // Extra padding to clear the top-left dismiss button
                         .frame(width: geometry.size.width, height: geometry.size.height)
                     }
+                    .padding(.top, geometry.safeAreaInsets.top)
+                    .padding(.bottom, geometry.safeAreaInsets.bottom)
+                    .padding(.leading, geometry.safeAreaInsets.leading)
+                    .padding(.trailing, geometry.safeAreaInsets.trailing)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
                 } else {
                     // Portrait Layout
-                    // Deduct 340 (since geometry.size respects safe area now, we need less subtracted budget than full screen height)
-                    let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, geometry.size.height - 340.0)))
+                    let safeHeight = geometry.size.height - geometry.safeAreaInsets.top - geometry.safeAreaInsets.bottom
+                    let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, safeHeight - 340.0)))
                     
                     VStack {
                         // Dismiss chevron bar
@@ -654,10 +662,15 @@ struct PlayerDetailView: View {
                         .padding(.horizontal, 12)
                         .padding(.bottom, isSmallScreen ? 8 : 16)
                     }
+                    .padding(.top, geometry.safeAreaInsets.top)
+                    .padding(.bottom, geometry.safeAreaInsets.bottom)
+                    .padding(.leading, geometry.safeAreaInsets.leading)
+                    .padding(.trailing, geometry.safeAreaInsets.trailing)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
         }
+        .ignoresSafeArea()
     }
     
     private func formatTime(_ seconds: Double) -> String {
