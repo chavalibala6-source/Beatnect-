@@ -44,16 +44,6 @@
       "idiom" : "ios-marketing",
       "size" : "1024x1024",
       "scale" : "1x"
-    },
-    {
-      "idiom" : "carplay",
-      "size" : "60x60",
-      "scale" : "2x"
-    },
-    {
-      "idiom" : "carplay",
-      "size" : "60x60",
-      "scale" : "3x"
     }
   ],
   "info" : {
