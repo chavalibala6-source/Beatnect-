@@ -10,22 +10,9 @@
 		2DCC7E1E2FDC45EC00D6F5F6 /* Beatnec.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Beatnec.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		2DCC7E472FDC467000D6F5F6 /* Exceptions for "Beatnec" folder in "Beatnec" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Beatnect/Info.plist,
-			);
-			target = 2DCC7E1D2FDC45EC00D6F5F6 /* Beatnec */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2DCC7E202FDC45EC00D6F5F6 /* Beatnec */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				2DCC7E472FDC467000D6F5F6 /* Exceptions for "Beatnec" folder in "Beatnec" target */,
-			);
 			path = Beatnec;
 			sourceTree = "<group>";
 		};
@@ -269,7 +256,7 @@
 				DEVELOPMENT_TEAM = YT562PFV2B;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Beatnec/Beatnect/Info.plist;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = beatsync;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -303,7 +290,7 @@
 				DEVELOPMENT_TEAM = YT562PFV2B;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Beatnec/Beatnect/Info.plist;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = beatsync;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
