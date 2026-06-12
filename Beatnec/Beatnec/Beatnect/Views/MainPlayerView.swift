@@ -48,19 +48,22 @@ struct MainPlayerView: View {
                         .padding()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
-                        List {
-                            ForEach(Array(playerService.tracks.enumerated()), id: \.element.id) { index, track in
-                                Button(action: {
-                                    playerService.setPlaylist(tracks: playerService.tracks, startAtIndex: index)
-                                }) {
-                                    TrackRowView(track: track,
-                                                 isCurrent: playerService.currentTrackIndex == index,
-                                                 isPlaying: playerService.isPlaying)
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(Array(playerService.tracks.enumerated()), id: \.element.id) { index, track in
+                                    Button(action: {
+                                        playerService.setPlaylist(tracks: playerService.tracks, startAtIndex: index)
+                                    }) {
+                                        TrackRowView(track: track,
+                                                     isCurrent: playerService.currentTrackIndex == index,
+                                                     isPlaying: playerService.isPlaying)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
-                                .buttonStyle(PlainButtonStyle())
                             }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
                         }
-                        .listStyle(PlainListStyle())
                     }
                     
                     // Mini Player Bar (Persistent at bottom)
@@ -287,7 +290,7 @@ struct PlayerDetailView: View {
                                 
                                 Text(track.displayArtist)
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
                                     .lineLimit(1)
                             }
                         }
@@ -304,7 +307,7 @@ struct PlayerDetailView: View {
                                     playerService.seek(to: sliderValue)
                                 }
                             })
-                            .accentColor(.blue)
+                            .accentColor(Color(red: 0.65, green: 0.8, blue: 0.22))
                             
                             HStack {
                                 Text(formatTime(playerService.currentTime))
@@ -322,8 +325,13 @@ struct PlayerDetailView: View {
                             // Shuffle
                             Button(action: { playerService.toggleShuffle() }) {
                                 Image(systemName: "shuffle")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(playerService.isShuffleEnabled ? .blue : .secondary)
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(playerService.isShuffleEnabled ? .blue : .primary)
+                                    .frame(width: 36, height: 36)
+                                    .background(
+                                        Circle()
+                                            .stroke(playerService.isShuffleEnabled ? Color.blue : Color.primary.opacity(0.25), lineWidth: 1.2)
+                                    )
                             }
                             
                             Spacer()
@@ -331,16 +339,27 @@ struct PlayerDetailView: View {
                             // Prev
                             Button(action: { playerService.previousTrack() }) {
                                 Image(systemName: "backward.fill")
-                                    .font(.system(size: 24))
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.primary)
+                                    .frame(width: 44, height: 44)
+                                    .background(
+                                        Circle()
+                                            .stroke(Color.primary.opacity(0.25), lineWidth: 1.2)
+                                    )
                             }
                             
                             Spacer()
                             
                             // Play/Pause
                             Button(action: { playerService.togglePlayPause() }) {
-                                Image(systemName: playerService.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                                    .font(.system(size: 48))
+                                Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
+                                    .font(.system(size: 20))
                                     .foregroundColor(.blue)
+                                    .frame(width: 52, height: 52)
+                                    .background(
+                                        Circle()
+                                            .stroke(Color.blue, lineWidth: 1.5)
+                                    )
                             }
                             
                             Spacer()
@@ -348,7 +367,13 @@ struct PlayerDetailView: View {
                             // Next
                             Button(action: { playerService.nextTrack() }) {
                                 Image(systemName: "forward.fill")
-                                    .font(.system(size: 24))
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.primary)
+                                    .frame(width: 44, height: 44)
+                                    .background(
+                                        Circle()
+                                            .stroke(Color.primary.opacity(0.25), lineWidth: 1.2)
+                                    )
                             }
                             
                             Spacer()
@@ -356,8 +381,13 @@ struct PlayerDetailView: View {
                             // Repeat
                             Button(action: { playerService.toggleRepeat() }) {
                                 Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(playerService.isRepeatEnabled ? .blue : .secondary)
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(playerService.isRepeatEnabled ? .blue : .primary)
+                                    .frame(width: 36, height: 36)
+                                    .background(
+                                        Circle()
+                                            .stroke(playerService.isRepeatEnabled ? Color.blue : Color.primary.opacity(0.25), lineWidth: 1.2)
+                                    )
                             }
                         }
                         .foregroundColor(.primary)
@@ -425,7 +455,7 @@ struct PlayerDetailView: View {
                             
                             Text(track.displayArtist)
                                 .font(.headline)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
                         }
                         .padding(.top, 16)
                     }
@@ -444,7 +474,7 @@ struct PlayerDetailView: View {
                                 playerService.seek(to: sliderValue)
                             }
                         })
-                        .accentColor(.blue)
+                        .accentColor(Color(red: 0.65, green: 0.8, blue: 0.22))
                         
                         HStack {
                             Text(formatTime(playerService.currentTime))
@@ -459,38 +489,65 @@ struct PlayerDetailView: View {
                     .padding(.horizontal, 32)
                     
                     // Player Controls
-                    HStack(spacing: 28) {
+                    HStack(spacing: 24) {
                         // Shuffle
                         Button(action: { playerService.toggleShuffle() }) {
                             Image(systemName: "shuffle")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(playerService.isShuffleEnabled ? .blue : .secondary)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(playerService.isShuffleEnabled ? .blue : .primary)
+                                .frame(width: 40, height: 40)
+                                .background(
+                                    Circle()
+                                        .stroke(playerService.isShuffleEnabled ? Color.blue : Color.primary.opacity(0.25), lineWidth: 1.2)
+                                )
                         }
                         
                         // Prev
                         Button(action: { playerService.previousTrack() }) {
                             Image(systemName: "backward.fill")
-                                .font(.system(size: 32))
+                                .font(.system(size: 20))
+                                .foregroundColor(.primary)
+                                .frame(width: 50, height: 50)
+                                .background(
+                                    Circle()
+                                        .stroke(Color.primary.opacity(0.25), lineWidth: 1.2)
+                                )
                         }
                         
                         // Play/Pause
                         Button(action: { playerService.togglePlayPause() }) {
-                            Image(systemName: playerService.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                                .font(.system(size: 72))
+                            Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 24))
                                 .foregroundColor(.blue)
+                                .frame(width: 64, height: 64)
+                                .background(
+                                    Circle()
+                                        .stroke(Color.blue, lineWidth: 1.5)
+                                )
                         }
                         
                         // Next
                         Button(action: { playerService.nextTrack() }) {
                             Image(systemName: "forward.fill")
-                                .font(.system(size: 32))
+                                .font(.system(size: 20))
+                                .foregroundColor(.primary)
+                                .frame(width: 50, height: 50)
+                                .background(
+                                    Circle()
+                                        .stroke(Color.primary.opacity(0.25), lineWidth: 1.2)
+                                )
                         }
                         
                         // Repeat
                         Button(action: { playerService.toggleRepeat() }) {
                             Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(playerService.isRepeatEnabled ? .blue : .secondary)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(playerService.isRepeatEnabled ? .blue : .primary)
+                                .frame(width: 40, height: 40)
+                                .background(
+                                    Circle()
+                                        .stroke(playerService.isRepeatEnabled ? Color.blue : Color.primary.opacity(0.25), lineWidth: 1.2)
+                                )
                         }
                     }
                     .foregroundColor(.primary)
