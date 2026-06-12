@@ -425,7 +425,8 @@ struct PlayerDetailView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 } else {
                     // Portrait Layout
-                    let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, geometry.size.height - 350.0)))
+                    // Deduct 400 (instead of 350) from height limit to calculate max artwork size, giving 50pt more spacing budget.
+                    let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, geometry.size.height - 400.0)))
                     
                     VStack {
                         // Handle bar
@@ -445,7 +446,7 @@ struct PlayerDetailView: View {
                                          .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                 } placeholder: {
                                     ProgressView()
-                                        .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                         .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                 }
                                 .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                 .cornerRadius(20)
@@ -476,7 +477,8 @@ struct PlayerDetailView: View {
                             .padding(.top, isSmallScreen ? 8 : 16)
                         }
                         
-                        Spacer(minLength: isSmallScreen ? 4 : 8)
+                        // Gap above the Progress Bar
+                        Spacer(minLength: isSmallScreen ? 8 : 16)
                         
                         // Progress Slider
                         VStack(spacing: isSmallScreen ? 4 : 8) {
@@ -503,6 +505,9 @@ struct PlayerDetailView: View {
                             }
                         }
                         .padding(.horizontal, 12)
+                        
+                        // Gap between Progress Bar and Player Controls
+                        Spacer(minLength: isSmallScreen ? 8 : 16)
                         
                         // Player Controls
                         HStack(spacing: isSmallScreen ? 16 : 24) {
@@ -567,7 +572,9 @@ struct PlayerDetailView: View {
                             }
                         }
                         .foregroundColor(.primary)
-                        .padding(.vertical, isSmallScreen ? 8 : 16)
+                        
+                        // Gap between Player Controls and Volume Control
+                        Spacer(minLength: isSmallScreen ? 12 : 28)
                         
                         // Volume Control
                         HStack(alignment: .center, spacing: 8) {
@@ -585,7 +592,7 @@ struct PlayerDetailView: View {
                                 .frame(width: 20, height: 20)
                         }
                         .padding(.horizontal, 12)
-                        .padding(.bottom, 2)
+                        .padding(.bottom, isSmallScreen ? 8 : 16)
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 }
