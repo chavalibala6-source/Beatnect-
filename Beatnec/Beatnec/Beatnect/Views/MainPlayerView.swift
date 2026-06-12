@@ -585,9 +585,7 @@ struct PlayerDetailView: View {
                                 .frame(width: 20, height: 20)
                         }
                         .padding(.horizontal, 12)
-                        .padding(.bottom, isSmallScreen ? 4 : 8)
-                        
-                        Spacer(minLength: isSmallScreen ? 2 : 4)
+                        .padding(.bottom, 2)
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 }
