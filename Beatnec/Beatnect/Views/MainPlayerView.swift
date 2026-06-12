@@ -235,22 +235,27 @@ struct PlayerDetailView: View {
     @State private var sliderValue: Double = 0
     
     var body: some View {
-        ZStack {
-            // Blurred Artwork Background
-            if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
-                AsyncImage(url: url) { image in
-                    image.resizable()
-                         .aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    Color.clear
-                }
-                .blur(radius: 40)
-                .opacity(0.4)
-                .ignoresSafeArea()
-            }
+        GeometryReader { geometry in
+            let isSmallScreen = geometry.size.height < 720
             
-            GeometryReader { geometry in
-                let isSmallScreen = geometry.size.height < 600
+            ZStack {
+                // Blurred Artwork Background
+                if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
+                    AsyncImage(url: url) { image in
+                        image.resizable()
+                             .aspectRatio(contentMode: .fill)
+                             .frame(width: geometry.size.width, height: geometry.size.height)
+                             .clipped()
+                    } placeholder: {
+                        Color.clear
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
+                    .blur(radius: 40)
+                    .opacity(0.4)
+                    .ignoresSafeArea()
+                }
                 
                 if verticalSizeClass == .compact {
                     // Landscape Layout: Image left side, controls right side
