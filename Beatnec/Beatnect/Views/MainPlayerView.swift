@@ -256,25 +256,39 @@ struct PlayerDetailView: View {
                     .opacity(0.4)
                 }
                 
+                // Clear overlay layer to capture swipe-to-dismiss gesture on empty spaces (without blocking foreground buttons/sliders)
+                Color.clear
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture()
+                            .onEnded { value in
+                                if value.translation.height > 60 {
+                                    withAnimation {
+                                        isPresented = false
+                                    }
+                                }
+                            }
+                    )
+                
                 if verticalSizeClass == .compact {
                     // Landscape Layout: Image left side, controls right side
-                    ZStack(alignment: .topLeading) {
-                        // Dismiss button for Landscape fullScreenCover
-                        Button(action: {
-                            withAnimation {
-                                isPresented = false
-                            }
-                        }) {
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.primary)
-                                .padding(10)
-                                .background(Color.primary.opacity(0.08))
-                                .clipShape(Circle())
-                        }
-                        .padding(.leading, 16)
-                        .padding(.top, 16)
-                        .zIndex(1)
+                    VStack(spacing: 0) {
+                        // Top Capsule Handle for Landscape
+                        Capsule()
+                            .fill(Color.secondary)
+                            .frame(width: 40, height: 5)
+                            .padding(.top, 8)
+                            .contentShape(Rectangle())
+                            .gesture(
+                                DragGesture()
+                                    .onEnded { value in
+                                        if value.translation.height > 30 {
+                                            withAnimation {
+                                                isPresented = false
+                                            }
+                                        }
+                                    }
+                            )
                         
                         let landscapeArtworkSize = max(120.0, min(220.0, geometry.size.height - 48.0))
                         
@@ -295,6 +309,16 @@ struct PlayerDetailView: View {
                                     .shadow(radius: 12)
                                     .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
                                     .animation(playerService.isPlaying ? Animation.linear(duration: 25).repeatForever(autoreverses: false) : .default, value: playerService.isPlaying)
+                                    .gesture(
+                                        DragGesture()
+                                            .onEnded { value in
+                                                if value.translation.height > 50 {
+                                                    withAnimation {
+                                                        isPresented = false
+                                                    }
+                                                }
+                                            }
+                                    )
                                 } else {
                                     Image(systemName: "music.note")
                                         .font(.system(size: landscapeArtworkSize * 0.27))
@@ -303,6 +327,16 @@ struct PlayerDetailView: View {
                                         .background(Color(.secondarySystemBackground))
                                         .cornerRadius(16)
                                         .shadow(radius: 8)
+                                        .gesture(
+                                            DragGesture()
+                                                .onEnded { value in
+                                                    if value.translation.height > 50 {
+                                                        withAnimation {
+                                                            isPresented = false
+                                                        }
+                                                    }
+                                                }
+                                        )
                                 }
                             }
                             
@@ -439,8 +473,7 @@ struct PlayerDetailView: View {
                             }
                         }
                         .padding(.horizontal, 24)
-                        .padding(.leading, 44) // Extra padding to clear the top-left dismiss button
-                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .frame(width: geometry.size.width, height: geometry.size.height - 20)
                     }
                     .padding(.top, geometry.safeAreaInsets.top)
                     .padding(.bottom, geometry.safeAreaInsets.bottom)
@@ -453,25 +486,22 @@ struct PlayerDetailView: View {
                     let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, safeHeight - 340.0)))
                     
                     VStack {
-                        // Dismiss chevron bar
-                        HStack {
-                            Button(action: {
-                                withAnimation {
-                                    isPresented = false
-                                }
-                            }) {
-                                Image(systemName: "chevron.down")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.primary)
-                                    .padding(10)
-                                    .background(Color.primary.opacity(0.08))
-                                    .clipShape(Circle())
-                            }
-                            .padding(.leading, 16)
-                            
-                            Spacer()
-                        }
-                        .padding(.top, isSmallScreen ? 4 : 8)
+                        // Top Pill Capsule Handle bar (for minimizing, just like previously in the sheet)
+                        Capsule()
+                            .fill(Color.secondary)
+                            .frame(width: 40, height: 5)
+                            .padding(.top, isSmallScreen ? 8 : 16)
+                            .contentShape(Rectangle())
+                            .gesture(
+                                DragGesture()
+                                    .onEnded { value in
+                                        if value.translation.height > 30 {
+                                            withAnimation {
+                                                isPresented = false
+                                            }
+                                        }
+                                    }
+                            )
                         
                         Spacer(minLength: isSmallScreen ? 2 : 4)
                         
@@ -494,7 +524,7 @@ struct PlayerDetailView: View {
                                 .gesture(
                                     DragGesture()
                                         .onEnded { value in
-                                            if value.translation.height > 80 {
+                                            if value.translation.height > 50 {
                                                 withAnimation {
                                                     isPresented = false
                                                 }
@@ -512,7 +542,7 @@ struct PlayerDetailView: View {
                                     .gesture(
                                         DragGesture()
                                             .onEnded { value in
-                                                if value.translation.height > 80 {
+                                                if value.translation.height > 50 {
                                                     withAnimation {
                                                         isPresented = false
                                                     }
@@ -536,7 +566,7 @@ struct PlayerDetailView: View {
                             .gesture(
                                 DragGesture()
                                     .onEnded { value in
-                                        if value.translation.height > 80 {
+                                        if value.translation.height > 50 {
                                             withAnimation {
                                                 isPresented = false
                                             }
@@ -669,6 +699,7 @@ struct PlayerDetailView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .ignoresSafeArea()
     }
