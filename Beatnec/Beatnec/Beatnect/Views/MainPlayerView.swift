@@ -1,5 +1,7 @@
 import SwiftUI
 import MediaPlayer
+import Combine
+
 
 struct MainPlayerView: View {
     @StateObject private var apiService = APIService.shared
@@ -138,14 +140,18 @@ struct MiniPlayerBar: View {
                     ProgressView()
                 }
                 .frame(width: 48, height: 48)
-                .cornerRadius(8)
+                .cornerRadius(10)
                 .clipped()
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 0.8)
+                )
             } else {
                 Image(systemName: "music.note")
                     .foregroundColor(.secondary)
                     .frame(width: 48, height: 48)
                     .background(Color(.secondarySystemBackground))
-                    .cornerRadius(8)
+                    .cornerRadius(10)
             }
             
             // Info
@@ -165,17 +171,33 @@ struct MiniPlayerBar: View {
             // Play/Pause Button
             Button(action: onToggle) {
                 Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.primary)
-                    .frame(width: 44, height: 44)
             }
+            .buttonStyle(LiquidGlassButtonStyle(isActive: isPlaying, activeColor: .blue, size: 38))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(
-            Color(.tertiarySystemBackground)
-                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: -4)
+            ZStack {
+                Rectangle()
+                    .fill(.thinMaterial)
+                Color.black.opacity(0.02)
+            }
         )
+        .overlay(
+            VStack {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [.white.opacity(0.2), .clear]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 1)
+                Spacer()
+            }
+        )
+        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: -4)
         .onTapGesture(perform: onTap)
     }
 }
@@ -235,42 +257,29 @@ struct PlayerDetailView: View {
     @State private var sliderValue: Double = 0
     
     var body: some View {
-        ZStack {
-            // Blurred Artwork Background (Ignores safe areas to provide complete screen coverage like Apple Music)
-            if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
-                AsyncImage(url: url) { image in
-                    image.resizable()
-                         .aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    Color.clear
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .blur(radius: 40)
-                .opacity(0.4)
-                .ignoresSafeArea()
-            }
+        GeometryReader { geometry in
+            let isSmallScreen = geometry.size.height < 720
             
-            // Clear overlay layer to capture swipe-to-dismiss gesture on empty spaces (without blocking foreground buttons/sliders)
-            Color.clear
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture()
-                        .onEnded { value in
-                            if value.translation.height > 60 {
-                                withAnimation {
-                                    isPresented = false
+            ZStack {
+                // Swipe-to-dismiss gesture overlay on empty spaces
+                Color.clear
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture()
+                            .onEnded { value in
+                                if value.translation.height > 60 {
+                                    withAnimation {
+                                        isPresented = false
+                                    }
                                 }
                             }
-                        }
-                )
-                .ignoresSafeArea()
-            
-            // Foreground Content (Respects safe areas automatically)
-            GeometryReader { geometry in
-                let isSmallScreen = geometry.size.height < 720
+                    )
                 
                 if verticalSizeClass == .compact {
-                    // Landscape Layout: Image left side, controls right side
+                    // Landscape Layout: Image left side (60% width), controls right side (40% width)
+                    let landscapeArtworkSize = max(120.0, min(280.0, geometry.size.height - (isSmallScreen ? 48.0 : 64.0)))
+                    let cardHeight = geometry.size.height - (isSmallScreen ? 36.0 : 48.0)
+                    
                     VStack(spacing: 0) {
                         // Top Capsule Handle for Landscape
                         Capsule()
@@ -289,25 +298,63 @@ struct PlayerDetailView: View {
                                     }
                             )
                         
-                        let landscapeArtworkSize = max(120.0, min(220.0, geometry.size.height - 48.0))
+                        Spacer(minLength: 4)
                         
-                        HStack(spacing: 24) {
-                            // Left Side: Artwork Vinyl
-                            if let track = playerService.currentTrack {
-                                if let url = track.fullArtworkUrl {
-                                    AsyncImage(url: url) { image in
-                                        image.resizable()
-                                             .aspectRatio(contentMode: .fit)
-                                             .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
-                                    } placeholder: {
-                                        ProgressView()
-                                            .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
+                        HStack(spacing: 16) {
+                            // Left Side: Artwork Vinyl (60% width split)
+                            VStack {
+                                Spacer()
+                                if let track = playerService.currentTrack {
+                                    ZStack {
+                                        if let url = track.fullArtworkUrl {
+                                            // Glowing Artwork Drop Shadow (Blurred and offset copy of the artwork)
+                                            AsyncImage(url: url) { image in
+                                                image.resizable()
+                                                     .aspectRatio(contentMode: .fit)
+                                            } placeholder: {
+                                                Color.clear
+                                            }
+                                            .frame(maxHeight: landscapeArtworkSize)
+                                            .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
+                                            .animation(playerService.isPlaying ? Animation.linear(duration: 25).repeatForever(autoreverses: false) : .default, value: playerService.isPlaying)
+                                            .blur(radius: 20)
+                                            .opacity(0.6)
+                                            .offset(y: 10)
+                                            
+                                            // Main Artwork image
+                                            AsyncImage(url: url) { image in
+                                                image.resizable()
+                                                     .aspectRatio(contentMode: .fit)
+                                                     .frame(maxHeight: landscapeArtworkSize)
+                                            } placeholder: {
+                                                ProgressView()
+                                                    .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
+                                            }
+                                            .frame(maxHeight: landscapeArtworkSize)
+                                            .cornerRadius(16)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 16)
+                                                    .stroke(
+                                                        LinearGradient(
+                                                            gradient: Gradient(colors: [.white.opacity(0.35), .clear, .black.opacity(0.2)]),
+                                                            startPoint: .topLeading,
+                                                            endPoint: .bottomTrailing
+                                                        ),
+                                                        lineWidth: 1.5
+                                                    )
+                                            )
+                                            .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
+                                            .animation(playerService.isPlaying ? Animation.linear(duration: 25).repeatForever(autoreverses: false) : .default, value: playerService.isPlaying)
+                                        } else {
+                                            Image(systemName: "music.note")
+                                                .font(.system(size: landscapeArtworkSize * 0.27))
+                                                .foregroundColor(.secondary)
+                                                .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
+                                                .background(Color(.secondarySystemBackground))
+                                                .cornerRadius(16)
+                                                .shadow(radius: 8)
+                                        }
                                     }
-                                    .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
-                                    .cornerRadius(16)
-                                    .shadow(radius: 12)
-                                    .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
-                                    .animation(playerService.isPlaying ? Animation.linear(duration: 25).repeatForever(autoreverses: false) : .default, value: playerService.isPlaying)
                                     .gesture(
                                         DragGesture()
                                             .onEnded { value in
@@ -318,31 +365,13 @@ struct PlayerDetailView: View {
                                                 }
                                             }
                                     )
-                                } else {
-                                    Image(systemName: "music.note")
-                                        .font(.system(size: landscapeArtworkSize * 0.27))
-                                        .foregroundColor(.secondary)
-                                        .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
-                                        .background(Color(.secondarySystemBackground))
-                                        .cornerRadius(16)
-                                        .shadow(radius: 8)
-                                        .gesture(
-                                            DragGesture()
-                                                .onEnded { value in
-                                                    if value.translation.height > 50 {
-                                                        withAnimation {
-                                                            isPresented = false
-                                                        }
-                                                    }
-                                                }
-                                        )
                                 }
+                                Spacer()
                             }
+                            .frame(width: geometry.size.width * 0.58)
                             
-                            // Right Side: Controls and Info
-                            VStack(alignment: .leading, spacing: 8) {
-                                Spacer(minLength: 4)
-                                
+                            // Right Side: Controls and Info wrapped in a liquid glass-morphic card (40% width split)
+                            VStack(alignment: .leading, spacing: 0) {
                                 if let track = playerService.currentTrack {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(track.displayName)
@@ -355,7 +384,15 @@ struct PlayerDetailView: View {
                                             .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
                                             .lineLimit(1)
                                     }
+                                    .padding(.top, 4)
                                 }
+                                
+                                // Waveform Visualizer for Landscape
+                                WaveformVisualizer(isPlaying: playerService.isPlaying)
+                                    .frame(height: 18)
+                                    .padding(.vertical, 2)
+                                
+                                Spacer(minLength: 8)
                                 
                                 // Progress Slider
                                 VStack(spacing: 4) {
@@ -382,77 +419,50 @@ struct PlayerDetailView: View {
                                     }
                                 }
                                 
+                                Spacer(minLength: 8)
+                                
                                 // Player Controls
-                                HStack(spacing: 16) {
+                                HStack(spacing: 0) {
                                     // Shuffle
                                     Button(action: { playerService.toggleShuffle() }) {
                                         Image(systemName: "shuffle")
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundColor(playerService.isShuffleEnabled ? .blue : .primary)
-                                            .frame(width: 32, height: 32)
-                                            .background(
-                                                Circle()
-                                                    .stroke(playerService.isShuffleEnabled ? Color.blue : Color.primary.opacity(0.25), lineWidth: 1.2)
-                                            )
                                     }
+                                    .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isShuffleEnabled, activeColor: .teal, size: 32))
                                     
                                     Spacer()
                                     
                                     // Prev
                                     Button(action: { playerService.previousTrack() }) {
                                         Image(systemName: "backward.fill")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.primary)
-                                            .frame(width: 38, height: 38)
-                                            .background(
-                                                Circle()
-                                                    .stroke(Color.primary.opacity(0.25), lineWidth: 1.2)
-                                            )
                                     }
+                                    .buttonStyle(LiquidGlassButtonStyle(isActive: false, size: 38))
                                     
                                     Spacer()
                                     
                                     // Play/Pause
                                     Button(action: { playerService.togglePlayPause() }) {
                                         Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
-                                            .font(.system(size: 18))
-                                            .foregroundColor(.blue)
-                                            .frame(width: 46, height: 46)
-                                            .background(
-                                                Circle()
-                                                    .stroke(Color.blue, lineWidth: 1.5)
-                                            )
                                     }
+                                    .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isPlaying, activeColor: .blue, size: 46))
                                     
                                     Spacer()
                                     
                                     // Next
                                     Button(action: { playerService.nextTrack() }) {
                                         Image(systemName: "forward.fill")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.primary)
-                                            .frame(width: 38, height: 38)
-                                            .background(
-                                                Circle()
-                                                    .stroke(Color.primary.opacity(0.25), lineWidth: 1.2)
-                                            )
                                     }
+                                    .buttonStyle(LiquidGlassButtonStyle(isActive: false, size: 38))
                                     
                                     Spacer()
                                     
                                     // Repeat
                                     Button(action: { playerService.toggleRepeat() }) {
                                         Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundColor(playerService.isRepeatEnabled ? .blue : .primary)
-                                            .frame(width: 32, height: 32)
-                                            .background(
-                                                Circle()
-                                                    .stroke(playerService.isRepeatEnabled ? Color.blue : Color.primary.opacity(0.25), lineWidth: 1.2)
-                                            )
                                     }
+                                    .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isRepeatEnabled, activeColor: .purple, size: 32))
                                 }
-                                .foregroundColor(.primary)
+                                
+                                Spacer(minLength: 12)
                                 
                                 // Volume Control
                                 HStack(alignment: .center, spacing: 10) {
@@ -467,20 +477,38 @@ struct PlayerDetailView: View {
                                         .font(.system(size: 10))
                                         .foregroundColor(.secondary)
                                 }
-                                
-                                Spacer(minLength: 4)
+                                .padding(.bottom, 4)
                             }
+                            .padding(18)
+                            .frame(width: geometry.size.width * 0.38, height: cardHeight)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(.ultraThinMaterial)
+                                    .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 5)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [.white.opacity(0.2), .white.opacity(0.05)]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1
+                                    )
+                            )
                         }
-                        .padding(.horizontal, 24)
-                        .frame(width: geometry.size.width, height: geometry.size.height - 20)
+                        .padding(.horizontal, 16)
+                        
+                        Spacer(minLength: 4)
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 } else {
                     // Portrait Layout
                     let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, geometry.size.height - 340.0)))
                     
-                    VStack {
-                        // Top Pill Capsule Handle bar (for minimizing, just like previously in the sheet)
+                    VStack(spacing: 0) {
+                        // Top Pill Capsule Handle bar
                         Capsule()
                             .fill(Color.primary.opacity(0.4))
                             .frame(width: 40, height: 5)
@@ -497,66 +525,60 @@ struct PlayerDetailView: View {
                                     }
                             )
                         
-                        Spacer(minLength: isSmallScreen ? 2 : 4)
+                        Spacer(minLength: isSmallScreen ? 6 : 12)
                         
                         // Big Artwork Vinyl
                         if let track = playerService.currentTrack {
-                            if let url = track.fullArtworkUrl {
-                                AsyncImage(url: url) { image in
-                                    image.resizable()
-                                         .aspectRatio(contentMode: .fit)
-                                         .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                } placeholder: {
-                                    ProgressView()
-                                         .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                }
-                                .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                .cornerRadius(20)
-                                .shadow(radius: 15)
-                                .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
-                                .animation(playerService.isPlaying ? Animation.linear(duration: 25).repeatForever(autoreverses: false) : .default, value: playerService.isPlaying)
-                                .gesture(
-                                    DragGesture()
-                                        .onEnded { value in
-                                            if value.translation.height > 50 {
-                                                withAnimation {
-                                                    isPresented = false
-                                                }
-                                            }
-                                        }
-                                )
-                            } else {
-                                Image(systemName: "music.note")
-                                    .font(.system(size: portraitArtworkSize * 0.27))
-                                    .foregroundColor(.secondary)
+                            ZStack {
+                                if let url = track.fullArtworkUrl {
+                                    // Glowing Artwork Drop Shadow (Blurred and offset copy of the artwork)
+                                    AsyncImage(url: url) { image in
+                                        image.resizable()
+                                             .aspectRatio(contentMode: .fit)
+                                    } placeholder: {
+                                        Color.clear
+                                    }
                                     .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                    .background(Color(.secondarySystemBackground))
+                                    .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
+                                    .animation(playerService.isPlaying ? Animation.linear(duration: 25).repeatForever(autoreverses: false) : .default, value: playerService.isPlaying)
+                                    .blur(radius: 24)
+                                    .opacity(0.65)
+                                    .offset(y: 12)
+                                    
+                                    // Main Artwork image
+                                    AsyncImage(url: url) { image in
+                                        image.resizable()
+                                             .aspectRatio(contentMode: .fit)
+                                             .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                    } placeholder: {
+                                        ProgressView()
+                                             .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                    }
+                                    .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                     .cornerRadius(20)
-                                    .shadow(radius: 10)
-                                    .gesture(
-                                        DragGesture()
-                                            .onEnded { value in
-                                                if value.translation.height > 50 {
-                                                    withAnimation {
-                                                        isPresented = false
-                                                    }
-                                                }
-                                            }
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(
+                                                LinearGradient(
+                                                    gradient: Gradient(colors: [.white.opacity(0.35), .clear, .black.opacity(0.25)]),
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.5
+                                            )
                                     )
+                                    .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
+                                    .animation(playerService.isPlaying ? Animation.linear(duration: 25).repeatForever(autoreverses: false) : .default, value: playerService.isPlaying)
+                                } else {
+                                    Image(systemName: "music.note")
+                                        .font(.system(size: portraitArtworkSize * 0.27))
+                                        .foregroundColor(.secondary)
+                                        .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                        .background(Color(.secondarySystemBackground))
+                                        .cornerRadius(20)
+                                        .shadow(radius: 10)
+                                }
                             }
-                            
-                            VStack(spacing: 4) {
-                                Text(track.displayName)
-                                    .font(isSmallScreen ? .headline : .title2)
-                                    .fontWeight(.bold)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                                
-                                Text(track.displayArtist)
-                                    .font(isSmallScreen ? .subheadline : .headline)
-                                    .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
-                            }
-                            .padding(.top, isSmallScreen ? 8 : 16)
                             .gesture(
                                 DragGesture()
                                     .onEnded { value in
@@ -569,127 +591,166 @@ struct PlayerDetailView: View {
                             )
                         }
                         
-                        // Gap above the Progress Bar
-                        Spacer(minLength: isSmallScreen ? 8 : 16)
+                        Spacer(minLength: isSmallScreen ? 12 : 24)
                         
-                        // Progress Slider
-                        VStack(spacing: isSmallScreen ? 4 : 8) {
-                            Slider(value: Binding(get: {
-                                isDraggingSlider ? sliderValue : playerService.currentTime
-                            }, set: { newValue in
-                                sliderValue = newValue
-                            }), in: 0...max(playerService.duration, 1), onEditingChanged: { editing in
-                                isDraggingSlider = editing
-                                if !editing {
-                                    playerService.seek(to: sliderValue)
+                        // Floating Liquid Glass-Morphic Card for Controls
+                        VStack(spacing: 0) {
+                            if let track = playerService.currentTrack {
+                                VStack(spacing: 4) {
+                                    Text(track.displayName)
+                                        .font(isSmallScreen ? .headline : .title2)
+                                        .fontWeight(.bold)
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal)
+                                    
+                                    Text(track.displayArtist)
+                                        .font(isSmallScreen ? .subheadline : .headline)
+                                        .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
                                 }
-                            })
-                            .accentColor(Color(red: 0.65, green: 0.8, blue: 0.22))
+                                .padding(.top, isSmallScreen ? 12 : 18)
+                                .gesture(
+                                    DragGesture()
+                                        .onEnded { value in
+                                            if value.translation.height > 50 {
+                                                withAnimation {
+                                                    isPresented = false
+                                                }
+                                            }
+                                        }
+                                )
+                            }
                             
-                            HStack {
-                                Text(formatTime(playerService.currentTime))
-                                    .font(.caption)
+                            // Waveform Visualizer
+                            WaveformVisualizer(isPlaying: playerService.isPlaying)
+                                .frame(height: isSmallScreen ? 24 : 32)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 4)
+                            
+                            Spacer(minLength: isSmallScreen ? 12 : 20)
+                            
+                            // Progress Slider
+                            VStack(spacing: isSmallScreen ? 4 : 8) {
+                                Slider(value: Binding(get: {
+                                    isDraggingSlider ? sliderValue : playerService.currentTime
+                                }, set: { newValue in
+                                    sliderValue = newValue
+                                }), in: 0...max(playerService.duration, 1), onEditingChanged: { editing in
+                                    isDraggingSlider = editing
+                                    if !editing {
+                                        playerService.seek(to: sliderValue)
+                                    }
+                                })
+                                .accentColor(Color(red: 0.65, green: 0.8, blue: 0.22))
+                                
+                                HStack {
+                                    Text(formatTime(playerService.currentTime))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                    Text(formatTime(playerService.duration))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            
+                            Spacer(minLength: isSmallScreen ? 12 : 20)
+                            
+                            // Player Controls in Liquid Glass button style
+                            HStack(spacing: isSmallScreen ? 16 : 24) {
+                                // Shuffle
+                                Button(action: { playerService.toggleShuffle() }) {
+                                    Image(systemName: "shuffle")
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isShuffleEnabled, activeColor: .teal, size: isSmallScreen ? 34 : 40))
+                                
+                                // Prev
+                                Button(action: { playerService.previousTrack() }) {
+                                    Image(systemName: "backward.fill")
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(isActive: false, size: isSmallScreen ? 40 : 50))
+                                
+                                // Play/Pause
+                                Button(action: { playerService.togglePlayPause() }) {
+                                    Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isPlaying, activeColor: .blue, size: isSmallScreen ? 54 : 64))
+                                
+                                // Next
+                                Button(action: { playerService.nextTrack() }) {
+                                    Image(systemName: "forward.fill")
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(isActive: false, size: isSmallScreen ? 40 : 50))
+                                
+                                // Repeat
+                                Button(action: { playerService.toggleRepeat() }) {
+                                    Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isRepeatEnabled, activeColor: .purple, size: isSmallScreen ? 34 : 40))
+                            }
+                            
+                            Spacer(minLength: isSmallScreen ? 16 : 28)
+                            
+                            // Volume Control
+                            HStack(alignment: .center, spacing: 8) {
+                                Image(systemName: "speaker.fill")
+                                    .font(.system(size: 14))
                                     .foregroundColor(.secondary)
-                                Spacer()
-                                Text(formatTime(playerService.duration))
-                                    .font(.caption)
+                                    .frame(width: 20, height: 20)
+                                
+                                VolumeSlider()
+                                    .frame(height: 22)
+                                
+                                Image(systemName: "speaker.wave.3.fill")
+                                    .font(.system(size: 14))
                                     .foregroundColor(.secondary)
+                                    .frame(width: 20, height: 20)
                             }
+                            .padding(.horizontal, 16)
+                            
+                            Spacer(minLength: isSmallScreen ? 10 : 16)
                         }
-                        .padding(.horizontal, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 24)
+                                .fill(.ultraThinMaterial)
+                                .shadow(color: Color.black.opacity(0.18), radius: 15, x: 0, y: 8)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [.white.opacity(0.22), .white.opacity(0.06)]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.2
+                                )
+                        )
+                        .padding(.horizontal, 16)
                         
-                        // Gap between Progress Bar and Player Controls
-                        Spacer(minLength: isSmallScreen ? 8 : 16)
-                        
-                        // Player Controls
-                        HStack(spacing: isSmallScreen ? 16 : 24) {
-                            // Shuffle
-                            Button(action: { playerService.toggleShuffle() }) {
-                                Image(systemName: "shuffle")
-                                    .font(.system(size: isSmallScreen ? 12 : 14, weight: .bold))
-                                    .foregroundColor(playerService.isShuffleEnabled ? .blue : .primary)
-                                    .frame(width: isSmallScreen ? 34 : 40, height: isSmallScreen ? 34 : 40)
-                                    .background(
-                                        Circle()
-                                            .stroke(playerService.isShuffleEnabled ? Color.blue : Color.primary.opacity(0.25), lineWidth: 1.2)
-                                    )
-                            }
-                            
-                            // Prev
-                            Button(action: { playerService.previousTrack() }) {
-                                Image(systemName: "backward.fill")
-                                    .font(.system(size: isSmallScreen ? 16 : 20))
-                                    .foregroundColor(.primary)
-                                    .frame(width: isSmallScreen ? 40 : 50, height: isSmallScreen ? 40 : 50)
-                                    .background(
-                                        Circle()
-                                            .stroke(Color.primary.opacity(0.25), lineWidth: 1.2)
-                                    )
-                            }
-                            
-                            // Play/Pause
-                            Button(action: { playerService.togglePlayPause() }) {
-                                Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
-                                    .font(.system(size: isSmallScreen ? 20 : 24))
-                                    .foregroundColor(.blue)
-                                    .frame(width: isSmallScreen ? 54 : 64, height: isSmallScreen ? 54 : 64)
-                                    .background(
-                                        Circle()
-                                            .stroke(Color.blue, lineWidth: 1.5)
-                                    )
-                            }
-                            
-                            // Next
-                            Button(action: { playerService.nextTrack() }) {
-                                Image(systemName: "forward.fill")
-                                    .font(.system(size: isSmallScreen ? 16 : 20))
-                                    .foregroundColor(.primary)
-                                    .frame(width: isSmallScreen ? 40 : 50, height: isSmallScreen ? 40 : 50)
-                                    .background(
-                                        Circle()
-                                            .stroke(Color.primary.opacity(0.25), lineWidth: 1.2)
-                                    )
-                            }
-                            
-                            // Repeat
-                            Button(action: { playerService.toggleRepeat() }) {
-                                Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
-                                    .font(.system(size: isSmallScreen ? 12 : 14, weight: .bold))
-                                    .foregroundColor(playerService.isRepeatEnabled ? .blue : .primary)
-                                    .frame(width: isSmallScreen ? 34 : 40, height: isSmallScreen ? 34 : 40)
-                                    .background(
-                                        Circle()
-                                            .stroke(playerService.isRepeatEnabled ? Color.blue : Color.primary.opacity(0.25), lineWidth: 1.2)
-                                    )
-                            }
-                        }
-                        .foregroundColor(.primary)
-                        
-                        // Gap between Player Controls and Volume Control
-                        Spacer(minLength: isSmallScreen ? 12 : 28)
-                        
-                        // Volume Control
-                        HStack(alignment: .center, spacing: 8) {
-                            Image(systemName: "speaker.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(.secondary)
-                                .frame(width: 20, height: 20)
-                            
-                            VolumeSlider()
-                                .frame(height: 22)
-                            
-                            Image(systemName: "speaker.wave.3.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(.secondary)
-                                .frame(width: 20, height: 20)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, isSmallScreen ? 8 : 16)
+                        Spacer(minLength: isSmallScreen ? 10 : 20)
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
         }
+        .background(
+            ZStack {
+                if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
+                    AsyncImage(url: url) { image in
+                        image.resizable()
+                             .aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Color.clear
+                    }
+                    .blur(radius: 40)
+                    .opacity(0.4)
+                } else {
+                    Color.clear
+                }
+            }
+            .ignoresSafeArea()
+        )
     }
     
     private func formatTime(_ seconds: Double) -> String {
@@ -704,8 +765,128 @@ struct VolumeSlider: UIViewRepresentable {
     func makeUIView(context: Context) -> MPVolumeView {
         let volumeView = MPVolumeView(frame: .zero)
         volumeView.showsRouteButton = false
+        
+        // Custom styling for the volume slider to match liquid glass look
+        for subview in volumeView.subviews {
+            if let slider = subview as? UISlider {
+                slider.minimumTrackTintColor = UIColor(red: 0.65, green: 0.8, blue: 0.22, alpha: 0.85) // Glowing lime
+                slider.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.15) // Glass track
+                break
+            }
+        }
+        
         return volumeView
     }
     
     func updateUIView(_ uiView: MPVolumeView, context: Context) {}
+}
+
+// MARK: - Liquid Glass Button Style
+
+struct LiquidGlassButtonStyle: ButtonStyle {
+    var isActive: Bool = false
+    var activeColor: Color = .blue
+    var size: CGFloat = 40
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: size * 0.42, weight: .bold))
+            .foregroundColor(.primary)
+            .frame(width: size, height: size)
+            .background(
+                ZStack {
+                    if isActive {
+                        // Liquid glowing background
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    gradient: Gradient(colors: [activeColor.opacity(0.65), activeColor.opacity(0.1)]),
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: size * 0.6
+                                )
+                            )
+                            .blur(radius: 2)
+                        
+                        Circle()
+                            .fill(activeColor.opacity(0.2))
+                    } else {
+                        Circle()
+                            .fill(Color.white.opacity(0.08))
+                    }
+                    
+                    // Glass material
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                }
+            )
+            .overlay(
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                .white.opacity(isActive ? 0.7 : 0.3),
+                                .white.opacity(0.05),
+                                .black.opacity(0.15)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.2
+                    )
+            )
+            .shadow(color: (isActive ? activeColor : Color.black).opacity(isActive ? 0.35 : 0.15), radius: configuration.isPressed ? 3 : 8, x: 0, y: configuration.isPressed ? 1 : 4)
+            .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Waveform Visualizer View
+
+struct WaveformVisualizer: View {
+    let isPlaying: Bool
+    @State private var phase: CGFloat = 0.0
+    
+    // Timer to drive the fluid animation
+    let timer = Timer.publish(every: 0.08, on: .main, in: .common).autoconnect()
+    
+    var body: some View {
+        Canvas { context, size in
+            let barWidth: CGFloat = 3.0
+            let gap: CGFloat = 2.0
+            let count = Int(size.width / (barWidth + gap))
+            
+            for i in 0..<count {
+                let x = CGFloat(i) * (barWidth + gap) + barWidth / 2.0
+                
+                // Normal curve envelope so it shapes like a wave (tapers at ends)
+                let relativeX = CGFloat(i) / CGFloat(count)
+                let envelope = sin(relativeX * .pi)
+                
+                // Fluid wavy movement driven by phase
+                let waveMod: CGFloat
+                if isPlaying {
+                    waveMod = sin(relativeX * 10.0 + phase) * 0.35 + cos(relativeX * 6.0 - phase) * 0.25 + 0.6
+                } else {
+                    waveMod = 0.12 // Tiny pulse resting state
+                }
+                
+                let barHeight = size.height * envelope * waveMod
+                let y = (size.height - barHeight) / 2.0
+                
+                let path = Path(roundedRect: CGRect(x: x - barWidth/2.0, y: y, width: barWidth, height: barHeight), cornerRadius: barWidth/2.0)
+                
+                // Colored glow matches the theme (lime-green)
+                let color = Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.85)
+                context.fill(path, with: .color(color))
+            }
+        }
+        .onReceive(timer) { _ in
+            if isPlaying {
+                withAnimation(.linear(duration: 0.08)) {
+                    phase += 0.45
+                }
+            }
+        }
+    }
 }
