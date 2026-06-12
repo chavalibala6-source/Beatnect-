@@ -262,7 +262,7 @@ struct PlayerDetailView: View {
                         } placeholder: {
                             ProgressView()
                         }
-                        .frame(width: 260, height: 260)
+                        .frame(width: 300, height: 300)
                         .cornerRadius(20)
                         .shadow(radius: 15)
                         .rotationEffect(Angle(degrees: playerService.isPlaying ? 360 : 0))
@@ -271,7 +271,7 @@ struct PlayerDetailView: View {
                         Image(systemName: "music.note")
                             .font(.system(size: 80))
                             .foregroundColor(.secondary)
-                            .frame(width: 260, height: 260)
+                            .frame(width: 300, height: 300)
                             .background(Color(.secondarySystemBackground))
                             .cornerRadius(20)
                             .shadow(radius: 10)
@@ -317,7 +317,7 @@ struct PlayerDetailView: View {
                             .foregroundColor(.secondary)
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 32)
                 
                 // Player Controls
                 HStack(spacing: 28) {
@@ -368,7 +368,7 @@ struct PlayerDetailView: View {
                     Image(systemName: "speaker.wave.3.fill")
                         .foregroundColor(.secondary)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 32)
                 .padding(.bottom, 24)
                 
                 Spacer()
