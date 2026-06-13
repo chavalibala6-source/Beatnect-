@@ -691,7 +691,7 @@ struct PlayerDetailView: View {
                                     .foregroundColor(.secondary)
                                     .frame(width: 20, height: 20)
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 4)
                             
                             Spacer(minLength: isSmallScreen ? 10 : 16)
                         }
