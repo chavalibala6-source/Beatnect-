@@ -481,22 +481,7 @@ struct PlayerDetailView: View {
                             }
                             .padding(18)
                             .frame(width: geometry.size.width * 0.38, height: cardHeight)
-                            .background(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(.ultraThinMaterial)
-                                    .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 5)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [.white.opacity(0.2), .white.opacity(0.05)]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1
-                                    )
-                            )
+
                         }
                         .padding(.horizontal, 16)
                         
@@ -710,23 +695,7 @@ struct PlayerDetailView: View {
                             
                             Spacer(minLength: isSmallScreen ? 10 : 16)
                         }
-                        .background(
-                            RoundedRectangle(cornerRadius: 24)
-                                .fill(.ultraThinMaterial)
-                                .shadow(color: Color.black.opacity(0.18), radius: 15, x: 0, y: 8)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 24)
-                                .stroke(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [.white.opacity(0.22), .white.opacity(0.06)]),
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.2
-                                )
-                        )
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 24)
                         
                         Spacer(minLength: isSmallScreen ? 10 : 20)
                     }
