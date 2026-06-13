@@ -387,12 +387,14 @@ struct PlayerDetailView: View {
                                     .padding(.top, 4)
                                 }
                                 
+                                Spacer(minLength: 8)
+                                
                                 // Waveform Visualizer for Landscape
                                 WaveformVisualizer(isPlaying: playerService.isPlaying)
                                     .frame(height: 18)
                                     .padding(.vertical, 2)
                                 
-                                Spacer(minLength: 8)
+                                Spacer(minLength: 14)
                                 
                                 // Progress Slider
                                 VStack(spacing: 4) {
@@ -419,7 +421,7 @@ struct PlayerDetailView: View {
                                     }
                                 }
                                 
-                                Spacer(minLength: 8)
+                                Spacer(minLength: 14)
                                 
                                 // Playback Controls (Row 1)
                                 HStack(spacing: 20) {
@@ -444,7 +446,7 @@ struct PlayerDetailView: View {
                                     Spacer()
                                 }
                                 
-                                Spacer(minLength: 8)
+                                Spacer(minLength: 12)
                                 
                                 // Shuffle & Repeat Controls (Row 2)
                                 HStack(spacing: 40) {
@@ -463,7 +465,7 @@ struct PlayerDetailView: View {
                                     Spacer()
                                 }
                                 
-                                Spacer(minLength: 12)
+                                Spacer(minLength: 20)
                                 
                                 // Volume Control
                                 HStack(alignment: .center, spacing: 10) {
@@ -491,7 +493,7 @@ struct PlayerDetailView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 } else {
                     // Portrait Layout
-                    let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, geometry.size.height - 340.0)))
+                    let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, geometry.size.height - 380.0)))
                     
                     VStack(spacing: 0) {
                         // Top Pill Capsule Handle bar
@@ -606,20 +608,22 @@ struct PlayerDetailView: View {
                                 )
                             }
                             
+                            Spacer(minLength: isSmallScreen ? 8 : 16)
+                            
                             // Waveform Visualizer
                             WaveformVisualizer(isPlaying: playerService.isPlaying)
                                 .frame(height: isSmallScreen ? 24 : 32)
                                 .padding(.horizontal, 24)
                                 .padding(.vertical, 4)
                             
-                            Spacer(minLength: isSmallScreen ? 12 : 20)
+                            Spacer(minLength: isSmallScreen ? 16 : 26)
                             
                             // Progress Slider
                             VStack(spacing: isSmallScreen ? 4 : 8) {
                                 Slider(value: Binding(get: {
                                     isDraggingSlider ? sliderValue : playerService.currentTime
                                 }, set: { newValue in
-                                    sliderValue = newValue
+                                        sliderValue = newValue
                                 }), in: 0...max(playerService.duration, 1), onEditingChanged: { editing in
                                     isDraggingSlider = editing
                                     if !editing {
@@ -640,7 +644,7 @@ struct PlayerDetailView: View {
                             }
                             .padding(.horizontal, 16)
                             
-                            Spacer(minLength: isSmallScreen ? 12 : 20)
+                            Spacer(minLength: isSmallScreen ? 16 : 24)
                             
                             // Playback Controls (Row 1)
                             HStack(spacing: isSmallScreen ? 24 : 36) {
@@ -665,7 +669,7 @@ struct PlayerDetailView: View {
                                 Spacer()
                             }
                             
-                            Spacer(minLength: isSmallScreen ? 10 : 16)
+                            Spacer(minLength: isSmallScreen ? 12 : 20)
                             
                             // Shuffle & Repeat Controls (Row 2)
                             HStack(spacing: isSmallScreen ? 48 : 64) {
@@ -684,7 +688,7 @@ struct PlayerDetailView: View {
                                 Spacer()
                             }
                             
-                            Spacer(minLength: isSmallScreen ? 16 : 28)
+                            Spacer(minLength: isSmallScreen ? 20 : 32)
                             
                             // Volume Control
                             HStack(alignment: .center, spacing: 8) {
@@ -703,7 +707,7 @@ struct PlayerDetailView: View {
                             }
                             .padding(.horizontal, 4)
                             
-                            Spacer(minLength: isSmallScreen ? 10 : 16)
+                            Spacer(minLength: isSmallScreen ? 12 : 24)
                         }
                         .padding(.horizontal, 24)
                         
