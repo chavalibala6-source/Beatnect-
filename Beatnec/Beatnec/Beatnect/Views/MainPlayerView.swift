@@ -421,23 +421,14 @@ struct PlayerDetailView: View {
                                 
                                 Spacer(minLength: 8)
                                 
-                                // Player Controls
-                                HStack(spacing: 0) {
-                                    // Shuffle
-                                    Button(action: { playerService.toggleShuffle() }) {
-                                        Image(systemName: "shuffle")
-                                    }
-                                    .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isShuffleEnabled, activeColor: .teal, size: 32))
-                                    
+                                // Playback Controls (Row 1)
+                                HStack(spacing: 20) {
                                     Spacer()
-                                    
                                     // Prev
                                     Button(action: { playerService.previousTrack() }) {
                                         Image(systemName: "backward.fill")
                                     }
                                     .buttonStyle(LiquidGlassButtonStyle(isActive: false, size: 38))
-                                    
-                                    Spacer()
                                     
                                     // Play/Pause
                                     Button(action: { playerService.togglePlayPause() }) {
@@ -445,21 +436,31 @@ struct PlayerDetailView: View {
                                     }
                                     .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isPlaying, activeColor: .blue, size: 46))
                                     
-                                    Spacer()
-                                    
                                     // Next
                                     Button(action: { playerService.nextTrack() }) {
                                         Image(systemName: "forward.fill")
                                     }
                                     .buttonStyle(LiquidGlassButtonStyle(isActive: false, size: 38))
-                                    
                                     Spacer()
+                                }
+                                
+                                Spacer(minLength: 8)
+                                
+                                // Shuffle & Repeat Controls (Row 2)
+                                HStack(spacing: 40) {
+                                    Spacer()
+                                    // Shuffle
+                                    Button(action: { playerService.toggleShuffle() }) {
+                                        Image(systemName: "shuffle")
+                                    }
+                                    .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isShuffleEnabled, activeColor: .teal, size: 32))
                                     
                                     // Repeat
                                     Button(action: { playerService.toggleRepeat() }) {
                                         Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
                                     }
                                     .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isRepeatEnabled, activeColor: .purple, size: 32))
+                                    Spacer()
                                 }
                                 
                                 Spacer(minLength: 12)
@@ -641,37 +642,46 @@ struct PlayerDetailView: View {
                             
                             Spacer(minLength: isSmallScreen ? 12 : 20)
                             
-                            // Player Controls in Liquid Glass button style
-                            HStack(spacing: isSmallScreen ? 16 : 24) {
+                            // Playback Controls (Row 1)
+                            HStack(spacing: isSmallScreen ? 24 : 36) {
+                                Spacer()
+                                // Prev
+                                Button(action: { playerService.previousTrack() }) {
+                                    Image(systemName: "backward.fill")
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(isActive: false, size: isSmallScreen ? 44 : 54))
+                                
+                                // Play/Pause
+                                Button(action: { playerService.togglePlayPause() }) {
+                                    Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isPlaying, activeColor: .blue, size: isSmallScreen ? 60 : 72))
+                                
+                                // Next
+                                Button(action: { playerService.nextTrack() }) {
+                                    Image(systemName: "forward.fill")
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(isActive: false, size: isSmallScreen ? 44 : 54))
+                                Spacer()
+                            }
+                            
+                            Spacer(minLength: isSmallScreen ? 10 : 16)
+                            
+                            // Shuffle & Repeat Controls (Row 2)
+                            HStack(spacing: isSmallScreen ? 48 : 64) {
+                                Spacer()
                                 // Shuffle
                                 Button(action: { playerService.toggleShuffle() }) {
                                     Image(systemName: "shuffle")
                                 }
                                 .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isShuffleEnabled, activeColor: .teal, size: isSmallScreen ? 34 : 40))
                                 
-                                // Prev
-                                Button(action: { playerService.previousTrack() }) {
-                                    Image(systemName: "backward.fill")
-                                }
-                                .buttonStyle(LiquidGlassButtonStyle(isActive: false, size: isSmallScreen ? 40 : 50))
-                                
-                                // Play/Pause
-                                Button(action: { playerService.togglePlayPause() }) {
-                                    Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
-                                }
-                                .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isPlaying, activeColor: .blue, size: isSmallScreen ? 54 : 64))
-                                
-                                // Next
-                                Button(action: { playerService.nextTrack() }) {
-                                    Image(systemName: "forward.fill")
-                                }
-                                .buttonStyle(LiquidGlassButtonStyle(isActive: false, size: isSmallScreen ? 40 : 50))
-                                
                                 // Repeat
                                 Button(action: { playerService.toggleRepeat() }) {
                                     Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
                                 }
                                 .buttonStyle(LiquidGlassButtonStyle(isActive: playerService.isRepeatEnabled, activeColor: .purple, size: isSmallScreen ? 34 : 40))
+                                Spacer()
                             }
                             
                             Spacer(minLength: isSmallScreen ? 16 : 28)
