@@ -12,6 +12,7 @@ struct MainPlayerView: View {
     @State private var errorMessage: String?
     @State private var isShowingSettings = false
     @State private var isShowingPlayerDetail = false
+    @State private var isLoading = false
     
     var body: some View {
         NavigationView {
@@ -24,7 +25,18 @@ struct MainPlayerView: View {
                 
                 VStack(spacing: 0) {
                     // Library Listing
-                    if playerService.tracks.isEmpty {
+                    if isLoading {
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: Color(red: 0.65, green: 0.8, blue: 0.22)))
+                                .scaleEffect(1.5)
+                            
+                            Text("Loading library...")
+                                .font(.system(.headline, design: .rounded))
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if playerService.tracks.isEmpty {
                         VStack(spacing: 16) {
                             Image(systemName: "music.note.list")
                                 .font(.system(size: 64))
@@ -32,11 +44,11 @@ struct MainPlayerView: View {
                             
                             Text("Beatnect Library is Empty")
                                 .font(.headline)
-                            
+                                
                             Text("Connect to your Flask server to load tracks")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            
+                                
                             Button(action: { isShowingSettings = true }) {
                                 Text("Configure Server")
                                     .fontWeight(.bold)
@@ -102,7 +114,11 @@ struct MainPlayerView: View {
     }
     
     private func reloadLibrary() {
+        if playerService.tracks.isEmpty {
+            isLoading = true
+        }
         apiService.fetchTracks { result in
+            isLoading = false
             switch result {
             case .success(let tracks):
                 playerService.tracks = tracks
