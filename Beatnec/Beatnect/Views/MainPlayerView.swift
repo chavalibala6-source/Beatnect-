@@ -608,7 +608,7 @@ struct PlayerDetailView: View {
                                 )
                             }
                             
-                            Spacer(minLength: isSmallScreen ? 8 : 16)
+                            Spacer()
                             
                             // Waveform Visualizer
                             WaveformVisualizer(isPlaying: playerService.isPlaying)
@@ -616,7 +616,7 @@ struct PlayerDetailView: View {
                                 .padding(.horizontal, 24)
                                 .padding(.vertical, 4)
                             
-                            Spacer(minLength: isSmallScreen ? 16 : 26)
+                            Spacer()
                             
                             // Progress Slider
                             VStack(spacing: isSmallScreen ? 4 : 8) {
@@ -644,7 +644,7 @@ struct PlayerDetailView: View {
                             }
                             .padding(.horizontal, 16)
                             
-                            Spacer(minLength: isSmallScreen ? 16 : 24)
+                            Spacer()
                             
                             // Playback Controls (Row 1)
                             HStack(spacing: isSmallScreen ? 24 : 36) {
@@ -669,7 +669,7 @@ struct PlayerDetailView: View {
                                 Spacer()
                             }
                             
-                            Spacer(minLength: isSmallScreen ? 12 : 20)
+                            Spacer()
                             
                             // Shuffle & Repeat Controls (Row 2)
                             HStack(spacing: isSmallScreen ? 48 : 64) {
@@ -688,7 +688,7 @@ struct PlayerDetailView: View {
                                 Spacer()
                             }
                             
-                            Spacer(minLength: isSmallScreen ? 20 : 32)
+                            Spacer()
                             
                             // Volume Control
                             HStack(alignment: .center, spacing: 8) {
@@ -706,17 +706,13 @@ struct PlayerDetailView: View {
                                     .frame(width: 20, height: 20)
                             }
                             .padding(.horizontal, 4)
-                            
-                            Spacer(minLength: isSmallScreen ? 12 : 24)
                         }
                         .padding(.horizontal, 24)
-                        
-                        Spacer(minLength: isSmallScreen ? 10 : 20)
+                        .padding(.bottom, isSmallScreen ? 8 : 16)
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
                 }
-            }
-        }
         .background(
             ZStack {
                 if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
@@ -734,6 +730,7 @@ struct PlayerDetailView: View {
             }
             .ignoresSafeArea()
         )
+    }
     }
     
     private func formatTime(_ seconds: Double) -> String {
