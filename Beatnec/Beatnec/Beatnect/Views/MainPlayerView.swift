@@ -670,7 +670,15 @@ struct PlayerDetailView: View {
                             }
                     )
                 
-                if verticalSizeClass == .compact {
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    // iPad: full split-view layout
+                    iPadPlayerDetailView(
+                        playerService: playerService,
+                        isPresented: $isPresented,
+                        isDraggingSlider: $isDraggingSlider,
+                        progress: $progress
+                    )
+                } else if verticalSizeClass == .compact {
                     // Landscape Layout: Image left side (60% width), controls right side (40% width)
                     let landscapeArtworkSize = max(120.0, min(280.0, geometry.size.height - (isSmallScreen ? 48.0 : 64.0)))
                     let cardHeight = geometry.size.height - (isSmallScreen ? 36.0 : 48.0)
@@ -1094,6 +1102,339 @@ struct PlayerDetailView: View {
         let mins = Int(seconds) / 60
         let secs = Int(seconds) % 60
         return String(format: "%d:%02d", mins, secs)
+    }
+}
+
+// MARK: - iPad Player Detail View
+
+struct iPadPlayerDetailView: View {
+    @ObservedObject var playerService: AudioPlayerService
+    @Binding var isPresented: Bool
+    @Binding var isDraggingSlider: Bool
+    @Binding var progress: Double
+
+    var body: some View {
+        GeometryReader { geometry in
+            HStack(spacing: 0) {
+                // ── LEFT: Player ──────────────────────────────────────────
+                iPadPlayerLeftPane(
+                    playerService: playerService,
+                    isPresented: $isPresented,
+                    isDraggingSlider: $isDraggingSlider,
+                    progress: $progress,
+                    width: geometry.size.width * 0.55,
+                    height: geometry.size.height
+                )
+
+                // ── DIVIDER ───────────────────────────────────────────────
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: 1)
+
+                // ── RIGHT: Up Next ────────────────────────────────────────
+                iPadUpNextPane(
+                    playerService: playerService,
+                    width: geometry.size.width * 0.45,
+                    height: geometry.size.height
+                )
+            }
+        }
+        .ignoresSafeArea()
+    }
+}
+
+// MARK: - iPad Left Pane (Player)
+
+struct iPadPlayerLeftPane: View {
+    @ObservedObject var playerService: AudioPlayerService
+    @Binding var isPresented: Bool
+    @Binding var isDraggingSlider: Bool
+    @Binding var progress: Double
+    let width: CGFloat
+    let height: CGFloat
+
+    var artworkSize: CGFloat { min(width * 0.72, height * 0.44) }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Handle
+            Capsule()
+                .fill(Color.white.opacity(0.35))
+                .frame(width: 40, height: 5)
+                .padding(.top, 20)
+
+            Spacer(minLength: 20)
+
+            // Album Artwork
+            artworkView
+
+            Spacer(minLength: 16)
+
+            // Track info
+            if let track = playerService.currentTrack {
+                VStack(spacing: 6) {
+                    Text(track.displayName)
+                        .font(.custom("SF Pro Display", size: 24).weight(.bold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .padding(.horizontal, 32)
+
+                    Text(track.displayArtist)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Color(red: 0.85, green: 0.72, blue: 0.2))
+                        .lineLimit(1)
+                }
+            }
+
+            // Waveform
+            WaveformVisualizer(isPlaying: playerService.isPlaying)
+                .frame(height: 22)
+                .padding(.vertical, 12)
+
+            // Progress
+            VStack(spacing: 6) {
+                PlayerProgressSlider(
+                    value: $progress,
+                    range: 0...max(playerService.duration, 1),
+                    onEditingChanged: { editing in
+                        isDraggingSlider = editing
+                        if !editing { playerService.seek(to: progress) }
+                    }
+                )
+                .padding(.horizontal, 36)
+
+                HStack {
+                    Text(formatTime(playerService.currentTime))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text(formatTime(playerService.duration))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 36)
+            }
+
+            Spacer(minLength: 16)
+
+            // Controls
+            PlayerToolbar(playerService: playerService, isSmallScreen: false)
+
+            Spacer(minLength: 12)
+
+            // Volume + shuffle/repeat row
+            HStack(spacing: 20) {
+                Button(action: { playerService.toggleShuffle() }) {
+                    Image(systemName: "shuffle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(playerService.isShuffleEnabled ? .teal : Color.white.opacity(0.5))
+                }
+
+                HStack(spacing: 8) {
+                    Image(systemName: "speaker.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                    VolumeSlider()
+                        .frame(maxWidth: .infinity, minHeight: 22, maxHeight: 22)
+                    Image(systemName: "speaker.wave.3.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+
+                Button(action: { playerService.toggleRepeat() }) {
+                    Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(playerService.isRepeatEnabled ? .purple : Color.white.opacity(0.5))
+                }
+            }
+            .padding(.horizontal, 36)
+            .padding(.bottom, 32)
+        }
+        .frame(width: width, height: height)
+        .gesture(
+            DragGesture().onEnded { value in
+                if value.translation.height > 50 {
+                    withAnimation { isPresented = false }
+                }
+            }
+        )
+        .onAppear { progress = playerService.currentTime }
+        .onReceive(playerService.$currentTime) { t in
+            if !isDraggingSlider { progress = t }
+        }
+        .onChange(of: playerService.currentTrackIndex) { _ in
+            isDraggingSlider = false
+            progress = 0
+        }
+    }
+
+    @ViewBuilder
+    private var artworkView: some View {
+        if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
+            ZStack {
+                CachedAsyncImage(url: url) { img in
+                    img.resizable().aspectRatio(contentMode: .fit)
+                       .frame(width: artworkSize, height: artworkSize)
+                } placeholder: { Color.clear.frame(width: artworkSize, height: artworkSize) }
+                .blur(radius: playerService.isPlaying ? 28 : 16)
+                .opacity(playerService.isPlaying ? 0.7 : 0.35)
+                .offset(y: playerService.isPlaying ? 14 : 6)
+                .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
+
+                CachedAsyncImage(url: url) { img in
+                    img.resizable().aspectRatio(contentMode: .fit)
+                       .frame(width: artworkSize, height: artworkSize)
+                } placeholder: {
+                    ProgressView().frame(width: artworkSize, height: artworkSize)
+                }
+                .frame(width: artworkSize, height: artworkSize)
+                .cornerRadius(22)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22)
+                        .stroke(
+                            LinearGradient(
+                                colors: [.white.opacity(0.3), .clear, .black.opacity(0.2)],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.5
+                        )
+                )
+                .shadow(color: .black.opacity(playerService.isPlaying ? 0.45 : 0.25),
+                        radius: playerService.isPlaying ? 16 : 8, x: 0, y: 10)
+                .scaleEffect(playerService.isPlaying ? 1.04 : 1.0)
+                .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
+            }
+        } else {
+            Image(systemName: "music.note")
+                .font(.system(size: artworkSize * 0.25))
+                .foregroundColor(.secondary)
+                .frame(width: artworkSize, height: artworkSize)
+                .background(Color(.secondarySystemBackground))
+                .cornerRadius(22)
+        }
+    }
+
+    private func formatTime(_ seconds: Double) -> String {
+        guard !seconds.isNaN else { return "0:00" }
+        let mins = Int(seconds) / 60
+        let secs = Int(seconds) % 60
+        return String(format: "%d:%02d", mins, secs)
+    }
+}
+
+// MARK: - iPad Right Pane (Up Next)
+
+struct iPadUpNextPane: View {
+    @ObservedObject var playerService: AudioPlayerService
+    let width: CGFloat
+    let height: CGFloat
+
+    var upNextTracks: [Track] {
+        guard let idx = playerService.currentTrackIndex,
+              idx + 1 < playerService.tracks.count else { return [] }
+        return Array(playerService.tracks[(idx + 1)...])
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            HStack {
+                Text("Up Next")
+                    .font(.custom("SF Pro Display", size: 26).weight(.bold))
+                    .foregroundColor(.white)
+                Spacer()
+                Text("\(upNextTracks.count) songs")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 36)
+            .padding(.bottom, 16)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.08))
+                .frame(height: 1)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+
+            if upNextTracks.isEmpty {
+                Spacer()
+                VStack(spacing: 12) {
+                    Image(systemName: "music.note.list")
+                        .font(.system(size: 48))
+                        .foregroundColor(.secondary.opacity(0.5))
+                    Text("No upcoming tracks")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(Array(upNextTracks.enumerated()), id: \.element.id) { offset, track in
+                            upNextRow(track: track, index: offset + 1)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 32)
+                }
+            }
+        }
+        .frame(width: width, height: height)
+        .background(Color.white.opacity(0.03))
+    }
+
+    @ViewBuilder
+    private func upNextRow(track: Track, index: Int) -> some View {
+        HStack(spacing: 12) {
+            // Index number
+            Text("\(index)")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.secondary)
+                .frame(width: 22, alignment: .trailing)
+
+            // Artwork
+            Group {
+                if let url = track.fullArtworkUrl {
+                    CachedAsyncImage(url: url) { img in
+                        img.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: { Color.gray.opacity(0.3) }
+                    .frame(width: 48, height: 48)
+                    .cornerRadius(8)
+                    .clipped()
+                } else {
+                    Image(systemName: "music.note")
+                        .foregroundColor(.secondary)
+                        .frame(width: 48, height: 48)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(8)
+                }
+            }
+
+            // Info
+            VStack(alignment: .leading, spacing: 3) {
+                Text(track.displayName)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                Text(track.displayArtist)
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
+        .background(Color.white.opacity(0.0))
+        .cornerRadius(10)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let idx = playerService.tracks.firstIndex(where: { $0.id == track.id }) {
+                playerService.playTrack(at: idx)
+            }
+        }
     }
 }
 
