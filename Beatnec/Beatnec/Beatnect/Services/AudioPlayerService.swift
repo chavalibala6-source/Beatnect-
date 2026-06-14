@@ -18,6 +18,13 @@ class AudioPlayerService: NSObject, ObservableObject {
             }
         }
     }
+    @Published var libraryTracks: [Track] = [] {
+        didSet {
+            if let encoded = try? JSONEncoder().encode(libraryTracks) {
+                UserDefaults.standard.set(encoded, forKey: "gmp_cached_library_tracks")
+            }
+        }
+    }
     @Published var currentTrackIndex: Int?
     @Published var isPlaying = false
     @Published var currentTime: Double = 0
@@ -40,6 +47,15 @@ class AudioPlayerService: NSObject, ObservableObject {
             cached = []
         }
         self.tracks = cached
+        
+        let cachedLib: [Track]
+        if let data = UserDefaults.standard.data(forKey: "gmp_cached_library_tracks"),
+           let decoded = try? JSONDecoder().decode([Track].self, from: data) {
+            cachedLib = decoded
+        } else {
+            cachedLib = []
+        }
+        self.libraryTracks = cachedLib
         
         super.init()
         setupAudioSession()

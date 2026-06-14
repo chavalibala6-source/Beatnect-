@@ -11,7 +11,20 @@ class AudioPlayerService: NSObject, ObservableObject {
     private var timeObserverToken: Any?
     private var cancellables = Set<AnyCancellable>()
     
-    @Published var tracks: [Track] = []
+    @Published var tracks: [Track] = [] {
+        didSet {
+            if let encoded = try? JSONEncoder().encode(tracks) {
+                UserDefaults.standard.set(encoded, forKey: "gmp_cached_tracks")
+            }
+        }
+    }
+    @Published var libraryTracks: [Track] = [] {
+        didSet {
+            if let encoded = try? JSONEncoder().encode(libraryTracks) {
+                UserDefaults.standard.set(encoded, forKey: "gmp_cached_library_tracks")
+            }
+        }
+    }
     @Published var currentTrackIndex: Int?
     @Published var isPlaying = false
     @Published var currentTime: Double = 0
@@ -25,6 +38,25 @@ class AudioPlayerService: NSObject, ObservableObject {
     }
     
     private override init() {
+        // Load cached tracks from UserDefaults if available
+        let cached: [Track]
+        if let data = UserDefaults.standard.data(forKey: "gmp_cached_tracks"),
+           let decoded = try? JSONDecoder().decode([Track].self, from: data) {
+            cached = decoded
+        } else {
+            cached = []
+        }
+        self.tracks = cached
+        
+        let cachedLib: [Track]
+        if let data = UserDefaults.standard.data(forKey: "gmp_cached_library_tracks"),
+           let decoded = try? JSONDecoder().decode([Track].self, from: data) {
+            cachedLib = decoded
+        } else {
+            cachedLib = []
+        }
+        self.libraryTracks = cachedLib
+        
         super.init()
         setupAudioSession()
         setupRemoteCommandCenter()
