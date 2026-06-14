@@ -6,6 +6,7 @@ import Combine
 struct MainPlayerView: View {
     @StateObject private var apiService = APIService.shared
     @StateObject private var playerService = AudioPlayerService.shared
+    @EnvironmentObject var themeManager: ThemeManager
     
     @State private var serverInput: String = ""
     @State private var documentInput: String = ""
@@ -21,8 +22,8 @@ struct MainPlayerView: View {
         ZStack(alignment: .bottom) {
             NavigationView {
                 ZStack {
-                    // Premium Black Background
-                    Color.black
+                    // Theme-Aware Background
+                    themeManager.backgroundColor
                         .ignoresSafeArea()
                     
                     // Hidden NavigationLink for Cover Flow album selection
@@ -170,16 +171,17 @@ struct MainPlayerView: View {
         .navigationViewStyle(StackNavigationViewStyle())
         .sheet(isPresented: $isShowingSettings) {
             SettingsSheetView(serverInput: $serverInput, documentInput: $documentInput, isPresented: $isShowingSettings, onSave: saveServerSettings)
+                .environmentObject(themeManager)
         }
         .fullScreenCover(isPresented: $isShowingPlayerDetail) {
             PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail)
+                .environmentObject(themeManager)
         }
         .onAppear {
             serverInput = apiService.serverAddress
             documentInput = apiService.documentName
             reloadLibrary()
         }
-        .preferredColorScheme(.dark)
     }
     
     private var albums: [Album] {
@@ -252,6 +254,7 @@ struct AlbumCardView: View {
     @State private var isFlipped = false
     @State private var isHovering = false
     @StateObject private var playerService = AudioPlayerService.shared
+    @EnvironmentObject var themeManager: ThemeManager
     
     private let activeGrad = RadialGradient(
         gradient: Gradient(colors: [Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.85), Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.2)]),
@@ -290,11 +293,11 @@ struct AlbumCardView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(album.name)
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.primaryTextColor)
                         .lineLimit(1)
                     Text(album.artist)
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
+                        .foregroundColor(themeManager.artistColor)
                         .lineLimit(1)
                 }
                 Spacer()
@@ -303,7 +306,7 @@ struct AlbumCardView: View {
             .padding(.top, 10)
             
             Divider()
-                .background(Color.white.opacity(0.15))
+                .background(themeManager.borderColor)
                 .padding(.horizontal, 10)
             
             ScrollView(.vertical, showsIndicators: false) {
@@ -319,12 +322,12 @@ struct AlbumCardView: View {
                             HStack(spacing: 6) {
                                 Text("\(trackIndex + 1)")
                                     .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(isTrackCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white.opacity(0.5))
+                                    .foregroundColor(isTrackCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : themeManager.secondaryTextColor)
                                     .frame(width: 14, alignment: .trailing)
                                 
                                 Text(track.displayName)
                                     .font(.system(size: 11, weight: .medium))
-                                    .foregroundColor(isTrackCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white)
+                                    .foregroundColor(isTrackCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : themeManager.primaryTextColor)
                                     .lineLimit(1)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 
@@ -338,7 +341,7 @@ struct AlbumCardView: View {
                             .padding(.horizontal, 6)
                             .background(
                                 RoundedRectangle(cornerRadius: 6)
-                                    .fill(isTrackCurrent ? Color.white.opacity(0.1) : Color.clear)
+                                    .fill(isTrackCurrent ? themeManager.overlayColor : Color.clear)
                             )
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -357,11 +360,11 @@ struct AlbumCardView: View {
         .frame(height: 220)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(red: 0.08, green: 0.08, blue: 0.09))
+                .fill(themeManager.secondaryBackgroundColor)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.6) : Color.white.opacity(0.12), lineWidth: 1.0)
+                .stroke(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.6) : themeManager.borderColor, lineWidth: 1.0)
         )
         .rotation3DEffect(Angle(degrees: 180), axis: (x: 0.0, y: 1.0, z: 0.0))
     }
@@ -383,7 +386,7 @@ struct AlbumCardView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 140)
-            .background(Color.black)
+            .background(themeManager.secondaryBackgroundColor)
             .cornerRadius(12)
             .clipped()
         } else {
@@ -403,7 +406,7 @@ struct AlbumCardView: View {
     @ViewBuilder
     private var hoverOverlay: some View {
         ZStack {
-            Color.black.opacity(isHovering ? 0.15 : 0.0)
+            (themeManager.isDarkMode ? Color.black : Color.black.opacity(0.08)).opacity(isHovering ? 0.15 : 0.0)
                 .cornerRadius(12)
             
             if isHovering {
@@ -433,17 +436,17 @@ struct AlbumCardView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(album.name)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(themeManager.primaryTextColor)
                     .lineLimit(1)
                 
                 Text(album.artist)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(isCurrent ? Color(red: 0.72, green: 0.62, blue: 0.16) : .secondary)
+                    .foregroundColor(isCurrent ? themeManager.artistColor : themeManager.secondaryTextColor)
                     .lineLimit(1)
                 
                 Text("\(album.tracks.count) Songs")
                     .font(.system(size: 10, weight: .regular))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(themeManager.secondaryTextColor)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -452,11 +455,11 @@ struct AlbumCardView: View {
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(isCurrent ? Color.white.opacity(0.08) : Color.white.opacity(0.03))
+                .fill(isCurrent ? themeManager.overlayColor : themeManager.backgroundColor.opacity(0.3))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.4) : Color.white.opacity(0.05), lineWidth: 1.0)
+                .stroke(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.4) : themeManager.borderColor, lineWidth: 1.0)
         )
         .scaleEffect(isCurrent ? 1.02 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCurrent)
@@ -490,6 +493,7 @@ struct MiniPlayerBar: View {
     
     @State private var isPressed = false
     @StateObject private var playerService = AudioPlayerService.shared
+    @EnvironmentObject var themeManager: ThemeManager
     
     var body: some View {
         HStack(spacing: 12) {
@@ -510,11 +514,11 @@ struct MiniPlayerBar: View {
                     .clipped()
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white.opacity(0.2), lineWidth: 0.8)
+                            .stroke(themeManager.borderColor, lineWidth: 0.8)
                     )
                 } else {
                     Image(systemName: "music.note")
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(themeManager.secondaryTextColor)
                         .frame(width: 48, height: 48)
                         .background(Color.white.opacity(0.08))
                         .cornerRadius(12)
@@ -524,12 +528,12 @@ struct MiniPlayerBar: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(track.displayName)
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.primaryTextColor)
                         .lineLimit(1)
                     
                     Text(track.displayArtist)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(themeManager.secondaryTextColor)
                         .lineLimit(1)
                 }
             }
@@ -546,11 +550,11 @@ struct MiniPlayerBar: View {
             Button(action: onToggle) {
                 Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.primaryTextColor)
                     .frame(width: 38, height: 38)
                     .background(
                         Circle()
-                            .fill(Color.white.opacity(0.12))
+                            .fill(themeManager.overlayColor)
                     )
             }
             .buttonStyle(PlainButtonStyle())
@@ -561,11 +565,11 @@ struct MiniPlayerBar: View {
             }) {
                 Image(systemName: "forward.fill")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.primaryTextColor)
                     .frame(width: 38, height: 38)
                     .background(
                         Circle()
-                            .fill(Color.white.opacity(0.12))
+                            .fill(themeManager.overlayColor)
                     )
             }
             .buttonStyle(PlainButtonStyle())
@@ -574,12 +578,14 @@ struct MiniPlayerBar: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(.ultraThinMaterial)
+                .fill(themeManager.isDarkMode ? Color.white.opacity(0.08) : Color.black.opacity(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
                         .stroke(
                             LinearGradient(
-                                colors: [.white.opacity(isPlaying ? 0.5 : 0.25), .white.opacity(0.05), .black.opacity(0.15)],
+                                colors: themeManager.isDarkMode 
+                                    ? [.white.opacity(isPlaying ? 0.5 : 0.25), .white.opacity(0.05), .black.opacity(0.15)]
+                                    : [.white.opacity(0.8), .white.opacity(0.4), .black.opacity(0.08)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -587,7 +593,7 @@ struct MiniPlayerBar: View {
                         )
                 )
         )
-        .shadow(color: (isPlaying ? Color.blue : Color.black).opacity(isPlaying ? 0.35 : 0.15), radius: isPressed ? 3 : 8, x: 0, y: isPressed ? 1 : 4)
+        .shadow(color: (isPlaying ? Color.blue : themeManager.shadowColor).opacity(isPlaying ? 0.35 : 0.15), radius: isPressed ? 3 : 8, x: 0, y: isPressed ? 1 : 4)
         .scaleEffect(isPressed ? 0.97 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
     }
@@ -600,10 +606,21 @@ struct SettingsSheetView: View {
     @Binding var documentInput: String
     @Binding var isPresented: Bool
     let onSave: () -> Void
+    @EnvironmentObject var themeManager: ThemeManager
     
     var body: some View {
         NavigationView {
             Form {
+                Section(header: Text("Display")) {
+                    Toggle(isOn: $themeManager.isDarkMode) {
+                        HStack {
+                            Image(systemName: themeManager.isDarkMode ? "moon.fill" : "sun.max.fill")
+                                .foregroundColor(themeManager.isDarkMode ? .yellow : .orange)
+                            Text(themeManager.isDarkMode ? "Dark Mode" : "Light Mode")
+                        }
+                    }
+                }
+                
                 Section(header: Text("Flask Server Settings")) {
                     TextField("Server Address (e.g. https://noteslook.shop)", text: $serverInput)
                         .keyboardType(.URL)
@@ -641,6 +658,7 @@ struct SettingsSheetView: View {
 struct PlayerDetailView: View {
     @ObservedObject var playerService: AudioPlayerService
     @Binding var isPresented: Bool
+    @EnvironmentObject var themeManager: ThemeManager
     
     @Environment(\.verticalSizeClass) var verticalSizeClass
     
@@ -656,6 +674,10 @@ struct PlayerDetailView: View {
             let isSmallScreen = geometry.size.height < 720
             
             ZStack {
+                // Theme-aware background
+                themeManager.backgroundColor
+                    .ignoresSafeArea()
+                
                 // Swipe-to-dismiss gesture overlay on empty spaces
                 Color.clear
                     .contentShape(Rectangle())
@@ -776,7 +798,7 @@ struct PlayerDetailView: View {
                                         
                                         Text(track.displayArtist)
                                             .font(.subheadline)
-                                            .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
+                                            .foregroundColor(themeManager.artistColor)
                                             .lineLimit(1)
                                     }
                                     .padding(.top, 4)
@@ -970,7 +992,7 @@ struct PlayerDetailView: View {
                                     
                                     Text(track.displayArtist)
                                         .font(isSmallScreen ? .subheadline : .headline)
-                                        .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
+                                        .foregroundColor(themeManager.artistColor)
                                 }
                                 .padding(.top, isSmallScreen ? 12 : 18)
                                 .gesture(
@@ -1362,6 +1384,7 @@ struct CoverFlowView: View {
     @GestureState private var dragOffset: CGFloat = 0
     @State private var hasInitialized = false
     @StateObject private var playerService = AudioPlayerService.shared
+    @EnvironmentObject var themeManager: ThemeManager
     
     // Configurations for larger sizing
     let coverWidth: CGFloat = 260
@@ -1384,8 +1407,8 @@ struct CoverFlowView: View {
             let fractionalIndex = Double(currentIndex) - Double(dragOffset / step)
             
             ZStack(alignment: .center) {
-                // Premium Black Background
-                Color.black
+                // Theme-aware background
+                themeManager.backgroundColor
                     .ignoresSafeArea()
                 
                 // Reflections Floor Gradient Overlay

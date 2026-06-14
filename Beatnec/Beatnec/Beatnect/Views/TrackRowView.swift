@@ -30,7 +30,7 @@ struct TrackRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(track.displayName)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(isCurrent ? .blue : .primary)
+                    .foregroundColor(isCurrent ? .blue : .black)
                     .lineLimit(1)
                 
                 Text(track.displayArtist)

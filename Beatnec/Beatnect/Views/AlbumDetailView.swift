@@ -3,12 +3,13 @@ import SwiftUI
 struct AlbumDetailView: View {
     let album: Album
     @StateObject private var playerService = AudioPlayerService.shared
+    @EnvironmentObject var themeManager: ThemeManager
     
     var body: some View {
         ZStack {
-            // Premium Charcoal Black Background with very subtle blurred artwork overlay
+            // Theme-aware background with subtle blurred artwork overlay
             ZStack {
-                Color(red: 0.08, green: 0.08, blue: 0.09) // Sleek Charcoal Black
+                themeManager.backgroundColor
                 
                 if let url = album.artworkUrl {
                     AsyncImage(url: url) { image in
@@ -58,7 +59,7 @@ struct AlbumDetailView: View {
                                 .cornerRadius(16)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.white.opacity(0.2), lineWidth: 1.5)
+                                        .stroke(themeManager.borderColor, lineWidth: 1.5)
                                 )
                             } else {
                                 Image(systemName: "music.note")
@@ -76,17 +77,17 @@ struct AlbumDetailView: View {
                             Text(album.name)
                                 .font(.system(.title2))
                                 .fontWeight(.bold)
-                                .foregroundColor(.primary)
+                                .foregroundColor(themeManager.primaryTextColor)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 24)
                             
                             Text(album.artist)
                                 .font(.system(.headline))
-                                .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
+                                .foregroundColor(themeManager.artistColor)
                             
                             Text("\(album.tracks.count) Songs")
                                 .font(.system(.caption))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(themeManager.secondaryTextColor)
                         }
                         
                         // Play Album Button
@@ -125,19 +126,19 @@ struct AlbumDetailView: View {
                                     // Index
                                     Text("\(index + 1)")
                                         .font(.system(.body))
-                                        .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .secondary)
+                                        .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : themeManager.secondaryTextColor)
                                         .frame(width: 28, alignment: .trailing)
                                     
                                     // Title & Artist
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(track.displayName)
                                             .font(.system(size: 15, weight: .bold))
-                                            .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .primary)
+                                            .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : themeManager.primaryTextColor)
                                             .lineLimit(1)
                                         
                                         Text(track.displayArtist)
                                             .font(.system(size: 13, weight: .regular))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(themeManager.secondaryTextColor)
                                             .lineLimit(1)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -157,7 +158,7 @@ struct AlbumDetailView: View {
                                 .padding(.horizontal, 20)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .fill(isCurrent ? Color.white.opacity(0.06) : Color.clear)
+                                        .fill(isCurrent ? themeManager.overlayColor : Color.clear)
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
@@ -174,6 +175,5 @@ struct AlbumDetailView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .preferredColorScheme(.dark)
     }
 }

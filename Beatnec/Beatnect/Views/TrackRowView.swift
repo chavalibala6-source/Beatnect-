@@ -4,6 +4,7 @@ struct TrackRowView: View {
     let track: Track
     let isCurrent: Bool
     let isPlaying: Bool
+    @EnvironmentObject var themeManager: ThemeManager
     
     var body: some View {
         HStack(spacing: 16) {
@@ -30,12 +31,12 @@ struct TrackRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(track.displayName)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(isCurrent ? .blue : .primary)
+                    .foregroundColor(isCurrent ? .blue : themeManager.primaryTextColor)
                     .lineLimit(1)
                 
                 Text(track.displayArtist)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
+                    .foregroundColor(themeManager.artistColor)
                     .lineLimit(1)
             }
             
@@ -64,8 +65,8 @@ struct TrackRowView: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(isCurrent ? Color(.secondarySystemBackground) : Color(.systemBackground))
-                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
+                .fill(isCurrent ? themeManager.overlayColor : themeManager.backgroundColor.opacity(0.3))
+                .shadow(color: themeManager.shadowColor.opacity(0.04), radius: 6, x: 0, y: 3)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)

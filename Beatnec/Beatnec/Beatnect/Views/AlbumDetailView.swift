@@ -3,12 +3,13 @@ import SwiftUI
 struct AlbumDetailView: View {
     let album: Album
     @StateObject private var playerService = AudioPlayerService.shared
+    @EnvironmentObject var themeManager: ThemeManager
     
     var body: some View {
         ZStack {
-            // Premium Charcoal Black Background with very subtle blurred artwork overlay
+            // Theme-aware background with subtle blurred artwork overlay
             ZStack {
-                Color(red: 0.08, green: 0.08, blue: 0.09) // Sleek Charcoal Black
+                themeManager.backgroundColor
                 
                 if let url = album.artworkUrl {
                     AsyncImage(url: url) { image in
@@ -76,7 +77,7 @@ struct AlbumDetailView: View {
                             Text(album.name)
                                 .font(.system(.title2))
                                 .fontWeight(.bold)
-                                .foregroundColor(.primary)
+                                .foregroundColor(.black)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 24)
                             
@@ -86,7 +87,7 @@ struct AlbumDetailView: View {
                             
                             Text("\(album.tracks.count) Songs")
                                 .font(.system(.caption))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.black)
                         }
                         
                         // Play Album Button
@@ -132,12 +133,12 @@ struct AlbumDetailView: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(track.displayName)
                                             .font(.system(size: 15, weight: .bold))
-                                            .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .primary)
+                                            .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .black)
                                             .lineLimit(1)
                                         
                                         Text(track.displayArtist)
                                             .font(.system(size: 13, weight: .regular))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
                                             .lineLimit(1)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -174,6 +175,5 @@ struct AlbumDetailView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .preferredColorScheme(.dark)
     }
 }
