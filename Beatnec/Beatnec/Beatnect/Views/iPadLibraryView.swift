@@ -44,6 +44,8 @@ struct iPadLibraryView: View {
     @StateObject private var store = PlaylistStore.shared
     @Binding var isShowingPlayerDetail: Bool
 
+    @AppStorage("ipad_theme_dark") private var isDark: Bool = true
+
     @State private var selectedSection: LibrarySection = .songs
     @State private var selectedPlaylist: Playlist? = nil
     @State private var searchText: String = ""
@@ -94,12 +96,13 @@ struct iPadLibraryView: View {
             sidebar
 
             Rectangle()
-                .fill(Color.white.opacity(0.08))
+                .fill(Color.primary.opacity(0.1))
                 .frame(width: 1)
 
             // ── RIGHT CONTENT ────────────────────────────────────────────
             contentArea
         }
+        .preferredColorScheme(isDark ? .dark : .light)
         .alert("New Playlist", isPresented: $showNewPlaylistAlert) {
             TextField("Playlist Name", text: $newPlaylistName)
             Button("Create") {
@@ -116,13 +119,32 @@ struct iPadLibraryView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // App title
-            Text("Beatnect")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 20)
-                .padding(.top, 24)
-                .padding(.bottom, 16)
+            // App title + theme toggle
+            HStack(alignment: .center) {
+                Text("Beatnect")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.primary)
+                Spacer()
+                // Theme toggle button
+                Button(action: {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                        isDark.toggle()
+                    }
+                }) {
+                    Image(systemName: isDark ? "sun.max.fill" : "moon.fill")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(isDark ? Color(red: 0.85, green: 0.72, blue: 0.2) : .indigo)
+                        .frame(width: 30, height: 30)
+                        .background(
+                            Circle()
+                                .fill(Color.primary.opacity(0.08))
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 24)
+            .padding(.bottom, 16)
 
             // Library sections
             Text("Library")
@@ -173,27 +195,39 @@ struct iPadLibraryView: View {
             }
 
             Spacer()
+
+            // Theme label at bottom
+            HStack(spacing: 6) {
+                Image(systemName: isDark ? "moon.stars.fill" : "sun.max.fill")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                Text(isDark ? "Dark Mode" : "Light Mode")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
         }
-        .frame(width: 200)
-        .background(Color.black.opacity(0.6))
+        .frame(width: 210)
+        .background(Color(isDark ? UIColor.systemBackground : UIColor.secondarySystemBackground).opacity(isDark ? 0.95 : 1.0))
     }
 
     private func sidebarRow(section: LibrarySection, isSelected: Bool) -> some View {
         HStack(spacing: 10) {
             Image(systemName: section.icon)
                 .font(.system(size: 14))
-                .foregroundColor(isSelected ? .white : .secondary)
+                .foregroundColor(isSelected ? Color.accentColor : .secondary)
                 .frame(width: 20)
             Text(section.rawValue)
                 .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
-                .foregroundColor(isSelected ? .white : .secondary)
+                .foregroundColor(isSelected ? .primary : .secondary)
             Spacer()
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(isSelected ? Color.white.opacity(0.12) : Color.clear)
+                .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
                 .padding(.horizontal, 8)
         )
     }
