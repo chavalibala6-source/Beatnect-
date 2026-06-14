@@ -49,7 +49,7 @@ struct MainPlayerView: View {
                                     .scaleEffect(1.5)
                                 
                                 Text("Loading library...")
-                                    .font(.system(.headline, design: .rounded))
+                                    .font(.system(.headline))
                                     .foregroundColor(.secondary)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -136,7 +136,7 @@ struct MainPlayerView: View {
                         scrollToTopTrigger.toggle()
                         reloadLibrary()
                     }) {
-                        Image(systemName: "house.fill")
+                        Image(systemName: "square.grid.2x2.fill")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                             .frame(width: 44, height: 44)
@@ -286,80 +286,73 @@ struct AlbumCardView: View {
     
     private var backView: some View {
         VStack(spacing: 8) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(album.name)
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                            Text(album.artist)
-                                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
-                                .lineLimit(1)
-                        }
-                        Spacer()
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(album.name)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    Text(album.artist)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
+                        .lineLimit(1)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.top, 10)
+            
+            Divider()
+                .background(Color.white.opacity(0.15))
+                .padding(.horizontal, 10)
+            
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 4) {
+                    ForEach(Array(album.tracks.enumerated()), id: \.element.id) { trackIndex, track in
+                        let isTrackCurrent = playerService.currentTrack?.id == track.id
+                        
                         Button(action: {
-                            withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
-                                isFlipped = false
+                            if let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == track.id }) {
+                                playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
                             }
                         }) {
-                            Image(systemName: "photo.fill")
-                                .font(.system(size: 11))
-                                .foregroundColor(.white.opacity(0.8))
-                                .frame(width: 22, height: 22)
-                                .background(.white.opacity(0.15))
-                                .clipShape(Circle())
+                            HStack(spacing: 6) {
+                                Text("\(trackIndex + 1)")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(isTrackCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white.opacity(0.5))
+                                    .frame(width: 14, alignment: .trailing)
+                                
+                                Text(track.displayName)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(isTrackCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white)
+                                    .lineLimit(1)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                
+                                if isTrackCurrent {
+                                    Image(systemName: playerService.isPlaying ? "waveform" : "play.fill")
+                                        .font(.system(size: 9))
+                                        .foregroundColor(Color(red: 0.65, green: 0.8, blue: 0.22))
+                                }
+                            }
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(isTrackCurrent ? Color.white.opacity(0.1) : Color.clear)
+                            )
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.top, 10)
-                    
-                    Divider()
-                        .background(Color.white.opacity(0.15))
-                        .padding(.horizontal, 10)
-                    
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 4) {
-                            ForEach(Array(album.tracks.enumerated()), id: \.element.id) { trackIndex, track in
-                                let isTrackCurrent = playerService.currentTrack?.id == track.id
-                                
-                                Button(action: {
-                                    if let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == track.id }) {
-                                        playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
-                                    }
-                                }) {
-                                    HStack(spacing: 6) {
-                                        Text("\(trackIndex + 1)")
-                                            .font(.system(size: 10, weight: .bold, design: .rounded))
-                                            .foregroundColor(isTrackCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white.opacity(0.5))
-                                            .frame(width: 14, alignment: .trailing)
-                                        
-                                        Text(track.displayName)
-                                            .font(.system(size: 11, weight: .medium, design: .rounded))
-                                            .foregroundColor(isTrackCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white)
-                                            .lineLimit(1)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                        
-                                        if isTrackCurrent {
-                                            Image(systemName: playerService.isPlaying ? "waveform" : "play.fill")
-                                                .font(.system(size: 9))
-                                                .foregroundColor(Color(red: 0.65, green: 0.8, blue: 0.22))
-                                        }
-                                    }
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 6)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .fill(isTrackCurrent ? Color.white.opacity(0.1) : Color.clear)
-                                    )
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                        }
-                        .padding(.horizontal, 6)
-                    }
                 }
+                .padding(.horizontal, 6)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
+                isFlipped = false
+            }
+        }
         .frame(maxWidth: .infinity)
         .frame(height: 220)
         .background(
@@ -439,17 +432,17 @@ struct AlbumCardView: View {
             // Text Details
             VStack(alignment: .leading, spacing: 2) {
                 Text(album.name)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.primary)
                     .lineLimit(1)
                 
                 Text(album.artist)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(isCurrent ? Color(red: 0.72, green: 0.62, blue: 0.16) : .secondary)
                     .lineLimit(1)
                 
                 Text("\(album.tracks.count) Songs")
-                    .font(.system(size: 10, weight: .regular, design: .rounded))
+                    .font(.system(size: 10, weight: .regular))
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
@@ -496,9 +489,11 @@ struct MiniPlayerBar: View {
     let onTap: () -> Void
     
     @State private var isPressed = false
+    @StateObject private var playerService = AudioPlayerService.shared
     
     var body: some View {
-        Button(action: onTap) {
+        HStack(spacing: 12) {
+            // Main Tappable Area (Artwork + Info)
             HStack(spacing: 12) {
                 // Artwork
                 if let url = track.fullArtworkUrl {
@@ -528,44 +523,73 @@ struct MiniPlayerBar: View {
                 // Info
                 VStack(alignment: .leading, spacing: 2) {
                     Text(track.displayName)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
                         .lineLimit(1)
                     
                     Text(track.displayArtist)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [.white.opacity(isPlaying ? 0.5 : 0.25), .white.opacity(0.05), .black.opacity(0.15)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.2
-                            )
-                    )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onTap)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in isPressed = true }
+                    .onEnded { _ in isPressed = false }
             )
-            .shadow(color: (isPlaying ? Color.blue : Color.black).opacity(isPlaying ? 0.35 : 0.15), radius: isPressed ? 3 : 8, x: 0, y: isPressed ? 1 : 4)
-            .scaleEffect(isPressed ? 0.95 : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+            
+            // Play/Pause Button
+            Button(action: onToggle) {
+                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 38, height: 38)
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(0.12))
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            // Next Button
+            Button(action: {
+                playerService.nextTrack()
+            }) {
+                Image(systemName: "forward.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 38, height: 38)
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(0.12))
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(
+                            LinearGradient(
+                                colors: [.white.opacity(isPlaying ? 0.5 : 0.25), .white.opacity(0.05), .black.opacity(0.15)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.2
+                        )
+                )
         )
+        .shadow(color: (isPlaying ? Color.blue : Color.black).opacity(isPlaying ? 0.35 : 0.15), radius: isPressed ? 3 : 8, x: 0, y: isPressed ? 1 : 4)
+        .scaleEffect(isPressed ? 0.97 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
     }
 }
 
@@ -1328,6 +1352,7 @@ struct CoverFlowView: View {
     @State private var currentIndex: Int = 0
     @GestureState private var dragOffset: CGFloat = 0
     @State private var hasInitialized = false
+    @StateObject private var playerService = AudioPlayerService.shared
     
     // Configurations for larger sizing
     let coverWidth: CGFloat = 260
@@ -1335,7 +1360,11 @@ struct CoverFlowView: View {
     let reflectionHeight: CGFloat = 100
     
     // Spacing step between cards (uniform gap)
-    let step: CGFloat = 220 // was 160 (try 200–240 to taste)
+    let step: CGFloat = 220
+    
+    var currentAlbum: Album? {
+        albums.indices.contains(currentIndex) ? albums[currentIndex] : nil
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -1362,52 +1391,123 @@ struct CoverFlowView: View {
                         startPoint: .top,
                         endPoint: .bottom
                     )
-                    .frame(height: screenHeight * 0.48)
+                    .frame(height: screenHeight * 0.55)
                 }
                 .ignoresSafeArea(edges: .bottom)
                 
-                // ZStack of all cards
-                ZStack {
-                    let visibleRange = max(0, currentIndex - 3)...min(albums.count - 1, currentIndex + 3)
-                    ForEach(Array(visibleRange), id: \.self) { index in
-                        let album = albums[index]
+                // Main layout: HStack — cards on left (lower), controls vertical on right
+                HStack(alignment: .center, spacing: 0) {
+                    
+                    // ── LEFT: Cards + label, pushed to bottom ──
+                    VStack(spacing: 0) {
+                        Spacer()
                         
-                        CoverFlowCard(
-                            album: album,
-                            width: coverWidth,
-                            height: coverHeight,
-                            reflectionHeight: reflectionHeight,
-                            index: index,
-                            fractionalIndex: fractionalIndex,
-                            step: step,
-                            currentIndex: $currentIndex,
-                            selectedAlbum: $selectedAlbum
+                        // ZStack of all cards
+                        ZStack {
+                            let visibleRange = max(0, currentIndex - 3)...min(albums.count - 1, currentIndex + 3)
+                            ForEach(Array(visibleRange), id: \.self) { index in
+                                let album = albums[index]
+                                CoverFlowCard(
+                                    album: album,
+                                    width: coverWidth,
+                                    height: coverHeight,
+                                    reflectionHeight: reflectionHeight,
+                                    index: index,
+                                    fractionalIndex: fractionalIndex,
+                                    step: step,
+                                    currentIndex: $currentIndex,
+                                    selectedAlbum: $selectedAlbum
+                                )
+                            }
+                        }
+                        .frame(width: screenWidth - 100, height: coverHeight + reflectionHeight)
+                        .contentShape(Rectangle())
+                        .simultaneousGesture(
+                            DragGesture(minimumDistance: 12)
+                                .updating($dragOffset) { value, state, _ in
+                                    state = value.translation.width
+                                }
+                                .onEnded { value in
+                                    let velocity = value.predictedEndTranslation.width
+                                    var offsetIndex = -Int(round(value.translation.width / step))
+                                    if velocity < -100 { offsetIndex = max(offsetIndex, 1) }
+                                    else if velocity > 100 { offsetIndex = min(offsetIndex, -1) }
+                                    let newIndex = min(albums.count - 1, max(0, currentIndex + offsetIndex))
+                                    withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                                        currentIndex = newIndex
+                                    }
+                                }
                         )
+                        
+                        // Album name + artist beneath cards
+                        VStack(spacing: 3) {
+                            Text(currentAlbum?.name ?? "")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                            Text(currentAlbum?.artist ?? "")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
+                                .lineLimit(1)
+                        }
+                        .padding(.top, 8)
+                        .padding(.bottom, 28)
+                        .padding(.horizontal, 16)
+                        .animation(.easeInOut(duration: 0.22), value: currentIndex)
                     }
+                    .frame(width: screenWidth - 100, height: screenHeight)
+                    
+                    // ── RIGHT: Vertical playback controls ──
+                    VStack(spacing: 20) {
+                        Spacer()
+                        
+                        // Previous
+                        Button(action: { playerService.previousTrack() }) {
+                            Image(systemName: "backward.fill")
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 46, height: 46)
+                                .background(Circle().fill(.ultraThinMaterial))
+                                .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                                .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Play / Pause — accent green, larger
+                        Button(action: { playerService.togglePlayPause() }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color(red: 0.65, green: 0.8, blue: 0.22))
+                                    .frame(width: 60, height: 60)
+                                    .shadow(
+                                        color: Color(red: 0.65, green: 0.8, blue: 0.22)
+                                            .opacity(playerService.isPlaying ? 0.6 : 0.25),
+                                        radius: 12, x: 0, y: 4
+                                    )
+                                Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(.black)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Next
+                        Button(action: { playerService.nextTrack() }) {
+                            Image(systemName: "forward.fill")
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 46, height: 46)
+                                .background(Circle().fill(.ultraThinMaterial))
+                                .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                                .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Spacer()
+                    }
+                    .frame(width: 100, height: screenHeight)
                 }
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture()
-                        .updating($dragOffset) { value, state, _ in
-                            state = value.translation.width
-                        }
-                        .onEnded { value in
-                            let velocity = value.predictedEndTranslation.width
-                            var offsetIndex = -Int(round(value.translation.width / step))
-                            
-                            // Boost with velocity for swiping
-                            if velocity < -100 {
-                                offsetIndex = max(offsetIndex, 1)
-                            } else if velocity > 100 {
-                                offsetIndex = min(offsetIndex, -1)
-                            }
-                            
-                            let newIndex = min(albums.count - 1, max(0, currentIndex + offsetIndex))
-                            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
-                                currentIndex = newIndex
-                            }
-                        }
-                )
+                .frame(width: screenWidth, height: screenHeight)
             }
             .frame(width: screenWidth, height: screenHeight)
             .onAppear {
@@ -1416,13 +1516,21 @@ struct CoverFlowView: View {
             .onChange(of: albums) { _ in
                 initializeIndex()
             }
+            // Sync cover flow when track changes externally (next/prev from mini player)
+            .onChange(of: playerService.currentTrack?.id) { _ in
+                if let currentTrack = playerService.currentTrack,
+                   let index = albums.firstIndex(where: { $0.tracks.contains { $0.id == currentTrack.id } }) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                        currentIndex = index
+                    }
+                }
+            }
         }
     }
     
     private func initializeIndex() {
         guard !hasInitialized && !albums.isEmpty else { return }
         
-        // Center on the album of the currently playing track if it exists, otherwise default to first album on left
         if let currentTrack = AudioPlayerService.shared.currentTrack,
            let index = albums.firstIndex(where: { $0.tracks.contains { $0.id == currentTrack.id } }) {
             currentIndex = index
@@ -1460,11 +1568,7 @@ struct CoverFlowCard: View {
         let baseRotation = -clampedDistanceForRotation * 55
         let rotationAngle = baseRotation + (isFlipped ? 180 : 0)
         
-        let playButtonSize: CGFloat = isCentered ? 54 : 40
-        let playIconSize: CGFloat = isCentered ? 26 : 18
-        let infoButtonSize: CGFloat = isCentered ? 36 : 28
-        let infoIconSize: CGFloat = isCentered ? 20 : 14
-        let overlayOpacity: Double = isCentered ? 1.0 : 0.8
+        // (overlay variables kept for future use)
         
         return VStack(spacing: 0) {
             ZStack {
@@ -1474,28 +1578,15 @@ struct CoverFlowCard: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(album.name)
-                                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                                    .font(.system(size: 14, weight: .bold))
                                     .foregroundColor(.white)
                                     .lineLimit(1)
                                 Text(album.artist)
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                    .font(.system(size: 12, weight: .semibold))
                                     .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
                                     .lineLimit(1)
                             }
                             Spacer()
-                            Button(action: {
-                                withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
-                                    isFlipped = false
-                                }
-                            }) {
-                                Image(systemName: "photo.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .frame(width: 28, height: 28)
-                                    .background(.white.opacity(0.15))
-                                    .clipShape(Circle())
-                            }
-                            .buttonStyle(PlainButtonStyle())
                         }
                         .padding(.horizontal, 12)
                         .padding(.top, 12)
@@ -1514,12 +1605,12 @@ struct CoverFlowCard: View {
                                     }) {
                                         HStack(spacing: 8) {
                                             Text("\(trackIndex + 1)")
-                                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                                .font(.system(size: 12, weight: .bold))
                                                 .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white.opacity(0.5))
                                                 .frame(width: 18, alignment: .trailing)
                                             
                                             Text(track.displayName)
-                                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                                .font(.system(size: 13, weight: .medium))
                                                 .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white)
                                                 .lineLimit(1)
                                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1541,6 +1632,12 @@ struct CoverFlowCard: View {
                                 }
                             }
                             .padding(.horizontal, 8)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
+                            isFlipped = false
                         }
                     }
                     .frame(width: width, height: height)
@@ -1588,14 +1685,23 @@ struct CoverFlowCard: View {
                     .frame(width: width, height: height)
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
-                            if isCentered {
+                        if isCentered {
+                            // Already centered — start playing immediately
+                            if let firstTrack = album.tracks.first,
+                               let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == firstTrack.id }) {
+                                playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
+                            }
+                        } else {
+                            // Animate to center first, then play after animation settles
+                            withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) {
+                                currentIndex = index
+                            }
+                            // Delay playback until the 3D centering animation has completed
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.52) {
                                 if let firstTrack = album.tracks.first,
                                    let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == firstTrack.id }) {
                                     playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
                                 }
-                            } else {
-                                currentIndex = index
                             }
                         }
                     }

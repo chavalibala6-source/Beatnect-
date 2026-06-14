@@ -1,7 +1,64 @@
 import SwiftUI
+import Combine
 
 class ImageCache {
     static let shared = NSCache<NSString, UIImage>()
+}
+
+class ImageLoader: ObservableObject {
+    @Published var image: UIImage? = nil
+    @Published var hasFailed = false
+    private var currentUrl: URL?
+    private var dataTask: URLSessionDataTask?
+    
+    func load(url: URL?) {
+        guard let url = url else {
+            self.image = nil
+            self.hasFailed = true
+            return
+        }
+        
+        if currentUrl == url {
+            return
+        }
+        currentUrl = url
+        
+        let key = url.absoluteString as NSString
+        if let cached = ImageCache.shared.object(forKey: key) {
+            self.image = cached
+            self.hasFailed = false
+            return
+        }
+        
+        self.image = nil
+        self.hasFailed = false
+        
+        dataTask?.cancel()
+        dataTask = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let self = self, self.currentUrl == url else { return }
+            
+            if let data = data, let loadedImage = UIImage(data: data) {
+                ImageCache.shared.setObject(loadedImage, forKey: key)
+                DispatchQueue.main.async {
+                    if self.currentUrl == url {
+                        self.image = loadedImage
+                        self.hasFailed = false
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    if self.currentUrl == url {
+                        self.hasFailed = true
+                    }
+                }
+            }
+        }
+        dataTask?.resume()
+    }
+    
+    deinit {
+        dataTask?.cancel()
+    }
 }
 
 struct CachedAsyncImage<Content: View, Placeholder: View>: View {
@@ -9,29 +66,27 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
     let content: (Image) -> Content
     let placeholder: () -> Placeholder
     
-    @State private var uiImage: UIImage? = nil
-    @State private var loadedUrl: URL? = nil
-    @State private var hasFailed = false
+    @StateObject private var loader = ImageLoader()
     
     init(url: URL?, @ViewBuilder content: @escaping (Image) -> Content, @ViewBuilder placeholder: @escaping () -> Placeholder) {
         self.url = url
         self.content = content
         self.placeholder = placeholder
-        
-        if let url = url {
-            let key = url.absoluteString as NSString
-            if let cached = ImageCache.shared.object(forKey: key) {
-                _uiImage = State(initialValue: cached)
-                _loadedUrl = State(initialValue: url)
-            }
-        }
     }
     
     var body: some View {
-        Group {
-            if let uiImage = uiImage, loadedUrl == url {
-                content(Image(uiImage: uiImage))
-            } else if hasFailed {
+        let cachedImage: UIImage? = {
+            if let url = url {
+                let key = url.absoluteString as NSString
+                return ImageCache.shared.object(forKey: key)
+            }
+            return nil
+        }()
+        
+        return Group {
+            if let imageToDisplay = cachedImage ?? loader.image {
+                content(Image(uiImage: imageToDisplay))
+            } else if loader.hasFailed {
                 ZStack {
                     Rectangle()
                         .fill(Color(.secondarySystemBackground))
@@ -44,52 +99,10 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             }
         }
         .onAppear {
-            loadImage()
+            loader.load(url: url)
         }
-        .onChange(of: url) { _ in
-            loadImage()
+        .onChange(of: url) { newUrl in
+            loader.load(url: newUrl)
         }
-    }
-    
-    private func loadImage() {
-        guard let url = url else {
-            self.uiImage = nil
-            self.loadedUrl = nil
-            self.hasFailed = true
-            return
-        }
-        
-        let key = url.absoluteString as NSString
-        if let cached = ImageCache.shared.object(forKey: key) {
-            self.uiImage = cached
-            self.loadedUrl = url
-            self.hasFailed = false
-            return
-        }
-        
-        if loadedUrl != url {
-            self.uiImage = nil
-            self.loadedUrl = nil
-            self.hasFailed = false
-        }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            if let data = data, let image = UIImage(data: data) {
-                ImageCache.shared.setObject(image, forKey: key)
-                DispatchQueue.main.async {
-                    if self.url == url {
-                        self.uiImage = image
-                        self.loadedUrl = url
-                        self.hasFailed = false
-                    }
-                }
-            } else {
-                DispatchQueue.main.async {
-                    if self.url == url {
-                        self.hasFailed = true
-                    }
-                }
-            }
-        }.resume()
     }
 }

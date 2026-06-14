@@ -74,18 +74,18 @@ struct AlbumDetailView: View {
                         // Metadata
                         VStack(spacing: 4) {
                             Text(album.name)
-                                .font(.system(.title2, design: .rounded))
+                                .font(.system(.title2))
                                 .fontWeight(.bold)
                                 .foregroundColor(.primary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 24)
                             
                             Text(album.artist)
-                                .font(.system(.headline, design: .rounded))
+                                .font(.system(.headline))
                                 .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
                             
                             Text("\(album.tracks.count) Songs")
-                                .font(.system(.caption, design: .rounded))
+                                .font(.system(.caption))
                                 .foregroundColor(.secondary)
                         }
                         
@@ -124,19 +124,19 @@ struct AlbumDetailView: View {
                                 HStack(spacing: 16) {
                                     // Index
                                     Text("\(index + 1)")
-                                        .font(.system(.body, design: .rounded))
+                                        .font(.system(.body))
                                         .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .secondary)
                                         .frame(width: 28, alignment: .trailing)
                                     
                                     // Title & Artist
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(track.displayName)
-                                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                                            .font(.system(size: 15, weight: .bold))
                                             .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .primary)
                                             .lineLimit(1)
                                         
                                         Text(track.displayArtist)
-                                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                                            .font(.system(size: 13, weight: .regular))
                                             .foregroundColor(.secondary)
                                             .lineLimit(1)
                                     }

@@ -29,12 +29,12 @@ struct TrackRowView: View {
             // Text Meta
             VStack(alignment: .leading, spacing: 4) {
                 Text(track.displayName)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundColor(isCurrent ? .blue : .primary)
                     .lineLimit(1)
                 
                 Text(track.displayArtist)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
                     .lineLimit(1)
             }
