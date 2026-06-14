@@ -79,7 +79,10 @@ struct MainPlayerView: View {
                             .padding()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
-                            if verticalSizeClass == .compact {
+                            if UIDevice.current.userInterfaceIdiom == .pad {
+                                // iPad: full iTunes-style sidebar + table
+                                iPadLibraryView(playerService: playerService, isShowingPlayerDetail: $isShowingPlayerDetail)
+                            } else if verticalSizeClass == .compact {
                                 CoverFlowView(albums: albums, selectedAlbum: $selectedAlbum)
                             } else {
                                 ScrollViewReader { proxy in
@@ -97,7 +100,7 @@ struct MainPlayerView: View {
                                         }
                                         .padding(.horizontal, 16)
                                         .padding(.vertical, 12)
-                                        .padding(.bottom, playerService.currentTrack != nil ? 90 : 16) // Padding for floating MiniPlayerBar
+                                        .padding(.bottom, playerService.currentTrack != nil ? 90 : 16)
                                     }
                                     .onChange(of: scrollToTopTrigger) {
                                         withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
