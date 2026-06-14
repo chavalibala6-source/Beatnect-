@@ -410,69 +410,12 @@ struct AlbumCardView: View {
     @ViewBuilder
     private var hoverOverlay: some View {
         ZStack {
-            Color.black.opacity(isHovering ? 0.25 : 0.0)
+            Color.black.opacity(isHovering ? 0.15 : 0.0)
                 .cornerRadius(12)
             
-            // Glass background layer
             if isHovering {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
-            }
-            
-            if isHovering {
-                Button(action: {
-                    if let firstTrack = album.tracks.first,
-                       let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == firstTrack.id }) {
-                        playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
-                    }
-                }) {
-                    Image(systemName: isCurrent && playerService.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 32, height: 32)
-                        .background(
-                            ZStack {
-                                Circle()
-                                    .fill(activeGrad)
-                                    .blur(radius: 1)
-                                Circle()
-                                    .fill(Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.35))
-                                Circle()
-                                    .fill(.ultraThinMaterial)
-                            }
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(strokeGrad, lineWidth: 1.0)
-                        )
-                        .shadow(color: Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.4), radius: 6, x: 0, y: 3)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .transition(.scale.combined(with: .opacity))
-            }
-            
-            // Flip card info button (always subtle, visible at top trailing on hover)
-            if isHovering {
-                VStack {
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
-                                isFlipped = true
-                            }
-                        }) {
-                            Image(systemName: "info.circle.fill")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 22, height: 22)
-                                .background(.black.opacity(0.5))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .padding(6)
-                    }
-                    Spacer()
-                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -531,8 +474,14 @@ struct AlbumCardView: View {
             }
         }
         .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovering.toggle()
+            if let firstTrack = album.tracks.first,
+               let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == firstTrack.id }) {
+                playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
+            }
+        }
+        .onLongPressGesture {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
+                isFlipped.toggle()
             }
         }
     }
@@ -1632,57 +1581,28 @@ struct CoverFlowCard: View {
                                 )
                         }
                         
-                        // Play & Flip buttons overlay on all cards (fully interactive)
-                        ZStack {
-                            Color.black.opacity(isCentered || isHovering ? 0.3 : 0.05)
-                                .cornerRadius(8)
-                            
-                            Button(action: {
-                                playerService.setPlaylist(tracks: album.tracks, startAtIndex: 0)
-                            }) {
-                                Image(systemName: "play.fill")
-                                    .font(.system(size: playIconSize, weight: .bold))
-                                    .foregroundColor(.black)
-                                    .frame(width: playButtonSize, height: playButtonSize)
-                                    .background(Color(red: 0.65, green: 0.8, blue: 0.22))
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.4), radius: 6, x: 0, y: 3)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .opacity(overlayOpacity)
-                            
-                            VStack {
-                                Spacer()
-                                HStack {
-                                    Spacer()
-                                    Button(action: {
-                                        withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
-                                            isFlipped = true
-                                        }
-                                    }) {
-                                        Image(systemName: "info.circle.fill")
-                                            .font(.system(size: infoIconSize))
-                                            .foregroundColor(.white)
-                                            .frame(width: infoButtonSize, height: infoButtonSize)
-                                            .background(.ultraThinMaterial)
-                                            .clipShape(Circle())
-                                            .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                    .opacity(overlayOpacity)
-                                    .padding(8)
-                                }
-                            }
-                        }
+                        // Subtle dark overlay
+                        Color.black.opacity(isCentered ? (isHovering ? 0.15 : 0.0) : 0.3)
+                            .cornerRadius(8)
                     }
                     .frame(width: width, height: height)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
                             if isCentered {
-                                selectedAlbum = album
+                                if let firstTrack = album.tracks.first,
+                                   let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == firstTrack.id }) {
+                                    playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
+                                }
                             } else {
                                 currentIndex = index
+                            }
+                        }
+                    }
+                    .onLongPressGesture {
+                        if isCentered {
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
+                                isFlipped.toggle()
                             }
                         }
                     }
