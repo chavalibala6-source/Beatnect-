@@ -386,13 +386,33 @@ struct iPadLibraryView: View {
     // MARK: - Albums Grid
 
     private var albumsGrid: some View {
-        ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 20)], spacing: 20) {
-                ForEach(albums) { album in
-                    AlbumCardView(album: album, currentTrack: playerService.currentTrack, isPlaying: playerService.isPlaying)
+        ScrollView(.vertical) {
+            LazyVStack(alignment: .leading, spacing: 36) {
+                // Group albums by first letter for browsing, or just show as one shelf
+                HorizontalAlbumShelf(
+                    title: "Albums",
+                    albums: albums,
+                    currentTrack: playerService.currentTrack,
+                    isPlaying: playerService.isPlaying,
+                    playerService: playerService
+                )
+
+                // Artist shelves
+                let artistAlbums = Dictionary(grouping: albums) { $0.artist }
+                let sortedArtists = artistAlbums.keys.sorted()
+                ForEach(sortedArtists, id: \.self) { artist in
+                    if let artistAlbumList = artistAlbums[artist], artistAlbumList.count > 1 {
+                        HorizontalAlbumShelf(
+                            title: artist,
+                            albums: artistAlbumList,
+                            currentTrack: playerService.currentTrack,
+                            isPlaying: playerService.isPlaying,
+                            playerService: playerService
+                        )
+                    }
                 }
             }
-            .padding(20)
+            .padding(.vertical, 20)
             .padding(.bottom, playerService.currentTrack != nil ? 90 : 16)
         }
     }
@@ -697,5 +717,204 @@ struct PlaylistCard: View {
         .background(Color.white.opacity(0.05))
         .cornerRadius(14)
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
+    }
+}
+
+// MARK: - Horizontal Album Shelf (Apple Music style)
+
+struct HorizontalAlbumShelf: View {
+    let title: String
+    let albums: [Album]
+    let currentTrack: Track?
+    let isPlaying: Bool
+    @ObservedObject var playerService: AudioPlayerService
+
+    @State private var scrollOffset: CGFloat = 0
+    @State private var scrollProxy: ScrollViewProxy? = nil
+    @State private var currentPage: Int = 0
+
+    private let cardWidth: CGFloat = 180
+    private let cardSpacing: CGFloat = 16
+    private let visibleCards: Int = 5
+
+    var maxPage: Int {
+        max(0, albums.count - visibleCards)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+
+            // ── Section Header ────────────────────────────────────────────
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.white)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.secondary)
+                Spacer()
+
+                // Left / Right arrows
+                HStack(spacing: 4) {
+                    arrowButton(direction: .left)
+                    arrowButton(direction: .right)
+                }
+            }
+            .padding(.horizontal, 20)
+
+            // ── Horizontal Scroll ─────────────────────────────────────────
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: cardSpacing) {
+                        ForEach(Array(albums.enumerated()), id: \.element.id) { idx, album in
+                            AppleMusicAlbumCard(
+                                album: album,
+                                isCurrent: album.tracks.contains { $0.id == currentTrack?.id },
+                                isPlaying: isPlaying && album.tracks.contains { $0.id == currentTrack?.id }
+                            )
+                            .frame(width: cardWidth)
+                            .id(idx)
+                            .onTapGesture {
+                                if let firstTrack = album.tracks.first,
+                                   let globalIdx = playerService.libraryTracks.firstIndex(where: { $0.id == firstTrack.id }) {
+                                    playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIdx)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .onAppear { scrollProxy = proxy }
+                .onChange(of: currentPage) { page in
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                        proxy.scrollTo(page, anchor: .leading)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Arrow button
+
+    private enum Direction { case left, right }
+
+    private func arrowButton(direction: Direction) -> some View {
+        let disabled = direction == .left ? currentPage == 0 : currentPage >= maxPage
+        return Button(action: {
+            if direction == .left {
+                currentPage = max(0, currentPage - visibleCards)
+            } else {
+                currentPage = min(maxPage, currentPage + visibleCards)
+            }
+        }) {
+            Image(systemName: direction == .left ? "chevron.left" : "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(disabled ? Color.white.opacity(0.2) : Color.white.opacity(0.85))
+                .frame(width: 32, height: 32)
+                .background(
+                    Circle()
+                        .fill(disabled ? Color.white.opacity(0.05) : Color.white.opacity(0.1))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(disabled ? 0.06 : 0.18), lineWidth: 1)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .disabled(disabled)
+        .animation(.easeInOut(duration: 0.15), value: disabled)
+    }
+}
+
+// MARK: - Apple Music Album Card
+
+struct AppleMusicAlbumCard: View {
+    let album: Album
+    let isCurrent: Bool
+    let isPlaying: Bool
+
+    @State private var isHovered = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+
+            // Artwork square
+            ZStack(alignment: .bottomLeading) {
+                Group {
+                    if let url = album.artworkUrl {
+                        CachedAsyncImage(url: url) { img in
+                            img.resizable()
+                               .aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.07))
+                                .overlay(
+                                    Image(systemName: "music.note")
+                                        .font(.system(size: 36))
+                                        .foregroundColor(.secondary)
+                                )
+                        }
+                    } else {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.07))
+                            .overlay(
+                                Image(systemName: "music.note")
+                                    .font(.system(size: 36))
+                                    .foregroundColor(.secondary)
+                            )
+                    }
+                }
+                .frame(width: 180, height: 180)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(
+                            isCurrent
+                                ? Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.6)
+                                : Color.white.opacity(isHovered ? 0.18 : 0.08),
+                            lineWidth: isCurrent ? 2 : 1
+                        )
+                )
+                .shadow(color: .black.opacity(isHovered ? 0.5 : 0.25), radius: isHovered ? 16 : 8, x: 0, y: 6)
+                .scaleEffect(isHovered ? 1.03 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovered)
+
+                // Now playing badge
+                if isPlaying {
+                    HStack(spacing: 4) {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.system(size: 10))
+                        Text("Playing")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color(red: 0.65, green: 0.8, blue: 0.22))
+                    )
+                    .padding(8)
+                }
+            }
+
+            // Title
+            Text(album.name)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white)
+                .lineLimit(1)
+
+            // Artist + track count
+            Text(album.artist)
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+
+            Text("\(album.tracks.count) songs")
+                .font(.system(size: 11))
+                .foregroundColor(Color.secondary.opacity(0.6))
+        }
+        .onHover { isHovered = $0 }
+        .contentShape(Rectangle())
     }
 }
