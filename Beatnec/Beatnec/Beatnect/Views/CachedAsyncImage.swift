@@ -1,7 +1,7 @@
 import SwiftUI
 
 class ImageCache {
-    static let shared = NSCache<NSURL, UIImage>()
+    static let shared = NSCache<NSString, UIImage>()
 }
 
 struct CachedAsyncImage<Content: View, Placeholder: View>: View {
@@ -17,6 +17,14 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         self.url = url
         self.content = content
         self.placeholder = placeholder
+        
+        if let url = url {
+            let key = url.absoluteString as NSString
+            if let cached = ImageCache.shared.object(forKey: key) {
+                _uiImage = State(initialValue: cached)
+                _loadedUrl = State(initialValue: url)
+            }
+        }
     }
     
     var body: some View {
@@ -51,8 +59,8 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             return
         }
         
-        let nsUrl = url as NSURL
-        if let cached = ImageCache.shared.object(forKey: nsUrl) {
+        let key = url.absoluteString as NSString
+        if let cached = ImageCache.shared.object(forKey: key) {
             self.uiImage = cached
             self.loadedUrl = url
             self.hasFailed = false
@@ -67,7 +75,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         
         URLSession.shared.dataTask(with: url) { data, response, error in
             if let data = data, let image = UIImage(data: data) {
-                ImageCache.shared.setObject(image, forKey: nsUrl)
+                ImageCache.shared.setObject(image, forKey: key)
                 DispatchQueue.main.async {
                     if self.url == url {
                         self.uiImage = image

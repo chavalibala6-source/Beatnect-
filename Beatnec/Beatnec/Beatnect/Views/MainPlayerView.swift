@@ -15,6 +15,7 @@ struct MainPlayerView: View {
     @State private var isLoading = false
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var selectedAlbum: Album? = nil
+    @State private var scrollToTopTrigger = false
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -81,17 +82,28 @@ struct MainPlayerView: View {
                             if verticalSizeClass == .compact {
                                 CoverFlowView(albums: albums, selectedAlbum: $selectedAlbum)
                             } else {
-                                ScrollView {
-                                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 16)], spacing: 16) {
-                                        ForEach(albums) { album in
-                                            AlbumCardView(album: album,
-                                                          currentTrack: playerService.currentTrack,
-                                                          isPlaying: playerService.isPlaying)
+                                ScrollViewReader { proxy in
+                                    ScrollView {
+                                        Color.clear
+                                            .frame(height: 1)
+                                            .id("scroll_to_top_dummy")
+                                        
+                                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 16)], spacing: 16) {
+                                            ForEach(albums) { album in
+                                                AlbumCardView(album: album,
+                                                              currentTrack: playerService.currentTrack,
+                                                              isPlaying: playerService.isPlaying)
+                                            }
+                                        }
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 12)
+                                        .padding(.bottom, playerService.currentTrack != nil ? 90 : 16) // Padding for floating MiniPlayerBar
+                                    }
+                                    .onChange(of: scrollToTopTrigger) {
+                                        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                            proxy.scrollTo("scroll_to_top_dummy", anchor: .top)
                                         }
                                     }
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 12)
-                                    .padding(.bottom, playerService.currentTrack != nil ? 90 : 16) // Padding for floating MiniPlayerBar
                                 }
                             }
                         }
@@ -121,7 +133,7 @@ struct MainPlayerView: View {
                 HStack(spacing: 12) {
                     // Home Button (with glass effect)
                     Button(action: {
-                        // Scroll to top or reload library
+                        scrollToTopTrigger.toggle()
                         reloadLibrary()
                     }) {
                         Image(systemName: "house.fill")
