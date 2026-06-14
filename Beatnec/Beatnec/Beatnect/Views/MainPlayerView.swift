@@ -1217,12 +1217,21 @@ struct VolumeSlider: UIViewRepresentable {
         let volumeView = MPVolumeView(frame: .zero)
         volumeView.showsRouteButton = false
         
-        // Custom styling for the volume slider to match Apple Music design (solid white and translucent white)
+        // Slim track, tiny thumb
         for subview in volumeView.subviews {
             if let slider = subview as? UISlider {
                 slider.minimumTrackTintColor = .white
                 slider.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.28)
-                slider.thumbTintColor = .white
+                // Scale down the thumb to a small dot
+                let thumbSize: CGFloat = 10
+                UIGraphicsBeginImageContextWithOptions(CGSize(width: thumbSize, height: thumbSize), false, 0)
+                let ctx = UIGraphicsGetCurrentContext()!
+                ctx.setFillColor(UIColor.white.cgColor)
+                ctx.fillEllipse(in: CGRect(x: 0, y: 0, width: thumbSize, height: thumbSize))
+                let thumbImage = UIGraphicsGetImageFromCurrentImageContext()
+                UIGraphicsEndImageContext()
+                slider.setThumbImage(thumbImage, for: .normal)
+                slider.setThumbImage(thumbImage, for: .highlighted)
                 break
             }
         }
@@ -1395,117 +1404,106 @@ struct CoverFlowView: View {
                 }
                 .ignoresSafeArea(edges: .bottom)
                 
-                // Main layout: HStack — cards on left (lower), controls vertical on right
-                HStack(alignment: .center, spacing: 0) {
+                // ── Cards area (left, pushed lower with top padding) ──
+                VStack(spacing: 0) {
+                    // Top breathing room so cards don't touch the status bar
+                    Spacer().frame(height: 36)
                     
-                    // ── LEFT: Cards + label, pushed to bottom ──
-                    VStack(spacing: 0) {
-                        Spacer()
-                        
-                        // ZStack of all cards
-                        ZStack {
-                            let visibleRange = max(0, currentIndex - 3)...min(albums.count - 1, currentIndex + 3)
-                            ForEach(Array(visibleRange), id: \.self) { index in
-                                let album = albums[index]
-                                CoverFlowCard(
-                                    album: album,
-                                    width: coverWidth,
-                                    height: coverHeight,
-                                    reflectionHeight: reflectionHeight,
-                                    index: index,
-                                    fractionalIndex: fractionalIndex,
-                                    step: step,
-                                    currentIndex: $currentIndex,
-                                    selectedAlbum: $selectedAlbum
-                                )
-                            }
+                    Spacer()
+                    
+                    // ZStack of all cards
+                    ZStack {
+                        let visibleRange = max(0, currentIndex - 3)...min(albums.count - 1, currentIndex + 3)
+                        ForEach(Array(visibleRange), id: \.self) { index in
+                            let album = albums[index]
+                            CoverFlowCard(
+                                album: album,
+                                width: coverWidth,
+                                height: coverHeight,
+                                reflectionHeight: reflectionHeight,
+                                index: index,
+                                fractionalIndex: fractionalIndex,
+                                step: step,
+                                currentIndex: $currentIndex,
+                                selectedAlbum: $selectedAlbum
+                            )
                         }
-                        .frame(width: screenWidth - 100, height: coverHeight + reflectionHeight)
-                        .contentShape(Rectangle())
-                        .simultaneousGesture(
-                            DragGesture(minimumDistance: 12)
-                                .updating($dragOffset) { value, state, _ in
-                                    state = value.translation.width
-                                }
-                                .onEnded { value in
-                                    let velocity = value.predictedEndTranslation.width
-                                    var offsetIndex = -Int(round(value.translation.width / step))
-                                    if velocity < -100 { offsetIndex = max(offsetIndex, 1) }
-                                    else if velocity > 100 { offsetIndex = min(offsetIndex, -1) }
-                                    let newIndex = min(albums.count - 1, max(0, currentIndex + offsetIndex))
-                                    withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
-                                        currentIndex = newIndex
-                                    }
-                                }
-                        )
-                        
-                        // Album name + artist beneath cards
-                        VStack(spacing: 3) {
-                            Text(currentAlbum?.name ?? "")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                            Text(currentAlbum?.artist ?? "")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
-                                .lineLimit(1)
-                        }
-                        .padding(.top, 8)
-                        .padding(.bottom, 28)
-                        .padding(.horizontal, 16)
-                        .animation(.easeInOut(duration: 0.22), value: currentIndex)
                     }
-                    .frame(width: screenWidth - 100, height: screenHeight)
+                    .frame(width: screenWidth - 110, height: coverHeight + reflectionHeight)
+                    .contentShape(Rectangle())
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 12)
+                            .updating($dragOffset) { value, state, _ in
+                                state = value.translation.width
+                            }
+                            .onEnded { value in
+                                let velocity = value.predictedEndTranslation.width
+                                var offsetIndex = -Int(round(value.translation.width / step))
+                                if velocity < -100 { offsetIndex = max(offsetIndex, 1) }
+                                else if velocity > 100 { offsetIndex = min(offsetIndex, -1) }
+                                let newIndex = min(albums.count - 1, max(0, currentIndex + offsetIndex))
+                                withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                                    currentIndex = newIndex
+                                }
+                            }
+                    )
                     
-                    // ── RIGHT: Vertical playback controls ──
-                    VStack(spacing: 20) {
+                    // Album name + artist beneath cards
+                    VStack(spacing: 3) {
+                        Text(currentAlbum?.name ?? "")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        Text(currentAlbum?.artist ?? "")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
+                            .lineLimit(1)
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, 32)
+                    .padding(.horizontal, 16)
+                    .animation(.easeInOut(duration: 0.22), value: currentIndex)
+                }
+                .frame(width: screenWidth, height: screenHeight)
+                
+                // ── BOTTOM BAR: bare volume bar (left) + bare icon controls (right) ──
+                VStack {
+                    Spacer()
+                    HStack(alignment: .center, spacing: 0) {
+                        
+                        // Volume bar only — no icons, no container
+                        VolumeSlider()
+                            .frame(width: 110, height: 20)
+                            .padding(.leading, 24)
+                        
                         Spacer()
                         
-                        // Previous
-                        Button(action: { playerService.previousTrack() }) {
-                            Image(systemName: "backward.fill")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 46, height: 46)
-                                .background(Circle().fill(.ultraThinMaterial))
-                                .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
-                                .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        // Play / Pause — accent green, larger
-                        Button(action: { playerService.togglePlayPause() }) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color(red: 0.65, green: 0.8, blue: 0.22))
-                                    .frame(width: 60, height: 60)
-                                    .shadow(
-                                        color: Color(red: 0.65, green: 0.8, blue: 0.22)
-                                            .opacity(playerService.isPlaying ? 0.6 : 0.25),
-                                        radius: 12, x: 0, y: 4
-                                    )
+                        // Bare white icons: prev · play/pause · next
+                        HStack(spacing: 28) {
+                            Button(action: { playerService.previousTrack() }) {
+                                Image(systemName: "backward.fill")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.85))
+                            }
+                            .buttonStyle(LiquidGlassPressStyle())
+                            
+                            Button(action: { playerService.togglePlayPause() }) {
                                 Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundColor(.black)
+                                    .font(.system(size: 26, weight: .semibold))
+                                    .foregroundStyle(.white)
                             }
+                            .buttonStyle(LiquidGlassPressStyle())
+                            
+                            Button(action: { playerService.nextTrack() }) {
+                                Image(systemName: "forward.fill")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.85))
+                            }
+                            .buttonStyle(LiquidGlassPressStyle())
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        // Next
-                        Button(action: { playerService.nextTrack() }) {
-                            Image(systemName: "forward.fill")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 46, height: 46)
-                                .background(Circle().fill(.ultraThinMaterial))
-                                .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
-                                .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        Spacer()
+                        .padding(.trailing, 24)
                     }
-                    .frame(width: 100, height: screenHeight)
+                    .padding(.bottom, 22)
                 }
                 .frame(width: screenWidth, height: screenHeight)
             }
@@ -1868,6 +1866,15 @@ struct GlassButtonStyle: ButtonStyle {
             )
             .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
+    }
+}
+
+// Subtle spring press feel for liquid glass buttons
+struct LiquidGlassPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.91 : 1.0)
+            .animation(.spring(response: 0.28, dampingFraction: 0.62), value: configuration.isPressed)
     }
 }
 
