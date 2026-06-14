@@ -44,7 +44,7 @@ struct iPadLibraryView: View {
     @StateObject private var store = PlaylistStore.shared
     @Binding var isShowingPlayerDetail: Bool
 
-    @AppStorage("ipad_theme_dark") private var isDark: Bool = true
+    @EnvironmentObject var themeManager: ThemeManager
 
     @State private var selectedSection: LibrarySection = .songs
     @State private var selectedPlaylist: Playlist? = nil
@@ -102,7 +102,7 @@ struct iPadLibraryView: View {
             // ── RIGHT CONTENT ────────────────────────────────────────────
             contentArea
         }
-        .preferredColorScheme(isDark ? .dark : .light)
+        .background(themeManager.backgroundColor.ignoresSafeArea())
         .alert("New Playlist", isPresented: $showNewPlaylistAlert) {
             TextField("Playlist Name", text: $newPlaylistName)
             Button("Create") {
@@ -128,12 +128,12 @@ struct iPadLibraryView: View {
                 // Theme toggle button
                 Button(action: {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                        isDark.toggle()
+                        themeManager.isDarkMode.toggle()
                     }
                 }) {
-                    Image(systemName: isDark ? "sun.max.fill" : "moon.fill")
+                    Image(systemName: themeManager.isDarkMode ? "sun.max.fill" : "moon.fill")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(isDark ? Color(red: 0.85, green: 0.72, blue: 0.2) : .indigo)
+                        .foregroundColor(themeManager.isDarkMode ? Color(red: 0.85, green: 0.72, blue: 0.2) : .indigo)
                         .frame(width: 30, height: 30)
                         .background(
                             Circle()
@@ -198,10 +198,10 @@ struct iPadLibraryView: View {
 
             // Theme label at bottom
             HStack(spacing: 6) {
-                Image(systemName: isDark ? "moon.stars.fill" : "sun.max.fill")
+                Image(systemName: themeManager.isDarkMode ? "moon.stars.fill" : "sun.max.fill")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
-                Text(isDark ? "Dark Mode" : "Light Mode")
+                Text(themeManager.isDarkMode ? "Dark Mode" : "Light Mode")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
@@ -209,7 +209,7 @@ struct iPadLibraryView: View {
             .padding(.bottom, 20)
         }
         .frame(width: 210)
-        .background(Color(isDark ? UIColor.systemBackground : UIColor.secondarySystemBackground).opacity(isDark ? 0.95 : 1.0))
+        .background(themeManager.secondaryBackgroundColor.opacity(themeManager.isDarkMode ? 0.95 : 1.0))
     }
 
     private func sidebarRow(section: LibrarySection, isSelected: Bool) -> some View {
@@ -239,11 +239,11 @@ struct iPadLibraryView: View {
         return HStack(spacing: 10) {
             Image(systemName: "music.note.list")
                 .font(.system(size: 13))
-                .foregroundColor(isSelected ? .white : .secondary)
+                .foregroundColor(isSelected ? Color.accentColor : .secondary)
                 .frame(width: 20)
             Text(playlist.name)
                 .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
-                .foregroundColor(isSelected ? .white : Color(white: 0.75))
+                .foregroundColor(isSelected ? .primary : .secondary)
                 .lineLimit(1)
             Spacer()
             Text("\(playlist.trackIDs.count)")
@@ -256,7 +256,7 @@ struct iPadLibraryView: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(isDropTarget
                       ? Color.blue.opacity(0.3)
-                      : (isSelected ? Color.white.opacity(0.12) : Color.clear))
+                      : (isSelected ? Color.accentColor.opacity(0.12) : Color.clear))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(isDropTarget ? Color.blue.opacity(0.8) : Color.clear, lineWidth: 1.5)
@@ -317,7 +317,7 @@ struct iPadLibraryView: View {
                  ? (selectedPlaylist?.name ?? "Playlists")
                  : selectedSection.rawValue)
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
 
             if selectedSection == .songs || selectedSection == .playlists {
                 Text("· \(filteredTracks.count) songs")
@@ -333,7 +333,7 @@ struct iPadLibraryView: View {
                     .foregroundColor(.secondary)
                     .font(.system(size: 13))
                 TextField("Search", text: $searchText)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .font(.system(size: 14))
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {
@@ -344,7 +344,7 @@ struct iPadLibraryView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color.white.opacity(0.08))
+            .background(Color.primary.opacity(0.06))
             .cornerRadius(10)
             .frame(maxWidth: 220)
         }
@@ -367,7 +367,7 @@ struct iPadLibraryView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .background(Color.white.opacity(0.04))
+            .background(Color.primary.opacity(0.03))
 
             Divider().opacity(0.2)
 
@@ -403,11 +403,11 @@ struct iPadLibraryView: View {
             HStack(spacing: 4) {
                 Text(col.rawValue)
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(sortColumn == col ? .white : .secondary)
+                    .foregroundColor(sortColumn == col ? .primary : .secondary)
                 if sortColumn == col {
                     Image(systemName: sortAscending ? "chevron.up" : "chevron.down")
                         .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                 }
                 Spacer()
             }
@@ -468,7 +468,7 @@ struct iPadLibraryView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(artist)
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                             Text("\(tracks.count) songs")
                                 .font(.system(size: 12))
                                 .foregroundColor(.secondary)
@@ -507,11 +507,11 @@ struct iPadLibraryView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 140)
-                    .background(Color.white.opacity(0.05))
+                    .background(Color.primary.opacity(0.04))
                     .cornerRadius(14)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.white.opacity(0.12), style: StrokeStyle(lineWidth: 1, dash: [6]))
+                            .stroke(Color.primary.opacity(0.12), style: StrokeStyle(lineWidth: 1, dash: [6]))
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -623,6 +623,7 @@ struct SongTableRow: View {
     let isCurrent: Bool
     let isPlaying: Bool
 
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var isHovered = false
 
     var body: some View {
@@ -654,7 +655,7 @@ struct SongTableRow: View {
                     Image(systemName: "music.note")
                         .foregroundColor(.secondary)
                         .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.06))
+                        .background(Color.primary.opacity(0.06))
                         .cornerRadius(6)
                 }
             }
@@ -664,7 +665,7 @@ struct SongTableRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.displayName)
                     .font(.system(size: 14, weight: isCurrent ? .semibold : .regular))
-                    .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white)
+                    .foregroundColor(isCurrent ? themeManager.accentColor : .primary)
                     .lineLimit(1)
                 Text(track.displayArtist)
                     .font(.system(size: 12))
@@ -697,7 +698,7 @@ struct SongTableRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 9)
-        .background(isHovered ? Color.white.opacity(0.05) : Color.clear)
+        .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
         .onHover { isHovered = $0 }
         .contentShape(Rectangle())
     }
@@ -732,7 +733,7 @@ struct PlaylistCard: View {
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity)
                         .aspectRatio(1, contentMode: .fit)
-                        .background(Color.white.opacity(0.06))
+                        .background(Color.primary.opacity(0.06))
                         .cornerRadius(10)
                 }
             }
@@ -740,7 +741,7 @@ struct PlaylistCard: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(playlist.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .lineLimit(1)
                 Text("\(playlist.trackIDs.count) songs")
                     .font(.system(size: 12))
@@ -748,9 +749,9 @@ struct PlaylistCard: View {
             }
         }
         .padding(12)
-        .background(Color.white.opacity(0.05))
+        .background(Color.primary.opacity(0.04))
         .cornerRadius(14)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.08), lineWidth: 1))
     }
 }
 
@@ -782,7 +783,7 @@ struct HorizontalAlbumShelf: View {
             HStack(spacing: 6) {
                 Text(title)
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.secondary)
@@ -843,15 +844,15 @@ struct HorizontalAlbumShelf: View {
         }) {
             Image(systemName: direction == .left ? "chevron.left" : "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(disabled ? Color.white.opacity(0.2) : Color.white.opacity(0.85))
+                .foregroundColor(disabled ? Color.primary.opacity(0.2) : Color.primary.opacity(0.85))
                 .frame(width: 32, height: 32)
                 .background(
                     Circle()
-                        .fill(disabled ? Color.white.opacity(0.05) : Color.white.opacity(0.1))
+                        .fill(disabled ? Color.primary.opacity(0.05) : Color.primary.opacity(0.1))
                 )
                 .overlay(
                     Circle()
-                        .stroke(Color.white.opacity(disabled ? 0.06 : 0.18), lineWidth: 1)
+                        .stroke(Color.primary.opacity(disabled ? 0.06 : 0.18), lineWidth: 1)
                 )
         }
         .buttonStyle(PlainButtonStyle())
@@ -881,7 +882,7 @@ struct AppleMusicAlbumCard: View {
                                .aspectRatio(contentMode: .fill)
                         } placeholder: {
                             Rectangle()
-                                .fill(Color.white.opacity(0.07))
+                                .fill(Color.primary.opacity(0.07))
                                 .overlay(
                                     Image(systemName: "music.note")
                                         .font(.system(size: 36))
@@ -905,7 +906,7 @@ struct AppleMusicAlbumCard: View {
                         .stroke(
                             isCurrent
                                 ? Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.6)
-                                : Color.white.opacity(isHovered ? 0.18 : 0.08),
+                                : Color.primary.opacity(isHovered ? 0.18 : 0.08),
                             lineWidth: isCurrent ? 2 : 1
                         )
                 )
@@ -935,7 +936,7 @@ struct AppleMusicAlbumCard: View {
             // Title
             Text(album.name)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white)
+                .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .primary)
                 .lineLimit(1)
 
             // Artist + track count

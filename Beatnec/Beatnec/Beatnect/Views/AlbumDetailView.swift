@@ -77,7 +77,7 @@ struct AlbumDetailView: View {
                             Text(album.name)
                                 .font(.system(.title2))
                                 .fontWeight(.bold)
-                                .foregroundColor(.black)
+                                .foregroundColor(.primary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 24)
                             
@@ -87,7 +87,7 @@ struct AlbumDetailView: View {
                             
                             Text("\(album.tracks.count) Songs")
                                 .font(.system(.caption))
-                                .foregroundColor(.black)
+                                .foregroundColor(.primary)
                         }
                         
                         // Play Album Button
@@ -133,7 +133,7 @@ struct AlbumDetailView: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(track.displayName)
                                             .font(.system(size: 15, weight: .bold))
-                                            .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .black)
+                                            .foregroundColor(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .primary)
                                             .lineLimit(1)
                                         
                                         Text(track.displayArtist)
@@ -177,3 +177,4 @@ struct AlbumDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 }
+

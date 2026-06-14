@@ -463,7 +463,7 @@ struct AlbumCardView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.4) : Color.black.opacity(0.08), lineWidth: 1.0)
         )
-        .scaleEffect(isCurrent ? 1.02 : 1.0)
+        .scaleEffect(isCurrent ? 3 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCurrent)
         .contentShape(Rectangle())
         .onHover { hovering in
@@ -515,6 +515,7 @@ private struct iPadMiniPlayer: View {
     let onToggle: () -> Void
     let onTap: () -> Void
 
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var isDragging = false
     @State private var dragProgress: Double = 0
 
@@ -533,7 +534,7 @@ private struct iPadMiniPlayer: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(track.displayName)
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.primary)
                         .lineLimit(1)
                     Text(track.displayArtist)
                         .font(.system(size: 12, weight: .medium))
@@ -553,17 +554,17 @@ private struct iPadMiniPlayer: View {
                     ZStack(alignment: .leading) {
                         // Track
                         Capsule()
-                            .fill(Color.black.opacity(0.2))
+                            .fill(Color.primary.opacity(0.2))
                             .frame(height: 3)
 
                         // Filled
                         Capsule()
-                            .fill(Color.black.opacity(0.85))
+                            .fill(Color.primary.opacity(0.85))
                             .frame(width: geo.size.width * CGFloat(progress), height: 3)
 
                         // Thumb
                         Circle()
-                            .fill(Color.black)
+                            .fill(Color.primary)
                             .frame(width: isDragging ? 14 : 10, height: isDragging ? 14 : 10)
                             .offset(x: geo.size.width * CGFloat(progress) - (isDragging ? 7 : 5))
                             .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isDragging)
@@ -586,11 +587,11 @@ private struct iPadMiniPlayer: View {
                 HStack {
                     Text(formatTime(playerService.currentTime))
                         .font(.system(size: 10))
-                        .foregroundColor(.black)
+                        .foregroundColor(.secondary)
                     Spacer()
                     Text(formatTime(playerService.duration))
                         .font(.system(size: 10))
-                        .foregroundColor(.black)
+                        .foregroundColor(.secondary)
                 }
             }
             .frame(maxWidth: 320)
@@ -602,21 +603,21 @@ private struct iPadMiniPlayer: View {
                 Button(action: { playerService.previousTrack() }) {
                     Image(systemName: "backward.fill")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.primary)
                 }
                 .buttonStyle(PlainButtonStyle())
 
                 Button(action: onToggle) {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.primary)
                 }
                 .buttonStyle(PlainButtonStyle())
 
                 Button(action: { playerService.nextTrack() }) {
                     Image(systemName: "forward.fill")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.primary)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -625,12 +626,12 @@ private struct iPadMiniPlayer: View {
             HStack(spacing: 6) {
                 Image(systemName: "speaker.fill")
                     .font(.system(size: 10))
-                    .foregroundColor(.black)
+                    .foregroundColor(.secondary)
                 VolumeSlider()
                     .frame(width: 100, height: 20)
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.system(size: 10))
-                    .foregroundColor(.black)
+                    .foregroundColor(.secondary)
             }
             .padding(.leading, 24)
         }
@@ -638,20 +639,16 @@ private struct iPadMiniPlayer: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(.ultraThinMaterial)
+                .fill(themeManager.cardBackgroundColor)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
                         .stroke(
-                            LinearGradient(
-                                colors: [.white.opacity(isPlaying ? 0.5 : 0.25), .white.opacity(0.05), .black.opacity(0.15)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
+                            themeManager.borderColor,
                             lineWidth: 1.2
                         )
                 )
         )
-        .shadow(color: (isPlaying ? Color.blue : Color.black).opacity(isPlaying ? 0.3 : 0.15), radius: 8, x: 0, y: 4)
+        .shadow(color: themeManager.shadowColor, radius: 8, x: 0, y: 4)
     }
 
     @ViewBuilder private var artworkView: some View {
@@ -665,9 +662,9 @@ private struct iPadMiniPlayer: View {
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.2), lineWidth: 0.8))
         } else {
             Image(systemName: "music.note")
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(.secondary)
                 .frame(width: 48, height: 48)
-                .background(Color.white.opacity(0.08))
+                .background(Color.primary.opacity(0.08))
                 .cornerRadius(12)
         }
     }
@@ -722,7 +719,7 @@ private struct iPhoneMiniPlayer: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(track.displayName)
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.blue)
                         .lineLimit(1)
                     
                     Text(track.displayArtist)
@@ -744,7 +741,7 @@ private struct iPhoneMiniPlayer: View {
             Button(action: onToggle) {
                 Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(.blue)
                     .frame(width: 38, height: 38)
                     .background(Circle().fill(Color.white.opacity(0.12)))
             }
@@ -754,7 +751,7 @@ private struct iPhoneMiniPlayer: View {
             Button(action: { playerService.nextTrack() }) {
                 Image(systemName: "forward.fill")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(.blue)
                     .frame(width: 38, height: 38)
                     .background(Circle().fill(Color.white.opacity(0.12)))
             }
@@ -1007,22 +1004,48 @@ struct PlayerDetailView: View {
                                 
                                 // Progress Slider
                                 VStack(spacing: 4) {
-                                    Slider(value: $progress, in: 0...max(playerService.duration, 1), onEditingChanged: { editing in
-                                        isDraggingSlider = editing
-                                        if !editing {
-                                            playerService.seek(to: progress)
+                                    GeometryReader { geo in
+                                        ZStack(alignment: .leading) {
+                                            // Track background
+                                            Capsule()
+                                                .fill(themeManager.primaryTextColor.opacity(0.18))
+                                                .frame(height: 3)
+                                            
+                                            // Filled track
+                                            Capsule()
+                                                .fill(Color(red: 0.65, green: 0.8, blue: 0.22))
+                                                .frame(width: playerService.duration > 0 ? geo.size.width * CGFloat(progress / max(playerService.duration, 1)) : 0, height: 3)
+                                            
+                                            // Thumb dot
+                                            Circle()
+                                                .fill(themeManager.primaryTextColor)
+                                                .frame(width: 10, height: 10)
+                                                .offset(x: playerService.duration > 0 ? geo.size.width * CGFloat(progress / max(playerService.duration, 1)) - 5 : -5)
                                         }
-                                    })
-                                    .accentColor(Color(red: 0.65, green: 0.8, blue: 0.22))
+                                        .gesture(
+                                            DragGesture(minimumDistance: 0)
+                                                .onChanged { value in
+                                                    isDraggingSlider = true
+                                                    let pct = max(0, min(1, value.location.x / geo.size.width))
+                                                    progress = pct * max(playerService.duration, 1)
+                                                }
+                                                .onEnded { value in
+                                                    let pct = max(0, min(1, value.location.x / geo.size.width))
+                                                    playerService.seek(to: pct * max(playerService.duration, 1))
+                                                    isDraggingSlider = false
+                                                }
+                                        )
+                                    }
+                                    .frame(height: 14)
                                     
                                     HStack {
                                         Text(formatTime(playerService.currentTime))
                                             .font(.caption2)
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(themeManager.secondaryTextColor)
                                         Spacer()
                                         Text(formatTime(playerService.duration))
                                             .font(.caption2)
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(themeManager.secondaryTextColor)
                                     }
                                 }
                                 
@@ -1042,15 +1065,15 @@ struct PlayerDetailView: View {
                                 HStack(alignment: .center, spacing: 10) {
                                     Image(systemName: "speaker.fill")
                                         .font(.system(size: 10))
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(themeManager.secondaryTextColor)
                                     
-                                    VolumeSlider()
+                                    VolumeSlider(tintColor: themeManager.isDarkMode ? .white : .black)
                                         .frame(maxWidth: .infinity)
                                         .frame(height: 22)
                                     
                                     Image(systemName: "speaker.wave.3.fill")
                                         .font(.system(size: 10))
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(themeManager.secondaryTextColor)
                                 }
                                 
                                 Spacer(minLength: 12)
@@ -1222,11 +1245,11 @@ struct PlayerDetailView: View {
                                 HStack {
                                     Text(formatTime(playerService.currentTime))
                                         .font(.caption)
-                                        .foregroundColor(.black)
+                                        .foregroundColor(themeManager.primaryTextColor)
                                     Spacer()
                                     Text(formatTime(playerService.duration))
                                         .font(.caption)
-                                        .foregroundColor(.black)
+                                        .foregroundColor(themeManager.primaryTextColor)
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -1245,16 +1268,16 @@ struct PlayerDetailView: View {
                             HStack(alignment: .center, spacing: 8) {
                                 Image(systemName: "speaker.fill")
                                     .font(.system(size: 14))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(themeManager.primaryTextColor)
                                     .frame(width: 20, height: 20)
                                 
-                                VolumeSlider()
+                                VolumeSlider(tintColor: themeManager.isDarkMode ? .white : .black)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 22)
                                 
                                 Image(systemName: "speaker.wave.3.fill")
                                     .font(.system(size: 14))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(themeManager.primaryTextColor)
                                     .frame(width: 20, height: 20)
                             }
                             .padding(.horizontal, 4)
@@ -1285,7 +1308,7 @@ struct PlayerDetailView: View {
                     }
                 }
         .background(
-            Color.black
+            themeManager.backgroundColor
                 .ignoresSafeArea()
         )
         .onAppear {
@@ -1359,13 +1382,15 @@ struct iPadPlayerLeftPane: View {
     let width: CGFloat
     let height: CGFloat
 
+    @EnvironmentObject var themeManager: ThemeManager
+
     var artworkSize: CGFloat { min(width * 0.72, height * 0.44) }
 
     var body: some View {
         VStack(spacing: 0) {
             // Handle
             Capsule()
-                .fill(Color.white.opacity(0.35))
+                .fill(Color.primary.opacity(0.35))
                 .frame(width: 40, height: 5)
                 .padding(.top, 20)
 
@@ -1381,13 +1406,13 @@ struct iPadPlayerLeftPane: View {
                 VStack(spacing: 6) {
                     Text(track.displayName)
                         .font(.custom("SF Pro Display", size: 24).weight(.bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                         .lineLimit(1)
                         .padding(.horizontal, 32)
 
                     Text(track.displayArtist)
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(Color(red: 0.85, green: 0.72, blue: 0.2))
+                        .foregroundColor(themeManager.artistColor)
                         .lineLimit(1)
                 }
             }
@@ -1433,24 +1458,24 @@ struct iPadPlayerLeftPane: View {
                 Button(action: { playerService.toggleShuffle() }) {
                     Image(systemName: "shuffle")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(playerService.isShuffleEnabled ? .teal : Color.white.opacity(0.5))
+                        .foregroundColor(playerService.isShuffleEnabled ? .teal : Color.primary.opacity(0.3))
                 }
 
                 HStack(spacing: 8) {
                     Image(systemName: "speaker.fill")
                         .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                    VolumeSlider()
+                        .foregroundColor(themeManager.secondaryTextColor)
+                    VolumeSlider(tintColor: themeManager.isDarkMode ? .white : .black)
                         .frame(maxWidth: .infinity, minHeight: 22, maxHeight: 22)
                     Image(systemName: "speaker.wave.3.fill")
                         .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(themeManager.secondaryTextColor)
                 }
 
                 Button(action: { playerService.toggleRepeat() }) {
                     Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(playerService.isRepeatEnabled ? .purple : Color.white.opacity(0.5))
+                        .foregroundColor(playerService.isRepeatEnabled ? .purple : Color.primary.opacity(0.3))
                 }
             }
             .padding(.horizontal, 36)
@@ -1547,7 +1572,7 @@ struct iPadUpNextPane: View {
             HStack {
                 Text("Up Next")
                     .font(.custom("SF Pro Display", size: 26).weight(.bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 Spacer()
                 Text("\(upNextTracks.count) songs")
                     .font(.subheadline)
@@ -1558,7 +1583,7 @@ struct iPadUpNextPane: View {
             .padding(.bottom, 16)
 
             Rectangle()
-                .fill(Color.white.opacity(0.08))
+                .fill(Color.primary.opacity(0.08))
                 .frame(height: 1)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
@@ -1588,7 +1613,7 @@ struct iPadUpNextPane: View {
             }
         }
         .frame(width: width, height: height)
-        .background(Color.white.opacity(0.03))
+        .background(Color.primary.opacity(0.02))
     }
 
     @ViewBuilder
@@ -1622,7 +1647,7 @@ struct iPadUpNextPane: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(track.displayName)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .lineLimit(1)
                 Text(track.displayArtist)
                     .font(.system(size: 13))
@@ -1633,7 +1658,7 @@ struct iPadUpNextPane: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 10)
-        .background(Color.white.opacity(0.0))
+        .background(Color.clear)
         .cornerRadius(10)
         .contentShape(Rectangle())
         .onTapGesture {
@@ -1760,33 +1785,34 @@ struct ScrollingTextView: View {
 }
 
 struct VolumeSlider: UIViewRepresentable {
+    var tintColor: UIColor = .label
+    
     func makeUIView(context: Context) -> MPVolumeView {
         let volumeView = MPVolumeView(frame: .zero)
         volumeView.showsRouteButton = false
-        
-        // Slim track, tiny thumb
-        for subview in volumeView.subviews {
-            if let slider = subview as? UISlider {
-                slider.minimumTrackTintColor = .black
-                slider.maximumTrackTintColor = UIColor.black.withAlphaComponent(0.28)
-                // Scale down the thumb to a small dot
-                let thumbSize: CGFloat = 10
-                UIGraphicsBeginImageContextWithOptions(CGSize(width: thumbSize, height: thumbSize), false, 0)
-                let ctx = UIGraphicsGetCurrentContext()!
-                ctx.setFillColor(UIColor.black.cgColor)
-                ctx.fillEllipse(in: CGRect(x: 0, y: 0, width: thumbSize, height: thumbSize))
-                let thumbImage = UIGraphicsGetImageFromCurrentImageContext()
-                UIGraphicsEndImageContext()
-                slider.setThumbImage(thumbImage, for: .normal)
-                slider.setThumbImage(thumbImage, for: .highlighted)
-                break
-            }
-        }
-        
         return volumeView
     }
     
-    func updateUIView(_ uiView: MPVolumeView, context: Context) {}
+    func updateUIView(_ uiView: MPVolumeView, context: Context) {
+        // Slim track, tiny thumb
+        for subview in uiView.subviews {
+            if let slider = subview as? UISlider {
+                slider.minimumTrackTintColor = tintColor
+                slider.maximumTrackTintColor = tintColor.withAlphaComponent(0.28)
+                // Scale down the thumb to a small dot
+                let thumbSize: CGFloat = 10
+                UIGraphicsBeginImageContextWithOptions(CGSize(width: thumbSize, height: thumbSize), false, 0)
+                if let ctx = UIGraphicsGetCurrentContext() {
+                    ctx.setFillColor(tintColor.cgColor)
+                    ctx.fillEllipse(in: CGRect(x: 0, y: 0, width: thumbSize, height: thumbSize))
+                    let thumbImage = UIGraphicsGetImageFromCurrentImageContext()
+                    slider.setThumbImage(thumbImage, for: .normal)
+                    slider.setThumbImage(thumbImage, for: .highlighted)
+                }
+                UIGraphicsEndImageContext()
+            }
+        }
+    }
 }
 
 // MARK: - Liquid Glass Button Style
@@ -1799,7 +1825,7 @@ struct LiquidGlassButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: size * 0.42, weight: .bold))
-            .foregroundColor(.black)
+            .foregroundColor(.primary)
             .frame(width: size, height: size)
             .background(
                 ZStack {
@@ -1909,6 +1935,8 @@ struct CoverFlowView: View {
     @GestureState private var dragOffset: CGFloat = 0
     @State private var hasInitialized = false
     @StateObject private var playerService = AudioPlayerService.shared
+    @State private var progress: Double = 0
+    @State private var isDraggingProgress = false
     
     // Configurations for larger sizing
     let coverWidth: CGFloat = 260
@@ -2013,46 +2041,116 @@ struct CoverFlowView: View {
                 }
                 .frame(width: screenWidth, height: screenHeight)
                 
-                // ── BOTTOM BAR: bare volume bar (left) + bare icon controls (right) ──
+                // ── BOTTOM BAR: progress bar + controls + volume ──
                 VStack {
                     Spacer()
-                    HStack(alignment: .center, spacing: 0) {
+                    VStack(spacing: 12) {
                         
-                        // Volume bar only — no icons, no container
-                        VolumeSlider()
-                            .frame(width: 110, height: 20)
-                            .padding(.leading, 24)
-                        
-                        Spacer()
-                        
-                        // Bare white icons: prev · play/pause · next
-                        HStack(spacing: 28) {
-                            Button(action: { playerService.previousTrack() }) {
-                                Image(systemName: "backward.fill")
-                                    .font(.system(size: 18, weight: .medium))
-                                    .foregroundStyle(.white.opacity(0.85))
+                        // ── Progress Bar ──────────────────────────────────
+                        VStack(spacing: 5) {
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    // Track background
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.2))
+                                        .frame(height: 3)
+                                    
+                                    // Filled track
+                                    Capsule()
+                                        .fill(Color(red: 0.65, green: 0.8, blue: 0.22))
+                                        .frame(width: playerService.duration > 0 ? geo.size.width * CGFloat(progress / max(playerService.duration, 1)) : 0, height: 3)
+                                    
+                                    // Thumb dot
+                                    Circle()
+                                        .fill(Color.white)
+                                        .frame(width: isDraggingProgress ? 14 : 10, height: isDraggingProgress ? 14 : 10)
+                                        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                                        .offset(x: playerService.duration > 0 ? geo.size.width * CGFloat(progress / max(playerService.duration, 1)) - (isDraggingProgress ? 7 : 5) : -5)
+                                        .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isDraggingProgress)
+                                }
+                                .gesture(
+                                    DragGesture(minimumDistance: 0)
+                                        .onChanged { value in
+                                            isDraggingProgress = true
+                                            let pct = max(0, min(1, value.location.x / geo.size.width))
+                                            progress = pct * max(playerService.duration, 1)
+                                        }
+                                        .onEnded { value in
+                                            let pct = max(0, min(1, value.location.x / geo.size.width))
+                                            playerService.seek(to: pct * max(playerService.duration, 1))
+                                            isDraggingProgress = false
+                                        }
+                                )
                             }
-                            .buttonStyle(LiquidGlassPressStyle())
+                            .frame(height: 16)
                             
-                            Button(action: { playerService.togglePlayPause() }) {
-                                Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
-                                    .font(.system(size: 26, weight: .semibold))
-                                    .foregroundStyle(.white)
+                            HStack {
+                                Text(formatCoverFlowTime(playerService.currentTime))
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.6))
+                                Spacer()
+                                Text(formatCoverFlowTime(playerService.duration))
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.6))
                             }
-                            .buttonStyle(LiquidGlassPressStyle())
-                            
-                            Button(action: { playerService.nextTrack() }) {
-                                Image(systemName: "forward.fill")
-                                    .font(.system(size: 18, weight: .medium))
-                                    .foregroundStyle(.white.opacity(0.85))
-                            }
-                            .buttonStyle(LiquidGlassPressStyle())
                         }
-                        .padding(.trailing, 24)
+                        .padding(.horizontal, 24)
+                        
+                        // ── Controls + Volume ─────────────────────────────
+                        HStack(alignment: .center, spacing: 0) {
+                            
+                            // Volume bar — white on black
+                            HStack(spacing: 6) {
+                                Image(systemName: "speaker.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.white.opacity(0.55))
+                                VolumeSlider(tintColor: .white)
+                                    .frame(width: 90, height: 20)
+                                Image(systemName: "speaker.wave.2.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.white.opacity(0.55))
+                            }
+                            .padding(.leading, 24)
+                            
+                            Spacer()
+                            
+                            // Bare white icons: prev · play/pause · next
+                            HStack(spacing: 28) {
+                                Button(action: { playerService.previousTrack() }) {
+                                    Image(systemName: "backward.fill")
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundStyle(.white.opacity(0.85))
+                                }
+                                .buttonStyle(LiquidGlassPressStyle())
+                                
+                                Button(action: { playerService.togglePlayPause() }) {
+                                    Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
+                                        .font(.system(size: 26, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                }
+                                .buttonStyle(LiquidGlassPressStyle())
+                                
+                                Button(action: { playerService.nextTrack() }) {
+                                    Image(systemName: "forward.fill")
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundStyle(.white.opacity(0.85))
+                                }
+                                .buttonStyle(LiquidGlassPressStyle())
+                            }
+                            .padding(.trailing, 24)
+                        }
                     }
                     .padding(.bottom, 22)
                 }
                 .frame(width: screenWidth, height: screenHeight)
+                .onAppear { progress = playerService.currentTime }
+                .onReceive(playerService.$currentTime) { newTime in
+                    if !isDraggingProgress { progress = newTime }
+                }
+                .onChange(of: playerService.currentTrackIndex) { _ in
+                    isDraggingProgress = false
+                    progress = 0
+                }
             }
             .frame(width: screenWidth, height: screenHeight)
             .onAppear {
@@ -2083,6 +2181,13 @@ struct CoverFlowView: View {
             currentIndex = 0
         }
         hasInitialized = true
+    }
+    
+    private func formatCoverFlowTime(_ seconds: Double) -> String {
+        guard !seconds.isNaN && !seconds.isInfinite && seconds >= 0 else { return "0:00" }
+        let mins = Int(seconds) / 60
+        let secs = Int(seconds) % 60
+        return String(format: "%d:%02d", mins, secs)
     }
 }
 
@@ -2391,7 +2496,7 @@ struct GlassButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: size * 0.42, weight: .bold))
-            .foregroundColor(.black)
+            .foregroundColor(.primary)
             .frame(width: size, height: size)
             .contentShape(Circle())
             .background(
@@ -2463,20 +2568,20 @@ struct PlayerProgressSlider: View {
             ZStack(alignment: .leading) {
                 // Background Track
                 RoundedRectangle(cornerRadius: trackHeight / 2)
-                    .fill(Color.white.opacity(0.15))
+                    .fill(Color.primary.opacity(0.15))
                     .frame(height: trackHeight)
                 
-                // Active Track (White)
+                // Active Track
                 RoundedRectangle(cornerRadius: trackHeight / 2)
-                    .fill(Color.white)
+                    .fill(Color.primary)
                     .frame(width: max(0, min(trackWidth * percentage, trackWidth)), height: trackHeight)
                 
                 // Custom Vertical Capsule Thumb (like the image)
                 RoundedRectangle(cornerRadius: thumbWidth / 2)
-                    .fill(Color.white)
+                    .fill(Color.primary)
                     .overlay(
                         RoundedRectangle(cornerRadius: thumbWidth / 2)
-                            .stroke(Color.black.opacity(0.35), lineWidth: 0.8)
+                            .stroke(Color.primary.opacity(0.35), lineWidth: 0.8)
                     )
                     .frame(width: thumbWidth, height: thumbHeight)
                     .offset(x: max(0, min(trackWidth * percentage - (thumbWidth / 2), trackWidth - thumbWidth)))
