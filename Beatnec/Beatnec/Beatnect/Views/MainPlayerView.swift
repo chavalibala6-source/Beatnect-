@@ -492,6 +492,199 @@ struct MiniPlayerBar: View {
     @StateObject private var playerService = AudioPlayerService.shared
     
     var body: some View {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            iPadMiniPlayer(track: track, isPlaying: isPlaying, isPressed: $isPressed, playerService: playerService, onToggle: onToggle, onTap: onTap)
+        } else {
+            iPhoneMiniPlayer(track: track, isPlaying: isPlaying, isPressed: $isPressed, playerService: playerService, onToggle: onToggle, onTap: onTap)
+        }
+    }
+}
+
+// MARK: - iPad Mini Player (expanded)
+
+private struct iPadMiniPlayer: View {
+    let track: Track
+    let isPlaying: Bool
+    @Binding var isPressed: Bool
+    @ObservedObject var playerService: AudioPlayerService
+    let onToggle: () -> Void
+    let onTap: () -> Void
+
+    @State private var isDragging = false
+    @State private var dragProgress: Double = 0
+
+    var progress: Double {
+        isDragging ? dragProgress : (playerService.duration > 0 ? playerService.currentTime / playerService.duration : 0)
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+
+            // ── Artwork + Info (tap to open) ──────────────────────────────
+            HStack(spacing: 12) {
+                artworkView
+                    .frame(width: 48, height: 48)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(track.displayName)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    Text(track.displayArtist)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(width: 220, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onTap)
+
+            Spacer()
+
+            // ── Progress bar (centre) ─────────────────────────────────────
+            VStack(spacing: 3) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        // Track
+                        Capsule()
+                            .fill(Color.white.opacity(0.2))
+                            .frame(height: 3)
+
+                        // Filled
+                        Capsule()
+                            .fill(Color.white.opacity(0.85))
+                            .frame(width: geo.size.width * CGFloat(progress), height: 3)
+
+                        // Thumb
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: isDragging ? 14 : 10, height: isDragging ? 14 : 10)
+                            .offset(x: geo.size.width * CGFloat(progress) - (isDragging ? 7 : 5))
+                            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isDragging)
+                    }
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                isDragging = true
+                                dragProgress = max(0, min(1, value.location.x / geo.size.width))
+                            }
+                            .onEnded { value in
+                                let p = max(0, min(1, value.location.x / geo.size.width))
+                                playerService.seek(to: p * playerService.duration)
+                                isDragging = false
+                            }
+                    )
+                }
+                .frame(height: 14)
+
+                HStack {
+                    Text(formatTime(playerService.currentTime))
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text(formatTime(playerService.duration))
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .frame(maxWidth: 320)
+
+            Spacer()
+
+            // ── Playback controls ─────────────────────────────────────────
+            HStack(spacing: 20) {
+                Button(action: { playerService.previousTrack() }) {
+                    Image(systemName: "backward.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                Button(action: onToggle) {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                Button(action: { playerService.nextTrack() }) {
+                    Image(systemName: "forward.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+
+            // ── Volume ────────────────────────────────────────────────────
+            HStack(spacing: 6) {
+                Image(systemName: "speaker.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+                VolumeSlider()
+                    .frame(width: 100, height: 20)
+                Image(systemName: "speaker.wave.3.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.leading, 24)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(
+                            LinearGradient(
+                                colors: [.white.opacity(isPlaying ? 0.5 : 0.25), .white.opacity(0.05), .black.opacity(0.15)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.2
+                        )
+                )
+        )
+        .shadow(color: (isPlaying ? Color.blue : Color.black).opacity(isPlaying ? 0.3 : 0.15), radius: 8, x: 0, y: 4)
+    }
+
+    @ViewBuilder private var artworkView: some View {
+        if let url = track.fullArtworkUrl {
+            CachedAsyncImage(url: url) { image in
+                image.resizable().aspectRatio(contentMode: .fill)
+            } placeholder: { ProgressView() }
+            .frame(width: 48, height: 48)
+            .cornerRadius(12)
+            .clipped()
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.2), lineWidth: 0.8))
+        } else {
+            Image(systemName: "music.note")
+                .foregroundColor(.white.opacity(0.8))
+                .frame(width: 48, height: 48)
+                .background(Color.white.opacity(0.08))
+                .cornerRadius(12)
+        }
+    }
+
+    private func formatTime(_ seconds: Double) -> String {
+        guard !seconds.isNaN else { return "0:00" }
+        let m = Int(seconds) / 60; let s = Int(seconds) % 60
+        return String(format: "%d:%02d", m, s)
+    }
+}
+
+// MARK: - iPhone Mini Player (compact)
+
+private struct iPhoneMiniPlayer: View {
+    let track: Track
+    let isPlaying: Bool
+    @Binding var isPressed: Bool
+    @ObservedObject var playerService: AudioPlayerService
+    let onToggle: () -> Void
+    let onTap: () -> Void
+
+    var body: some View {
         HStack(spacing: 12) {
             // Main Tappable Area (Artwork + Info)
             HStack(spacing: 12) {
@@ -548,25 +741,17 @@ struct MiniPlayerBar: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .frame(width: 38, height: 38)
-                    .background(
-                        Circle()
-                            .fill(Color.white.opacity(0.12))
-                    )
+                    .background(Circle().fill(Color.white.opacity(0.12)))
             }
             .buttonStyle(PlainButtonStyle())
             
             // Next Button
-            Button(action: {
-                playerService.nextTrack()
-            }) {
+            Button(action: { playerService.nextTrack() }) {
                 Image(systemName: "forward.fill")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.white)
                     .frame(width: 38, height: 38)
-                    .background(
-                        Circle()
-                            .fill(Color.white.opacity(0.12))
-                    )
+                    .background(Circle().fill(Color.white.opacity(0.12)))
             }
             .buttonStyle(PlainButtonStyle())
         }
