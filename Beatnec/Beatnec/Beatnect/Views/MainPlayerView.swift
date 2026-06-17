@@ -519,21 +519,22 @@ struct AlbumCardView: View {
             .shadow(color: (isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : Color.black).opacity(isCurrent ? 0.2 : 0.12), radius: 8, x: 0, y: 4)
             
             // Text Details
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(album.name)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.black)
-                    .lineLimit(1)
-                
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(2)
+                    .frame(height: 34, alignment: .topLeading)
+
                 Text(album.artist)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(isCurrent ? Color(red: 0.72, green: 0.62, blue: 0.16) : Color(red: 0.72, green: 0.62, blue: 0.16))
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
                     .lineLimit(1)
-                
-                Text("\(album.tracks.count) Songs")
-                    .font(.system(size: 10, weight: .regular))
-                    .foregroundColor(.black)
-                    .lineLimit(1)
+                    .frame(height: 16, alignment: .leading)
+
+                Text("\(album.tracks.count) songs")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .frame(height: 14, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 4)
