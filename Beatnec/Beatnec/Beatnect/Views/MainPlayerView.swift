@@ -1,7 +1,151 @@
 import SwiftUI
 import MediaPlayer
 import Combine
+import UIKit
 
+import UIKit
+import CoreImage
+
+extension UIImage {
+    func dominantColor() -> UIColor {
+        guard let cgImage = self.cgImage else {
+            return .systemBlue
+        }
+
+        let width = 40
+        let height = 40
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+
+        guard let context = CGContext(
+            data: &pixels,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * 4,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return .systemBlue
+        }
+
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        var colorCounts: [String: Int] = [:]
+
+        for i in stride(from: 0, to: pixels.count, by: 4) {
+            let r = Int(pixels[i])
+            let g = Int(pixels[i + 1])
+            let b = Int(pixels[i + 2])
+
+            // Ignore near-white and near-black
+            if max(r, g, b) > 240 || max(r, g, b) < 30 {
+                continue
+            }
+
+            let key = "\(r/16)-\(g/16)-\(b/16)"
+            colorCounts[key, default: 0] += 1
+        }
+
+        guard let dominant = colorCounts.max(by: { $0.value < $1.value })?.key else {
+            return .systemBlue
+        }
+
+        let comps = dominant.split(separator: "-").compactMap { Int($0) }
+
+        return UIColor(
+            red: CGFloat(comps[0] * 16) / 255,
+            green: CGFloat(comps[1] * 16) / 255,
+            blue: CGFloat(comps[2] * 16) / 255,
+            alpha: 1
+        )
+    }
+}
+
+struct ArtworkBackground: View {
+    let color: Color
+
+    @State private var animate = false
+
+    var body: some View {
+        ZStack {
+
+            RadialGradient(
+                colors: [
+                    color.opacity(0.95),
+                    color.opacity(0.45),
+                    .clear
+                ],
+    
+                center: animate ? .topLeading : .bottomTrailing,
+                startRadius: 80,
+                endRadius: 500
+            )
+            RadialGradient(
+                colors: [
+                    color.opacity(0.8),
+                    .clear
+                ],
+                center: .center,
+                startRadius: 50,
+                endRadius: 300
+            )
+            .offset(x: 120, y: -100)
+            
+            RadialGradient(
+                colors: [
+                    .white.opacity(0.04),
+                    .clear
+                ],
+                center: animate ? .bottomTrailing : .topLeading,
+                startRadius: 40,
+                endRadius: 350
+            )
+
+            LinearGradient(
+                colors: [
+                    color.opacity(0.35),
+                    color.opacity(0.7),
+                    .black
+                ],
+                startPoint: animate ? .topLeading : .bottomLeading,
+                endPoint: animate ? .bottomTrailing : .topTrailing
+            )
+        }
+        .blur(radius: 70)
+        .ignoresSafeArea()
+        .onAppear {
+            withAnimation(
+                .easeInOut(duration: 18)
+                .repeatForever(autoreverses: true)
+            ) {
+                animate.toggle()
+            }
+        }
+    }
+}
+
+
+struct AudioBarVisualizer: View {
+    let isPlaying: Bool
+    @StateObject private var analyzer = SpectrumAnalyzer()
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 3) {
+            ForEach(analyzer.magnitudes.indices, id: \.self) { i in
+                let raw    = CGFloat(analyzer.magnitudes[i])
+                let height = isPlaying ? max(6, raw * 90) : 8
+                Capsule()
+                    .fill(Color.white.opacity(0.4 + Double(raw) * 0.6))
+                    .frame(width: 4, height: height)
+                    .animation(.spring(response: 0.12, dampingFraction: 0.65), value: height)
+            }
+        }
+        .onAppear  { analyzer.install(on: AudioPlayerService.shared.engine) }
+        .onDisappear { analyzer.remove(from: AudioPlayerService.shared.engine) }
+    }
+}
 
 struct MainPlayerView: View {
     @StateObject private var apiService = APIService.shared
@@ -23,7 +167,12 @@ struct MainPlayerView: View {
             NavigationView {
                 ZStack {
                     // Theme-Aware Background
+                    //themeManager.backgroundColor
+                     //   .ignoresSafeArea()
+                        //.ignoresSafeArea()
+
                     themeManager.backgroundColor
+                        .opacity(0.25)
                         .ignoresSafeArea()
                     
                     // Hidden NavigationLink for Cover Flow album selection
@@ -189,24 +338,50 @@ struct MainPlayerView: View {
     
     private var albums: [Album] {
         var dict = [String: Album]()
+
         for track in playerService.libraryTracks {
-            let albumName = track.displayAlbum
-            let albumArtist = track.displayArtist
-            let key = "\(albumName)|\(albumArtist)"
-            
-            if var existingAlbum = dict[key] {
+            let normalizedAlbumName = track.displayAlbum
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+
+            if var existingAlbum = dict[normalizedAlbumName] {
                 existingAlbum.tracks.append(track)
-                dict[key] = existingAlbum
+                dict[normalizedAlbumName] = existingAlbum
             } else {
-                dict[key] = Album(
-                    name: albumName,
-                    artist: albumArtist,
+                dict[normalizedAlbumName] = Album(
+                    name: track.displayAlbum,
+                    artist: track.displayArtist,
                     artworkUrl: track.fullArtworkUrl,
                     tracks: [track]
                 )
             }
         }
-        return dict.values.sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
+
+        // Update artist label for albums containing multiple artists
+        var result = dict.values.map { album -> Album in
+            let uniqueArtists = Set(
+                album.tracks.map {
+                    $0.displayArtist.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            )
+
+            return Album(
+                name: album.name,
+                artist: uniqueArtists.count == 1
+                    ? (uniqueArtists.first ?? "")
+                    : "Various Artists",
+                artworkUrl: album.artworkUrl,
+                tracks: album.tracks.sorted {
+                    $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+                }
+            )
+        }
+
+        result.sort {
+            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+        }
+
+        return result
     }
     
     private func reloadLibrary() {
@@ -254,7 +429,6 @@ struct AlbumCardView: View {
     let currentTrack: Track?
     let isPlaying: Bool
     
-    @State private var isFlipped = false
     @State private var isHovering = false
     @StateObject private var playerService = AudioPlayerService.shared
     
@@ -277,99 +451,9 @@ struct AlbumCardView: View {
     }
     
     var body: some View {
-        let rotationAngle = isFlipped ? 180.0 : 0.0
-        
-        return ZStack {
-            if isFlipped {
-                backView
-            } else {
-                frontView
-            }
-        }
-        .rotation3DEffect(Angle(degrees: rotationAngle), axis: (x: 0.0, y: 1.0, z: 0.0))
+        return frontView
     }
     
-    private var backView: some View {
-        VStack(spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(album.name)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.black)
-                        .lineLimit(1)
-                    Text(album.artist)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
-                        .lineLimit(1)
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 10)
-            .padding(.top, 10)
-            
-            Divider()
-                .background(Color.black.opacity(0.15))
-                .padding(.horizontal, 10)
-            
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 4) {
-                    ForEach(Array(album.tracks.enumerated()), id: \.element.id) { trackIndex, track in
-                        let isTrackCurrent = playerService.currentTrack?.id == track.id
-                        
-                        Button(action: {
-                            if let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == track.id }) {
-                                playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
-                            }
-                        }) {
-                            HStack(spacing: 6) {
-                                Text("\(trackIndex + 1)")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(isTrackCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .black.opacity(0.5))
-                                    .frame(width: 14, alignment: .trailing)
-                                
-                                Text(track.displayName)
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundColor(isTrackCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : .black)
-                                    .lineLimit(1)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                
-                                if isTrackCurrent {
-                                    Image(systemName: playerService.isPlaying ? "waveform" : "play.fill")
-                                        .font(.system(size: 9))
-                                        .foregroundColor(Color(red: 0.65, green: 0.8, blue: 0.22))
-                                }
-                            }
-                            .padding(.vertical, 4)
-                            .padding(.horizontal, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(isTrackCurrent ? Color.black.opacity(0.1) : Color.clear)
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                }
-                .padding(.horizontal, 6)
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
-                isFlipped = false
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 220)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.6) : Color.black.opacity(0.12), lineWidth: 1.0)
-        )
-        .rotation3DEffect(Angle(degrees: 180), axis: (x: 0.0, y: 1.0, z: 0.0))
-    }
     
     @ViewBuilder
     private var artworkView: some View {
@@ -463,7 +547,7 @@ struct AlbumCardView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.4) : Color.black.opacity(0.08), lineWidth: 1.0)
         )
-        .scaleEffect(isCurrent ? 3 : 1.0)
+        .scaleEffect(isCurrent ? 1.04 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCurrent)
         .contentShape(Rectangle())
         .onHover { hovering in
@@ -475,11 +559,6 @@ struct AlbumCardView: View {
             if let firstTrack = album.tracks.first,
                let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == firstTrack.id }) {
                 playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
-            }
-        }
-        .onLongPressGesture {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
-                isFlipped.toggle()
             }
         }
     }
@@ -840,14 +919,31 @@ struct PlayerDetailView: View {
     @ObservedObject var playerService: AudioPlayerService
     @Binding var isPresented: Bool
     @EnvironmentObject var themeManager: ThemeManager
-    
     @Environment(\.verticalSizeClass) var verticalSizeClass
     
     @State private var isDraggingSlider = false
     @State private var progress: Double = 0
-    
+    @State private var artworkColor: Color = .orange
+    private func updateArtworkColor() {
+        guard let url = playerService.currentTrack?.fullArtworkUrl else { return }
+
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            guard
+                let data,
+                let image = UIImage(data: data)
+            else { return }
+
+            let uiColor = image.dominantColor()
+
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    artworkColor = Color(uiColor)
+                }
+            }
+        }.resume()
+    }
     var body: some View {
-        let artworkScale = playerService.isPlaying ? 1.08 : 1.0
+        let artworkScale = playerService.isPlaying ? 1.20 : 1.0
         let artworkShadowRadius = playerService.isPlaying ? 15.0 : 8.0
         let artworkShadowOpacity = playerService.isPlaying ? 0.45 : 0.25
         
@@ -856,7 +952,9 @@ struct PlayerDetailView: View {
             
             ZStack {
                 // Theme-aware background
-                themeManager.backgroundColor
+                //themeManager.backgroundColor
+                ArtworkBackground(color: artworkColor)
+
                     .ignoresSafeArea()
                 
                 // Swipe-to-dismiss gesture overlay on empty spaces
@@ -940,17 +1038,17 @@ struct PlayerDetailView: View {
                                             }
                                             .frame(maxHeight: landscapeArtworkSize)
                                             .cornerRadius(16)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 16)
-                                                    .stroke(
-                                                        LinearGradient(
-                                                            gradient: Gradient(colors: [.white.opacity(0.35), .clear, .black.opacity(0.2)]),
-                                                            startPoint: .topLeading,
-                                                            endPoint: .bottomTrailing
-                                                        ),
-                                                        lineWidth: 1.5
-                                                    )
-                                            )
+                                            //.overlay(
+                                              //  RoundedRectangle(cornerRadius: 16)
+                                               //     .stroke(
+                                                //        LinearGradient(
+                                            //            gradient: Gradient(colors: [.white.opacity(0.35), .clear, //.black.opacity(0.2)]),
+                                               //             startPoint: .topLeading,
+                                               //             endPoint: .bottomTrailing
+                                               //         ),
+                                                //        lineWidth: 1.5
+                                                //    )
+                                           // )
                                             .scaleEffect(artworkScale)
                                             .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 10 : 5)
                                             .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
@@ -987,7 +1085,7 @@ struct PlayerDetailView: View {
                                         
                                         Text(track.displayArtist)
                                             .font(.subheadline)
-                                            .foregroundColor(Color(red: 0.72, green: 0.62, blue: 0.16))
+                                            .foregroundColor(.black)
                                             .lineLimit(1)
                                     }
                                     .padding(.top, 4)
@@ -996,9 +1094,12 @@ struct PlayerDetailView: View {
                                 Spacer(minLength: 8)
                                 
                                 // Waveform Visualizer for Landscape
-                                WaveformVisualizer(isPlaying: playerService.isPlaying)
-                                    .frame(height: 18)
-                                    .padding(.vertical, 2)
+                                AudioBarVisualizer(
+                                    isPlaying: playerService.isPlaying
+                                )
+                                .frame(height: 90)
+                                .padding(.horizontal)
+                                .padding(.vertical, 2)
                                 
                                 Spacer(minLength: 14)
                                 
@@ -1017,10 +1118,10 @@ struct PlayerDetailView: View {
                                                 .frame(width: playerService.duration > 0 ? geo.size.width * CGFloat(progress / max(playerService.duration, 1)) : 0, height: 3)
                                             
                                             // Thumb dot
-                                            Circle()
-                                                .fill(themeManager.primaryTextColor)
-                                                .frame(width: 10, height: 10)
-                                                .offset(x: playerService.duration > 0 ? geo.size.width * CGFloat(progress / max(playerService.duration, 1)) - 5 : -5)
+                                           // Circle()
+                                              //  .fill(themeManager.primaryTextColor)
+                                              //  .frame(width: 10, height: 10)
+                                               // .offset(x: playerService.duration > 0 ? geo.size.width * CGFloat(progress / //max(playerService.duration, 1)) - 5 : -5)
                                         }
                                         .gesture(
                                             DragGesture(minimumDistance: 0)
@@ -1160,17 +1261,18 @@ struct PlayerDetailView: View {
                                     }
                                     .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                     .cornerRadius(20)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .stroke(
-                                                LinearGradient(
-                                                    gradient: Gradient(colors: [.white.opacity(0.35), .clear, .black.opacity(0.25)]),
-                                                    startPoint: .topLeading,
-                                                    endPoint: .bottomTrailing
-                                                ),
-                                                lineWidth: 1.5
-                                            )
-                                    )
+                                   // .overlay(
+                                    //    RoundedRectangle(cornerRadius: 20)
+                                     //       .stroke(
+                                     //           LinearGradient(
+                                      //              gradient: Gradient(colors: [.white.opacity(0.35), .clear, //.black.opacity(0.25)]),
+                                          //          startPoint: .topLeading,
+                                           //         endPoint: .bottomTrailing
+                                           //     ),
+                                    
+                                           //     lineWidth: 1.5
+                                          //  )
+                                    //)
                                     .scaleEffect(artworkScale)
                                     .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
                                     .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
@@ -1225,10 +1327,7 @@ struct PlayerDetailView: View {
                             Spacer()
                             
                             // Waveform Visualizer
-                            WaveformVisualizer(isPlaying: playerService.isPlaying)
-                                .frame(height: isSmallScreen ? 24 : 32)
-                                .padding(.horizontal, 24)
-                                .padding(.vertical, 4)
+                          
                             
                             Spacer()
                             
@@ -1240,7 +1339,7 @@ struct PlayerDetailView: View {
                                         playerService.seek(to: progress)
                                     }
                                 })
-                                .accentColor(Color(red: 0.65, green: 0.8, blue: 0.22))
+                                .tint(Color.orange)
                                 
                                 HStack {
                                     Text(formatTime(playerService.currentTime))
@@ -1312,7 +1411,11 @@ struct PlayerDetailView: View {
                 .ignoresSafeArea()
         )
         .onAppear {
-            progress = playerService.currentTime
+            updateArtworkColor()
+        }
+
+        .onChange(of: playerService.currentTrackIndex) { _ in
+            updateArtworkColor()
         }
         .onReceive(playerService.$currentTime) { newTime in
             if !isDraggingSlider {
@@ -1412,15 +1515,12 @@ struct iPadPlayerLeftPane: View {
 
                     Text(track.displayArtist)
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(themeManager.artistColor)
+                        .foregroundColor(.white)
                         .lineLimit(1)
                 }
             }
 
-            // Waveform
-            WaveformVisualizer(isPlaying: playerService.isPlaying)
-                .frame(height: 22)
-                .padding(.vertical, 12)
+           
 
             // Progress
             VStack(spacing: 6) {
@@ -1875,55 +1975,6 @@ struct LiquidGlassButtonStyle: ButtonStyle {
     }
 }
 
-// MARK: - Waveform Visualizer View
-
-struct WaveformVisualizer: View {
-    let isPlaying: Bool
-    @State private var phase: CGFloat = 0.0
-    
-    // Timer to drive the fluid animation
-    let timer = Timer.publish(every: 0.08, on: .main, in: .common).autoconnect()
-    
-    var body: some View {
-        Canvas { context, size in
-            let barWidth: CGFloat = 3.0
-            let gap: CGFloat = 2.0
-            let count = Int(size.width / (barWidth + gap))
-            
-            for i in 0..<count {
-                let x = CGFloat(i) * (barWidth + gap) + barWidth / 2.0
-                
-                // Normal curve envelope so it shapes like a wave (tapers at ends)
-                let relativeX = CGFloat(i) / CGFloat(count)
-                let envelope = sin(relativeX * .pi)
-                
-                // Fluid wavy movement driven by phase
-                let waveMod: CGFloat
-                if isPlaying {
-                    waveMod = sin(relativeX * 10.0 + phase) * 0.35 + cos(relativeX * 6.0 - phase) * 0.25 + 0.6
-                } else {
-                    waveMod = 0.12 // Tiny pulse resting state
-                }
-                
-                let barHeight = size.height * envelope * waveMod
-                let y = (size.height - barHeight) / 2.0
-                
-                let path = Path(roundedRect: CGRect(x: x - barWidth/2.0, y: y, width: barWidth, height: barHeight), cornerRadius: barWidth/2.0)
-                
-                // Colored glow matches the theme (lime-green)
-                let color = Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.85)
-                context.fill(path, with: .color(color))
-            }
-        }
-        .onReceive(timer) { _ in
-            if isPlaying {
-                withAnimation(.linear(duration: 0.08)) {
-                    phase += 0.45
-                }
-            }
-        }
-    }
-}
 
 // MARK: - 3D Cover Flow Views (iOS 6 Style)
 
@@ -2202,8 +2253,8 @@ struct CoverFlowCard: View {
     @Binding var currentIndex: Int
     @Binding var selectedAlbum: Album?
     
-    @State private var isFlipped = false
     @State private var isHovering = false
+    @State private var isFlipped = false
     @StateObject private var playerService = AudioPlayerService.shared
     
     var body: some View {
@@ -2568,21 +2619,28 @@ struct PlayerProgressSlider: View {
             ZStack(alignment: .leading) {
                 // Background Track
                 RoundedRectangle(cornerRadius: trackHeight / 2)
-                    .fill(Color.primary.opacity(0.15))
+                    .fill(Color.white.opacity(0.15))
                     .frame(height: trackHeight)
                 
-                // Active Track
+                // Active Track — orange gradient
                 RoundedRectangle(cornerRadius: trackHeight / 2)
-                    .fill(Color.primary)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(red: 1.0, green: 0.45, blue: 0.0), Color(red: 1.0, green: 0.25, blue: 0.0)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .frame(width: max(0, min(trackWidth * percentage, trackWidth)), height: trackHeight)
                 
-                // Custom Vertical Capsule Thumb (like the image)
+                // Thumb — orange with glow
                 RoundedRectangle(cornerRadius: thumbWidth / 2)
-                    .fill(Color.primary)
+                    .fill(Color.orange)
                     .overlay(
                         RoundedRectangle(cornerRadius: thumbWidth / 2)
-                            .stroke(Color.primary.opacity(0.35), lineWidth: 0.8)
+                            .stroke(Color.orange.opacity(0.5), lineWidth: 0.8)
                     )
+                    .shadow(color: Color.orange.opacity(0.7), radius: 4, x: 0, y: 0)
                     .frame(width: thumbWidth, height: thumbHeight)
                     .offset(x: max(0, min(trackWidth * percentage - (thumbWidth / 2), trackWidth - thumbWidth)))
             }

@@ -1,27 +1,135 @@
 import Foundation
 import AVFoundation
 import MediaPlayer
+import MediaToolbox
 import Combine
+import Accelerate
 
+// MARK: - Spectrum Analyzer
+final class SpectrumAnalyzer: ObservableObject {
+    @Published var magnitudes: [Float] = Array(repeating: 0, count: 40)
+
+    private let bandCount = 40
+    private let bufferSize: AVAudioFrameCount = 2048
+    private var isInstalled = false
+
+    func install(on engine: AVAudioEngine) {
+        guard !isInstalled else { return }
+        let mixer = engine.mainMixerNode
+        let format = mixer.outputFormat(forBus: 0)
+        guard format.sampleRate > 0 else { return }
+        isInstalled = true
+        mixer.installTap(onBus: 0, bufferSize: bufferSize, format: format) { [weak self] buffer, _ in
+            self?.process(buffer)
+        }
+    }
+
+    func remove(from engine: AVAudioEngine) {
+        guard isInstalled else { return }
+        engine.mainMixerNode.removeTap(onBus: 0)
+        isInstalled = false
+        DispatchQueue.main.async {
+            self.magnitudes = Array(repeating: 0, count: self.bandCount)
+        }
+    }
+
+    private func process(_ buffer: AVAudioPCMBuffer) {
+        guard let data = buffer.floatChannelData?[0] else { return }
+        let frameCount = Int(buffer.frameLength)
+        guard frameCount >= 64 else { return }
+
+        let log2n = UInt(log2(Double(frameCount)))
+        let fftSize = 1 << log2n
+        let half = fftSize / 2
+
+        var windowed = [Float](repeating: 0, count: fftSize)
+        var window   = [Float](repeating: 0, count: fftSize)
+        vDSP_hann_window(&window, vDSP_Length(fftSize), Int32(vDSP_HANN_NORM))
+        vDSP_vmul(data, 1, window, 1, &windowed, 1, vDSP_Length(fftSize))
+
+        var real = [Float](repeating: 0, count: half)
+        var imag = [Float](repeating: 0, count: half)
+        var split = DSPSplitComplex(realp: &real, imagp: &imag)
+
+        windowed.withUnsafeBytes {
+            let ptr = $0.bindMemory(to: DSPComplex.self)
+            vDSP_ctoz(ptr.baseAddress!, 2, &split, 1, vDSP_Length(half))
+        }
+
+        guard let setup = vDSP_create_fftsetup(log2n, FFTRadix(kFFTRadix2)) else { return }
+        defer { vDSP_destroy_fftsetup(setup) }
+        vDSP_fft_zrip(setup, &split, 1, log2n, FFTDirection(FFT_FORWARD))
+
+        var mags   = [Float](repeating: 0, count: half)
+        var scaled = [Float](repeating: 0, count: half)
+        vDSP_zvabs(&split, 1, &mags, 1, vDSP_Length(half))
+        var scale = 2.0 / Float(fftSize)
+        vDSP_vsmul(&mags, 1, &scale, &scaled, 1, vDSP_Length(half))
+
+        var bands = [Float](repeating: 0, count: bandCount)
+        for i in 0..<bandCount {
+            let lo = Int(pow(Double(half), Double(i)     / Double(bandCount)))
+            let hi = Int(pow(Double(half), Double(i + 1) / Double(bandCount)))
+            let slice = scaled[max(0, lo)..<min(hi + 1, half)]
+            bands[i] = slice.max() ?? 0
+        }
+
+        let minDB: Float = -70
+        let maxDB: Float = -10
+        let norm = bands.map { v -> Float in
+            let db = 20 * log10(max(v, 1e-9))
+            return min(max((db - minDB) / (maxDB - minDB), 0), 1)
+        }
+
+        DispatchQueue.main.async { self.magnitudes = norm }
+    }
+}
+
+// MARK: - Metering Target (CADisplayLink helper)
+final class MeteringTarget: NSObject {
+    let callback: () -> Void
+    init(_ callback: @escaping () -> Void) { self.callback = callback }
+    @objc func tick() { callback() }
+}
+
+// MARK: - Audio Player Service
 class AudioPlayerService: NSObject, ObservableObject {
     static let shared = AudioPlayerService()
-    
+
+    // Engine (kept alive for SpectrumAnalyzer tap if needed)
+    let engine = AVAudioEngine()
+    private let silentNode = AVAudioPlayerNode()
+
+    // AVPlayer for instant streaming
     private var player: AVPlayer?
-    private var playerItemContext = 0
-    private var timeObserverToken: Any?
-    private var cancellables = Set<AnyCancellable>()
-    
+    private var playerItem: AVPlayerItem?
+    private var timeObserver: Any?
+    private var itemEndObserver: NSObjectProtocol?
+
+    // Metering via MTAudioProcessingTap
+    private var meterLevels: [Float] = Array(repeating: 0, count: 40)
+    private let meterQueue = DispatchQueue(label: "com.beatnect.meter", qos: .userInteractive)
+    private var currentMix: AVAudioMix?
+
+    // Prefetch
+    private var prefetchTask: URLSessionDownloadTask?
+    private var prefetchedTrackURL: URL?
+    private var prefetchedFileURL: URL?
+
+    // Guard against rapid track changes
+    private var isTransitioning = false
+
     @Published var tracks: [Track] = [] {
         didSet {
-            if let encoded = try? JSONEncoder().encode(tracks) {
-                UserDefaults.standard.set(encoded, forKey: "gmp_cached_tracks")
+            if let e = try? JSONEncoder().encode(tracks) {
+                UserDefaults.standard.set(e, forKey: "gmp_cached_tracks")
             }
         }
     }
     @Published var libraryTracks: [Track] = [] {
         didSet {
-            if let encoded = try? JSONEncoder().encode(libraryTracks) {
-                UserDefaults.standard.set(encoded, forKey: "gmp_cached_library_tracks")
+            if let e = try? JSONEncoder().encode(libraryTracks) {
+                UserDefaults.standard.set(e, forKey: "gmp_cached_library_tracks")
             }
         }
     }
@@ -31,298 +139,384 @@ class AudioPlayerService: NSObject, ObservableObject {
     @Published var duration: Double = 0
     @Published var isShuffleEnabled = false
     @Published var isRepeatEnabled = false
-    
+
     var currentTrack: Track? {
-        guard let index = currentTrackIndex, index < tracks.count else { return nil }
-        return tracks[index]
+        guard let i = currentTrackIndex, i < tracks.count else { return nil }
+        return tracks[i]
     }
-    
+
+    // MARK: - Init
     private override init() {
-        // Load cached tracks from UserDefaults if available
-        let cached: [Track]
-        if let data = UserDefaults.standard.data(forKey: "gmp_cached_tracks"),
-           let decoded = try? JSONDecoder().decode([Track].self, from: data) {
-            cached = decoded
-        } else {
-            cached = []
-        }
-        self.tracks = cached
-        
-        let cachedLib: [Track]
-        if let data = UserDefaults.standard.data(forKey: "gmp_cached_library_tracks"),
-           let decoded = try? JSONDecoder().decode([Track].self, from: data) {
-            cachedLib = decoded
-        } else {
-            cachedLib = []
-        }
-        self.libraryTracks = cachedLib
-        
+        if let d = UserDefaults.standard.data(forKey: "gmp_cached_tracks"),
+           let v = try? JSONDecoder().decode([Track].self, from: d) {
+            tracks = v
+        } else { tracks = [] }
+
+        if let d = UserDefaults.standard.data(forKey: "gmp_cached_library_tracks"),
+           let v = try? JSONDecoder().decode([Track].self, from: d) {
+            libraryTracks = v
+        } else { libraryTracks = [] }
+
         super.init()
         setupAudioSession()
+        setupEngine()
         setupRemoteCommandCenter()
-        setupNotifications()
     }
-    
+
+    // MARK: - Setup
     private func setupAudioSession() {
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("Failed to set up AVAudioSession: \(error)")
-        }
+        } catch { print("AudioSession error: \(error)") }
     }
-    
+
+    private func setupEngine() {
+        engine.attach(silentNode)
+        engine.connect(silentNode, to: engine.mainMixerNode, format: nil)
+        engine.prepare()
+        do { try engine.start() } catch { print("Engine error: \(error)") }
+    }
+
+    // MARK: - Playlist
     func setPlaylist(tracks: [Track], startAtIndex index: Int) {
         self.tracks = tracks
         playTrack(at: index)
     }
-    
+
     func playTrack(at index: Int) {
-        guard index >= 0 && index < tracks.count else { return }
-        
-        // Remove current time observer
-        if let token = timeObserverToken {
-            player?.removeTimeObserver(token)
-            timeObserverToken = nil
-        }
-        
+        guard index >= 0, index < tracks.count else { return }
+        guard !isTransitioning else { return }
+        isTransitioning = true
+        defer { isTransitioning = false }
+
         currentTrackIndex = index
-        guard let track = currentTrack else { return }
-        
-        guard let url = URL(string: track.url) else { return }
-        let playerItem = AVPlayerItem(url: url)
-        
-        // Add KVO for status and duration
-        playerItem.addObserver(self, forKeyPath: #keyPath(AVPlayerItem.status), options: [.old, .new], context: &playerItemContext)
-        playerItem.addObserver(self, forKeyPath: #keyPath(AVPlayerItem.duration), options: [.old, .new], context: &playerItemContext)
-        
-        if player == nil {
-            player = AVPlayer(playerItem: playerItem)
+        guard let track = currentTrack,
+              let url = URL(string: track.url) else { return }
+
+        stopCurrentPlayback()
+
+        // Use prefetched file if available for this URL
+        if let cached = prefetchedFileURL,
+           let cachedURL = prefetchedTrackURL,
+           cachedURL == url {
+            prefetchedFileURL  = nil
+            prefetchedTrackURL = nil
+            startPlayer(url: cached)
         } else {
-            player?.replaceCurrentItem(with: playerItem)
+            startPlayer(url: url)
         }
-        
-        // Set up time observer
-        timeObserverToken = player?.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC)), queue: .main) { [weak self] time in
-            guard let self = self else { return }
+
+        updateNowPlayingMetadata()
+        prefetchNextTrack()
+    }
+
+    // MARK: - AVPlayer
+    private func startPlayer(url: URL) {
+        let item = AVPlayerItem(url: url)
+        playerItem = item
+
+        // Install metering tap
+        if let mix = buildMeteringMix(for: item) {
+            item.audioMix = mix
+            currentMix = mix
+        }
+
+        if player == nil {
+            player = AVPlayer(playerItem: item)
+            player?.automaticallyWaitsToMinimizeStalling = false
+        } else {
+            player?.replaceCurrentItem(with: item)
+        }
+
+        // Periodic time observer
+        timeObserver = player?.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: 0.25, preferredTimescale: 600),
+            queue: .main
+        ) { [weak self] time in
+            guard let self, self.isPlaying else { return }
             self.currentTime = time.seconds
+            if let d = self.playerItem?.duration,
+               d.isNumeric, d.seconds > 0 {
+                self.duration = d.seconds
+            }
             self.updateNowPlayingPlaybackInfo()
         }
-        
-        play()
-        updateNowPlayingMetadata()
+
+        // End observer
+        itemEndObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleTrackFinished()
+        }
+
+        player?.play()
+        isPlaying = true
+        updateNowPlayingPlaybackInfo()
     }
-    
+
+    private func stopCurrentPlayback() {
+        if let t = timeObserver {
+            player?.removeTimeObserver(t)
+            timeObserver = nil
+        }
+        if let obs = itemEndObserver {
+            NotificationCenter.default.removeObserver(obs)
+            itemEndObserver = nil
+        }
+        player?.pause()
+        player?.replaceCurrentItem(with: nil)
+        playerItem = nil
+        currentMix = nil
+        isPlaying  = false
+        currentTime = 0
+        duration    = 0
+        meterQueue.async { self.meterLevels = Array(repeating: 0, count: 40) }
+    }
+
+    private func handleTrackFinished() {
+        if isRepeatEnabled {
+            player?.seek(to: .zero)
+            player?.play()
+        } else {
+            nextTrack()
+        }
+    }
+
+    // MARK: - MTAudioProcessingTap Metering
+    private func buildMeteringMix(for item: AVPlayerItem) -> AVAudioMix? {
+        // Wait for tracks to load
+        let asset = item.asset
+        guard let audioTrack = asset.tracks(withMediaType: .audio).first else {
+            // Asset tracks not loaded yet — load them async
+            asset.loadTracks(withMediaType: .audio) { [weak self, weak item] tracks, _ in
+                guard let self,
+                      let item,
+                      let track = tracks?.first else { return }
+                DispatchQueue.main.async {
+                    if let mix = self.buildMeteringMixWith(track: track) {
+                        item.audioMix = mix
+                        self.currentMix = mix
+                    }
+                }
+            }
+            return nil
+        }
+        return buildMeteringMixWith(track: audioTrack)
+    }
+
+    private func buildMeteringMixWith(track: AVAssetTrack) -> AVAudioMix? {
+        var callbacks = MTAudioProcessingTapCallbacks(
+            version: kMTAudioProcessingTapCallbacksVersion_0,
+            clientInfo: UnsafeMutableRawPointer(
+                Unmanaged.passRetained(self).toOpaque()
+            ),
+            init: { tap, clientInfo, tapStorageOut in
+                tapStorageOut.pointee = clientInfo
+            },
+            finalize: { tap in
+                let ptr = MTAudioProcessingTapGetStorage(tap);                Unmanaged<AudioPlayerService>.fromOpaque(ptr).release()
+            },
+            prepare: { _, _, _ in },
+            unprepare: { _ in },
+            process: { tap, numFrames, flags, bufferList, numFramesOut, flagsOut in
+                guard MTAudioProcessingTapGetSourceAudio(
+                    tap,
+                    numFrames,
+                    bufferList,
+                    flagsOut,
+                    nil,
+                    numFramesOut
+                ) == noErr else { return }
+
+                let ptr = MTAudioProcessingTapGetStorage(tap)
+                let service = Unmanaged<AudioPlayerService>
+                    .fromOpaque(ptr)
+                    .takeUnretainedValue()
+
+                service.processMeterData(bufferList, frames: Int(numFrames))
+            }
+        )
+
+        var tap: MTAudioProcessingTap?
+
+        let status = MTAudioProcessingTapCreate(
+            kCFAllocatorDefault,
+            &callbacks,
+            kMTAudioProcessingTapCreationFlag_PostEffects,
+            &tap
+        )
+
+        guard status == noErr, let tap else {
+            return nil
+        }
+
+        let params = AVMutableAudioMixInputParameters(track: track)
+        params.audioTapProcessor = tap
+
+        let mix = AVMutableAudioMix()
+        mix.inputParameters = [params]
+        return mix
+    }
+
+    private func processMeterData(
+        _ bufferList: UnsafeMutablePointer<AudioBufferList>,
+        frames: Int
+    ) {
+        let abl = UnsafeMutableAudioBufferListPointer(bufferList)
+        guard let buf = abl.first,
+              let data = buf.mData,
+              frames > 0 else { return }
+
+        let samples = UnsafeBufferPointer(
+            start: data.bindMemory(to: Float.self, capacity: frames),
+            count: frames
+        )
+        let arr = Array(samples)
+        let bandCount = 40
+        let bandSize  = max(1, frames / bandCount)
+        var bands = [Float](repeating: 0, count: bandCount)
+
+        for i in 0..<bandCount {
+            let start = i * bandSize
+            let end   = min(start + bandSize, frames)
+            guard start < end else { continue }
+            var rms: Float = 0
+            vDSP_rmsqv(Array(arr[start..<end]), 1, &rms, vDSP_Length(end - start))
+            let db = 20 * log10(max(rms, 1e-9))
+            let minDB: Float = -60; let maxDB: Float = 0
+            bands[i] = min(max((db - minDB) / (maxDB - minDB), 0), 1)
+        }
+
+        meterQueue.async { self.meterLevels = bands }
+    }
+
+    func currentMeterLevels() -> [Float] {
+        meterQueue.sync { meterLevels }
+    }
+
+    // MARK: - Prefetch
+    private func prefetchNextTrack() {
+        prefetchTask?.cancel()
+        prefetchTask      = nil
+        prefetchedTrackURL = nil
+        prefetchedFileURL  = nil
+
+        guard !isShuffleEnabled,
+              let idx = currentTrackIndex,
+              idx + 1 < tracks.count else { return }
+
+        let next = tracks[idx + 1]
+        guard let url = URL(string: next.url) else { return }
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("prefetch_next.mp3")
+
+        prefetchedTrackURL = url
+        let task = URLSession.shared.downloadTask(with: url) { [weak self] location, _, error in
+            guard let self, error == nil, let location else { return }
+            try? FileManager.default.removeItem(at: tempURL)
+            try? FileManager.default.moveItem(at: location, to: tempURL)
+            DispatchQueue.main.async { self.prefetchedFileURL = tempURL }
+        }
+        prefetchTask = task
+        task.resume()
+    }
+
+    // MARK: - Controls
     func play() {
         player?.play()
         isPlaying = true
         updateNowPlayingPlaybackInfo()
     }
-    
+
     func pause() {
         player?.pause()
         isPlaying = false
         updateNowPlayingPlaybackInfo()
     }
-    
-    func togglePlayPause() {
-        if isPlaying {
-            pause()
-        } else {
-            play()
-        }
-    }
-    
+
+    func togglePlayPause() { isPlaying ? pause() : play() }
+
     func nextTrack() {
         guard !tracks.isEmpty else { return }
-        if isShuffleEnabled {
-            let randomIndex = Int.random(in: 0..<tracks.count)
-            playTrack(at: randomIndex)
-        } else {
-            guard let currentIndex = currentTrackIndex else { return }
-            let nextIndex = (currentIndex + 1) % tracks.count
-            playTrack(at: nextIndex)
-        }
+        let next = isShuffleEnabled
+            ? Int.random(in: 0..<tracks.count)
+            : ((currentTrackIndex ?? 0) + 1) % tracks.count
+        playTrack(at: next)
     }
-    
+
     func previousTrack() {
         guard !tracks.isEmpty else { return }
-        if isShuffleEnabled {
-            let randomIndex = Int.random(in: 0..<tracks.count)
-            playTrack(at: randomIndex)
-        } else {
-            guard let currentIndex = currentTrackIndex else { return }
-            let prevIndex = (currentIndex - 1 + tracks.count) % tracks.count
-            playTrack(at: prevIndex)
-        }
-    }
-    
-    func toggleShuffle() {
-        isShuffleEnabled.toggle()
-    }
-    
-    func toggleRepeat() {
-        isRepeatEnabled.toggle()
-    }
-    
-    func seek(to seconds: Double) {
-        let targetTime = CMTime(seconds: seconds, preferredTimescale: 1000)
-        player?.seek(to: targetTime) { [weak self] _ in
-            self?.currentTime = seconds
-            self?.updateNowPlayingPlaybackInfo()
-        }
-    }
-    
-    // MARK: - Now Playing Info Center
-    
-    private func updateNowPlayingMetadata() {
-        guard let track = currentTrack else { return }
-        
-        var nowPlayingInfo = [String: Any]()
-        nowPlayingInfo[MPMediaItemPropertyTitle] = track.displayName
-        nowPlayingInfo[MPMediaItemPropertyArtist] = track.displayArtist
-        nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = track.displayAlbum
-        
-        // Load artwork asynchronously
-        if let url = track.fullArtworkUrl {
-            URLSession.shared.dataTask(with: url) { data, _, _ in
-                if let data = data, let image = UIImage(data: data) {
-                    let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
-                    DispatchQueue.main.async {
-                        var currentInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
-                        currentInfo[MPMediaItemPropertyArtwork] = artwork
-                        MPNowPlayingInfoCenter.default().nowPlayingInfo = currentInfo
-                    }
-                }
-            }.resume()
-        } else {
-            // Placeholder default artwork if none is available
-            if let image = UIImage(systemName: "music.note") {
-                let artwork = MPMediaItemArtwork(boundsSize: CGSize(width: 300, height: 300)) { _ in image }
-                nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
-            }
-        }
-        
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
-    }
-    
-    private func updateNowPlayingPlaybackInfo() {
-        guard var nowPlayingInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo else { return }
-        
-        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
-        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = duration
-        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
-        
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
-    }
-    
-    // MARK: - MPRemoteCommandCenter Controls
-    
-    private func setupRemoteCommandCenter() {
-        let commandCenter = MPRemoteCommandCenter.shared()
-        
-        commandCenter.playCommand.isEnabled = true
-        commandCenter.playCommand.addTarget { [weak self] _ in
-            self?.play()
-            return .success
-        }
-        
-        commandCenter.pauseCommand.isEnabled = true
-        commandCenter.pauseCommand.addTarget { [weak self] _ in
-            self?.pause()
-            return .success
-        }
-        
-        commandCenter.togglePlayPauseCommand.isEnabled = true
-        commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
-            self?.togglePlayPause()
-            return .success
-        }
-        
-        commandCenter.nextTrackCommand.isEnabled = true
-        commandCenter.nextTrackCommand.addTarget { [weak self] _ in
-            self?.nextTrack()
-            return .success
-        }
-        
-        commandCenter.previousTrackCommand.isEnabled = true
-        commandCenter.previousTrackCommand.addTarget { [weak self] _ in
-            self?.previousTrack()
-            return .success
-        }
-        
-        commandCenter.changePlaybackPositionCommand.isEnabled = true
-        commandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
-            if let positionEvent = event as? MPChangePlaybackPositionCommandEvent {
-                self?.seek(to: positionEvent.positionTime)
-                return .success
-            }
-            return .commandFailed
-        }
-        
-        commandCenter.changeShuffleModeCommand.isEnabled = true
-        commandCenter.changeShuffleModeCommand.addTarget { [weak self] event in
-            guard let self = self,
-                  let shuffleEvent = event as? MPChangeShuffleModeCommandEvent else {
-                return .commandFailed
-            }
-            self.isShuffleEnabled = shuffleEvent.shuffleType != .off
-            return .success
-        }
-        
-        commandCenter.changeRepeatModeCommand.isEnabled = true
-        commandCenter.changeRepeatModeCommand.addTarget { [weak self] event in
-            guard let self = self,
-                  let repeatEvent = event as? MPChangeRepeatModeCommandEvent else {
-                return .commandFailed
-            }
-            self.isRepeatEnabled = repeatEvent.repeatType != .off
-            return .success
-        }
-    }
-    
-    // MARK: - Notification Selectors
-    
-    private func setupNotifications() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(playerItemDidPlayToEndTime),
-                                               name: .AVPlayerItemDidPlayToEndTime,
-                                               object: nil)
-    }
-    
-    @objc private func playerItemDidPlayToEndTime(notification: Notification) {
-        if isRepeatEnabled {
-            seek(to: 0)
-            play()
-        } else {
-            nextTrack()
-        }
-    }
-    
-    // MARK: - KVO Observer
-    
-    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        guard context == &playerItemContext else {
-            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
+        if currentTime > 3 {
+            player?.seek(to: .zero)
+            currentTime = 0
             return
         }
-        
-        if keyPath == #keyPath(AVPlayerItem.status) {
-            if let statusNumber = change?[.newKey] as? NSNumber {
-                let status = AVPlayerItem.Status(rawValue: statusNumber.intValue)
-                if status == .failed {
-                    print("AVPlayerItem failed to load: \(String(describing: player?.currentItem?.error))")
-                    pause()
+        let prev = isShuffleEnabled
+            ? Int.random(in: 0..<tracks.count)
+            : ((currentTrackIndex ?? 0) - 1 + tracks.count) % tracks.count
+        playTrack(at: prev)
+    }
+
+    func toggleShuffle() { isShuffleEnabled.toggle() }
+    func toggleRepeat()  { isRepeatEnabled.toggle() }
+
+    func seek(to seconds: Double) {
+        let target = CMTime(seconds: seconds, preferredTimescale: 1000)
+        player?.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
+        currentTime = seconds
+        updateNowPlayingPlaybackInfo()
+    }
+
+    // MARK: - Now Playing
+    private func updateNowPlayingMetadata() {
+        guard let track = currentTrack else { return }
+        let info: [String: Any] = [
+            MPMediaItemPropertyTitle:      track.displayName,
+            MPMediaItemPropertyArtist:     track.displayArtist,
+            MPMediaItemPropertyAlbumTitle: track.displayAlbum
+        ]
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        if let url = track.fullArtworkUrl {
+            URLSession.shared.dataTask(with: url) { data, _, _ in
+                guard let data, let img = UIImage(data: data) else { return }
+                let art = MPMediaItemArtwork(boundsSize: img.size) { _ in img }
+                DispatchQueue.main.async {
+                    var cur = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+                    cur[MPMediaItemPropertyArtwork] = art
+                    MPNowPlayingInfoCenter.default().nowPlayingInfo = cur
                 }
-            }
-        } else if keyPath == #keyPath(AVPlayerItem.duration) {
-            if let newDuration = player?.currentItem?.duration {
-                let seconds = CMTimeGetSeconds(newDuration)
-                if !seconds.isNaN {
-                    self.duration = seconds
-                    self.updateNowPlayingPlaybackInfo()
-                }
-            }
+            }.resume()
         }
+    }
+
+    private func updateNowPlayingPlaybackInfo() {
+        guard var info = MPNowPlayingInfoCenter.default().nowPlayingInfo else { return }
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
+        info[MPMediaItemPropertyPlaybackDuration]        = duration
+        info[MPNowPlayingInfoPropertyPlaybackRate]       = isPlaying ? 1.0 : 0.0
+        MPNowPlayingInfoCenter.default().nowPlayingInfo  = info
+    }
+
+    // MARK: - Remote Commands
+    private func setupRemoteCommandCenter() {
+        let cc = MPRemoteCommandCenter.shared()
+        cc.playCommand.addTarget            { [weak self] _ in self?.play();            return .success }
+        cc.pauseCommand.addTarget           { [weak self] _ in self?.pause();           return .success }
+        cc.togglePlayPauseCommand.addTarget { [weak self] _ in self?.togglePlayPause(); return .success }
+        cc.nextTrackCommand.addTarget       { [weak self] _ in self?.nextTrack();       return .success }
+        cc.previousTrackCommand.addTarget   { [weak self] _ in self?.previousTrack();   return .success }
+        cc.changePlaybackPositionCommand.addTarget { [weak self] e in
+            if let ev = e as? MPChangePlaybackPositionCommandEvent {
+                self?.seek(to: ev.positionTime)
+            }
+            return .success
+        }
+        [cc.playCommand, cc.pauseCommand, cc.togglePlayPauseCommand,
+         cc.nextTrackCommand, cc.previousTrackCommand,
+         cc.changePlaybackPositionCommand].forEach { $0.isEnabled = true }
     }
 }

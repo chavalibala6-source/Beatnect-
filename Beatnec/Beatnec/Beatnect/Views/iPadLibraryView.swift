@@ -420,30 +420,27 @@ struct iPadLibraryView: View {
     // MARK: - Albums Grid
 
     private var albumsGrid: some View {
-        ScrollView(.vertical) {
-            LazyVStack(alignment: .leading, spacing: 36) {
-                // Group albums by first letter for browsing, or just show as one shelf
-                HorizontalAlbumShelf(
-                    title: "Albums",
-                    albums: albums,
-                    currentTrack: playerService.currentTrack,
-                    isPlaying: playerService.isPlaying,
-                    playerService: playerService
-                )
-
-                // Artist shelves
-                let artistAlbums = Dictionary(grouping: albums) { $0.artist }
-                let sortedArtists = artistAlbums.keys.sorted()
-                ForEach(sortedArtists, id: \.self) { artist in
-                    if let artistAlbumList = artistAlbums[artist], artistAlbumList.count > 1 {
-                        HorizontalAlbumShelf(
-                            title: artist,
-                            albums: artistAlbumList,
-                            currentTrack: playerService.currentTrack,
-                            isPlaying: playerService.isPlaying,
-                            playerService: playerService
-                        )
+        // Group albums alphabetically by the first letter of the album title
+        // Group albums by full name (each album is its own section)
+        let sortedAlbums = albums.sorted { $0.name < $1.name }
+        return ScrollView(.vertical) {
+            LazyVStack(alignment: .leading, spacing: 16) {
+                ForEach(sortedAlbums) { album in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(album.name)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.primary)
+                        // List tracks for this album
+                        ForEach(album.tracks) { track in
+                            Text(track.displayName)
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                                .padding(.vertical, 2)
+                        }
                     }
+                    .padding(12)
+                    .background(Color.primary.opacity(0.04))
+                    .cornerRadius(10)
                 }
             }
             .padding(.vertical, 20)

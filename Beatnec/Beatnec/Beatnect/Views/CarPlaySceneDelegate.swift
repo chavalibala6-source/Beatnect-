@@ -2,152 +2,119 @@ import CarPlay
 import UIKit
 
 class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
-    var interfaceController: CPInterfaceController?
-    var tabBarTemplate: CPTabBarTemplate?
-    var libraryTemplate: CPListTemplate?
-    var nowPlayingObserver: NSObjectProtocol?
 
-    // MARK: - Connect
+    var interfaceController: CPInterfaceController?
+    var libraryTemplate: CPListTemplate?
+    var artistTemplate: CPListTemplate?
+
+    // MARK: - Connect / Disconnect
 
     func templateApplicationScene(
         _ templateApplicationScene: CPTemplateApplicationScene,
         didConnect interfaceController: CPInterfaceController
     ) {
         self.interfaceController = interfaceController
-
-        // Build tab bar with icons
-        let tabs = buildTabBarTemplate()
-        self.tabBarTemplate = tabs
-        interfaceController.setRootTemplate(tabs, animated: true, completion: nil)
-
-        // Load tracks into Library tab
+        setupRootTemplate(interfaceController)
         loadTracks()
-
-        // Observe track changes to refresh now-playing badge
-        nowPlayingObserver = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("TrackDidChange"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.refreshNowPlayingButton()
-        }
     }
 
     func templateApplicationScene(
         _ templateApplicationScene: CPTemplateApplicationScene,
         didDisconnectInterfaceController interfaceController: CPInterfaceController
     ) {
-        if let observer = nowPlayingObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
         self.interfaceController = nil
-        self.tabBarTemplate = nil
         self.libraryTemplate = nil
+        self.artistTemplate = nil
     }
 
-    // MARK: - Tab Bar
+    // MARK: - Root Template (Tab Bar with Icons)
 
-    private func buildTabBarTemplate() -> CPTabBarTemplate {
-        // ── Library Tab ────────────────────────────────────────────────────
-        let library = CPListTemplate(title: "Library", sections: [])
-        library.tabTitle = "Library"
-        library.tabImage = UIImage(systemName: "music.note.list",
-                                   withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .medium))
+    private func setupRootTemplate(_ interfaceController: CPInterfaceController) {
+        // Library tab
+        let libTemplate = CPListTemplate(title: "Library", sections: [])
+        libTemplate.tabTitle = "Library"
+        libTemplate.tabImage = icon("music.note.list")
+        self.libraryTemplate = libTemplate
 
-        // ── Now Playing Tab ────────────────────────────────────────────────
-        let nowPlaying = CPNowPlayingTemplate.shared
-        // CPNowPlayingTemplate is a singleton — access via .shared
+        // Now Playing tab (system-provided)
+        let nowPlayingTemplate = CPNowPlayingTemplate.shared
+        nowPlayingTemplate.tabTitle = "Now Playing"
+        nowPlayingTemplate.tabImage = icon("play.circle.fill")
 
-        // ── Browse Tab (Artists) ────────────────────────────────────────────
-        let browse = CPListTemplate(title: "Artists", sections: [])
-        browse.tabTitle = "Artists"
-        browse.tabImage = UIImage(systemName: "person.2.fill",
-                                  withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .medium))
+        // Artists tab
+        let artTemplate = CPListTemplate(title: "Artists", sections: [])
+        artTemplate.tabTitle = "Artists"
+        artTemplate.tabImage = icon("person.2.fill")
+        self.artistTemplate = artTemplate
 
-        self.libraryTemplate = library
-
-        return CPTabBarTemplate(templates: [library, nowPlaying, browse])
+        let tabBar = CPTabBarTemplate(templates: [libTemplate, nowPlayingTemplate, artTemplate])
+        interfaceController.setRootTemplate(tabBar, animated: true, completion: nil)
     }
 
     // MARK: - Load Tracks
 
-    func loadTracks() {
+    private func loadTracks() {
         APIService.shared.fetchTracks { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let tracks):
-                    self?.buildLibraryTemplate(with: tracks)
-                    self?.buildArtistTemplate(with: tracks)
+                    self?.populateLibrary(tracks: tracks)
+                    self?.populateArtists(tracks: tracks)
                 case .failure(let error):
-                    print("CarPlay: failed to fetch tracks — \(error)")
-                    self?.showErrorTemplate(message: error.localizedDescription)
+                    self?.showError(message: error.localizedDescription)
                 }
             }
         }
     }
 
-    // MARK: - Library List
+    // MARK: - Library Tab
 
-    private func buildLibraryTemplate(with tracks: [Track]) {
-        guard let libraryTemplate = libraryTemplate else { return }
-
-        // Header item — shows current playback state
-        let currentTrackName = AudioPlayerService.shared.currentTrack?.displayName ?? "Nothing playing"
-        let nowPlayingItem = CPListItem(
-            text: "▶︎  Now Playing",
-            detailText: currentTrackName
+    private func populateLibrary(tracks: [Track]) {
+        // Now-playing banner row
+        let currentName = AudioPlayerService.shared.currentTrack?.displayName ?? "Nothing playing yet"
+        let bannerItem = CPListItem(
+            text: "Now Playing",
+            detailText: currentName,
+            image: icon("waveform", size: 28),
+            accessoryImage: nil,
+            accessoryType: .disclosureIndicator
         )
-        nowPlayingItem.setImage(
-            UIImage(systemName: "waveform",
-                    withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold))
-        )
-        nowPlayingItem.handler = { [weak self] _, completion in
-            if let nowPlaying = self?.tabBarTemplate?.templates.first(where: { $0 is CPNowPlayingTemplate }) {
-                self?.interfaceController?.pushTemplate(nowPlaying, animated: true, completion: nil)
+        bannerItem.handler = { [weak self] _, completion in
+            if let vc = self?.interfaceController {
+                vc.pushTemplate(CPNowPlayingTemplate.shared, animated: true, completion: nil)
             }
             completion()
         }
+        let bannerSection = CPListSection(items: [bannerItem])
 
-        let headerSection = CPListSection(
-            items: [nowPlayingItem],
-            header: nil,
-            headerSubtitle: nil,
-            headerImage: UIImage(systemName: "beats.headphones"),
-            headerButton: nil,
-            sectionIndexTitle: nil
-        )
-
-        // Track items
-        var trackItems = [CPListItem]()
+        // Track rows
+        var trackItems: [CPListItem] = []
         for (index, track) in tracks.enumerated() {
-            let isCurrentlyPlaying = AudioPlayerService.shared.currentTrack?.id == track.id
-                                  && AudioPlayerService.shared.isPlaying
+            let isNowPlaying = AudioPlayerService.shared.currentTrack?.id == track.id
+            let rowIcon = isNowPlaying ? icon("speaker.wave.2.fill", size: 28, tint: UIColor(red: 0.65, green: 0.8, blue: 0.22, alpha: 1))
+                                       : icon("music.note", size: 28, tint: .secondaryLabel)
 
             let item = CPListItem(
                 text: track.displayName,
-                detailText: track.displayArtist
+                detailText: track.displayArtist,
+                image: rowIcon,
+                accessoryImage: nil,
+                accessoryType: isNowPlaying ? .cloud : .none
             )
 
-            // Playback indicator icon
-            let iconName = isCurrentlyPlaying ? "speaker.wave.2.fill" : "music.note"
-            item.setImage(
-                UIImage(systemName: iconName,
-                        withConfiguration: UIImage.SymbolConfiguration(pointSize: 14, weight: .regular))
-            )
-
+            // Tap → play
             item.handler = { _, completion in
                 AudioPlayerService.shared.setPlaylist(tracks: tracks, startAtIndex: index)
                 completion()
             }
 
-            // Load artwork asynchronously and replace icon
+            // Load album artwork and replace the SF symbol
             if let url = track.fullArtworkUrl {
                 URLSession.shared.dataTask(with: url) { data, _, _ in
-                    if let data = data, let image = UIImage(data: data) {
-                        let resized = image.resized(to: CGSize(width: 44, height: 44))
-                        DispatchQueue.main.async {
-                            item.setImage(resized)
-                        }
+                    guard let data = data, let raw = UIImage(data: data) else { return }
+                    let thumb = raw.roundedThumbnail(size: CGSize(width: 44, height: 44), cornerRadius: 6)
+                    DispatchQueue.main.async {
+                        item.setImage(thumb)
                     }
                 }.resume()
             }
@@ -155,93 +122,92 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
             trackItems.append(item)
         }
 
-        let tracksSection = CPListSection(
+        let songsSection = CPListSection(
             items: trackItems,
-            header: "All Songs",
-            headerSubtitle: "\(tracks.count) tracks",
-            headerImage: UIImage(systemName: "music.note",
-                                 withConfiguration: UIImage.SymbolConfiguration(pointSize: 14)),
-            headerButton: nil,
-            sectionIndexTitle: "♫"
+            header: "All Songs — \(tracks.count) tracks",
+            sectionIndexTitle: nil
         )
 
-        libraryTemplate.updateSections([headerSection, tracksSection])
+        libraryTemplate?.updateSections([bannerSection, songsSection])
     }
 
-    // MARK: - Artist List
+    // MARK: - Artists Tab
 
-    private func buildArtistTemplate(with tracks: [Track]) {
-        guard let browseTemplate = tabBarTemplate?.templates.last as? CPListTemplate else { return }
-
+    private func populateArtists(tracks: [Track]) {
         let grouped = Dictionary(grouping: tracks) { $0.displayArtist }
         let sorted = grouped.keys.sorted()
 
-        var artistItems = [CPListItem]()
+        var items: [CPListItem] = []
         for artist in sorted {
             let artistTracks = grouped[artist] ?? []
             let item = CPListItem(
                 text: artist,
-                detailText: "\(artistTracks.count) songs"
-            )
-            item.setImage(
-                UIImage(systemName: "person.fill",
-                        withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .medium))
+                detailText: "\(artistTracks.count) song\(artistTracks.count == 1 ? "" : "s")",
+                image: icon("person.fill", size: 28, tint: .secondaryLabel),
+                accessoryImage: nil,
+                accessoryType: .disclosureIndicator
             )
             item.handler = { _, completion in
                 AudioPlayerService.shared.setPlaylist(tracks: artistTracks, startAtIndex: 0)
                 completion()
             }
-            artistItems.append(item)
+
+            // Try to load artwork from first track of artist
+            if let firstUrl = artistTracks.first?.fullArtworkUrl {
+                URLSession.shared.dataTask(with: firstUrl) { data, _, _ in
+                    guard let data = data, let raw = UIImage(data: data) else { return }
+                    let thumb = raw.roundedThumbnail(size: CGSize(width: 44, height: 44), cornerRadius: 22)
+                    DispatchQueue.main.async {
+                        item.setImage(thumb)
+                    }
+                }.resume()
+            }
+
+            items.append(item)
         }
 
         let section = CPListSection(
-            items: artistItems,
-            header: "Artists",
-            headerSubtitle: "\(sorted.count) artists",
-            headerImage: UIImage(systemName: "person.2.fill",
-                                 withConfiguration: UIImage.SymbolConfiguration(pointSize: 14)),
-            headerButton: nil,
+            items: items,
+            header: "Artists — \(sorted.count) artists",
             sectionIndexTitle: nil
         )
-        browseTemplate.updateSections([section])
-    }
-
-    // MARK: - Now Playing Refresh
-
-    private func refreshNowPlayingButton() {
-        // Reload library list to update the "Now Playing" banner item
-        APIService.shared.fetchTracks { [weak self] result in
-            if case .success(let tracks) = result {
-                DispatchQueue.main.async {
-                    self?.buildLibraryTemplate(with: tracks)
-                }
-            }
-        }
+        artistTemplate?.updateSections([section])
     }
 
     // MARK: - Error
 
-    private func showErrorTemplate(message: String) {
-        let errorItem = CPListItem(
-            text: "Unable to load library",
-            detailText: message
+    private func showError(message: String) {
+        let item = CPListItem(
+            text: "Failed to load library",
+            detailText: message,
+            image: icon("exclamationmark.triangle.fill", size: 28, tint: .systemRed),
+            accessoryImage: nil,
+            accessoryType: .none
         )
-        errorItem.setImage(
-            UIImage(systemName: "exclamationmark.triangle.fill",
-                    withConfiguration: UIImage.SymbolConfiguration(pointSize: 16))
-        )
-        let section = CPListSection(items: [errorItem])
+        let section = CPListSection(items: [item])
         libraryTemplate?.updateSections([section])
+    }
+
+    // MARK: - Icon Helper
+
+    /// Returns a tinted SF Symbol as UIImage, sized for CarPlay list rows (recommended: 28–44pt)
+    private func icon(_ name: String, size: CGFloat = 24, tint: UIColor = .label) -> UIImage? {
+        let config = UIImage.SymbolConfiguration(pointSize: size, weight: .medium)
+        return UIImage(systemName: name, withConfiguration: config)?
+            .withTintColor(tint, renderingMode: .alwaysOriginal)
     }
 }
 
-// MARK: - UIImage resize helper
+// MARK: - UIImage Helpers
 
 private extension UIImage {
-    func resized(to size: CGSize) -> UIImage {
+    /// Resize + round corners — ideal for CarPlay list row thumbnails
+    func roundedThumbnail(size: CGSize, cornerRadius: CGFloat) -> UIImage {
         let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { _ in
-            self.draw(in: CGRect(origin: .zero, size: size))
+        return renderer.image { ctx in
+            let rect = CGRect(origin: .zero, size: size)
+            UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius).addClip()
+            self.draw(in: rect)
         }
     }
 }
