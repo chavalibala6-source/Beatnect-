@@ -1194,13 +1194,54 @@ struct PlayerDetailView: View {
                                                 .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
                                         }
                                     }
+                                    .offset(x: dragOffset)
+                                    .rotation3DEffect(.degrees(Double(dragOffset / geometry.size.width) * -35), axis: (x: 0.0, y: 1.0, z: 0.0), perspective: 0.55)
                                     .gesture(
                                         DragGesture()
+                                            .onChanged { value in
+                                                withAnimation(.interactiveSpring()) {
+                                                     dragOffset = value.translation.width
+                                                     isDraggingArtwork = true
+                                                }
+                                            }
                                             .onEnded { value in
-                                                if value.translation.height > 50 {
-                                                    withAnimation {
-                                                        isPresented = false
-                                                    }
+                                                let threshold: CGFloat = 100
+                                                if value.translation.height > 60 && abs(value.translation.width) < 50 {
+                                                     withAnimation {
+                                                         isPresented = false
+                                                     }
+                                                } else if value.translation.width < -threshold {
+                                                     // Swipe Left -> Next
+                                                     withAnimation(.easeOut(duration: 0.2)) {
+                                                         dragOffset = -geometry.size.width - 50
+                                                     }
+                                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                                         playerService.nextTrack()
+                                                         dragOffset = geometry.size.width + 50
+                                                         isDraggingArtwork = false
+                                                         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                                                             dragOffset = 0
+                                                         }
+                                                     }
+                                                } else if value.translation.width > threshold {
+                                                     // Swipe Right -> Prev
+                                                     withAnimation(.easeOut(duration: 0.2)) {
+                                                         dragOffset = geometry.size.width + 50
+                                                     }
+                                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                                         playerService.previousTrack()
+                                                         dragOffset = -geometry.size.width - 50
+                                                         isDraggingArtwork = false
+                                                         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                                                             dragOffset = 0
+                                                         }
+                                                     }
+                                                } else {
+                                                     // Reset
+                                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                                         dragOffset = 0
+                                                         isDraggingArtwork = false
+                                                     }
                                                 }
                                             }
                                     )
@@ -1216,6 +1257,8 @@ struct PlayerDetailView: View {
                                             .font(isSmallScreen ? .subheadline : .title3)
                                             .foregroundColor(.white.opacity(0.7))
                                             .lineLimit(1)
+                                            .opacity(isDraggingArtwork ? 0.0 : 1.0)
+                                            .animation(.easeInOut(duration: 0.2), value: isDraggingArtwork)
                                     }
                                     .padding(.horizontal, 24)
                                     
@@ -1234,6 +1277,9 @@ struct PlayerDetailView: View {
                             isShowingQueue: $isShowingQueue,
                             isSmallScreen: isSmallScreen
                         )
+                        .opacity(isDraggingArtwork ? 0.0 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: isDraggingArtwork)
+
                     }
                     }
                 }
