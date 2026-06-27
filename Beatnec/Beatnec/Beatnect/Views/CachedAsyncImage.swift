@@ -43,6 +43,11 @@ class ImageLoader: ObservableObject {
 
         // Already loaded or already known to fail — don't touch the network again
         if currentUrl == url { return }
+        
+        // Reset loader state for the new URL
+        self.image = nil
+        self.hasFailed = false
+        
         currentUrl = url
 
         let key = url.absoluteString as NSString
