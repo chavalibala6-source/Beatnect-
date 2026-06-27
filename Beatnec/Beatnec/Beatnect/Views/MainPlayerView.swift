@@ -854,6 +854,8 @@ struct PlayerDetailView: View {
     @State private var progress: Double = 0
     @State private var artworkColor: Color = Color(red: 0.08, green: 0.08, blue: 0.09)
     @State private var isShowingQueue = false
+    @State private var dragOffset: CGFloat = 0
+    @State private var isDraggingArtwork = false
     private func updateArtworkColor() {
         guard let url = playerService.currentTrack?.fullArtworkUrl else {
             withAnimation(.easeInOut(duration: 0.5)) {
