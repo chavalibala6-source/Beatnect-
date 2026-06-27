@@ -1272,28 +1272,22 @@ struct PlayerDetailView: View {
                                                 } else if value.translation.width < -threshold {
                                                      // Swipe Left -> Next
                                                      withAnimation(.easeOut(duration: 0.2)) {
-                                                         dragOffset = -geometry.size.width - 50
+                                                         dragOffset = -geometry.size.width - 40
                                                      }
                                                      DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                                          playerService.nextTrack()
-                                                         dragOffset = geometry.size.width + 50
+                                                         dragOffset = 0
                                                          isDraggingArtwork = false
-                                                         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
-                                                             dragOffset = 0
-                                                         }
                                                      }
                                                 } else if value.translation.width > threshold {
                                                      // Swipe Right -> Prev
                                                      withAnimation(.easeOut(duration: 0.2)) {
-                                                         dragOffset = geometry.size.width + 50
+                                                         dragOffset = geometry.size.width + 40
                                                      }
                                                      DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                                          playerService.previousTrack()
-                                                         dragOffset = -geometry.size.width - 50
+                                                         dragOffset = 0
                                                          isDraggingArtwork = false
-                                                         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
-                                                             dragOffset = 0
-                                                         }
                                                      }
                                                 } else {
                                                      // Reset
