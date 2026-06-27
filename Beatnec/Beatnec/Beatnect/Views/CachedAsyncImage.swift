@@ -44,15 +44,20 @@ class ImageLoader: ObservableObject {
         // Already loaded or already known to fail — don't touch the network again
         if currentUrl == url { return }
         
-        // Reset loader state for the new URL
-        self.image = nil
-        self.hasFailed = false
+        // If the new URL is already failed, clear the image immediately so placeholder shows
+        if FailedURLCache.shared.hasFailed(url: url) {
+            self.image = nil
+            self.hasFailed = true
+            return
+        }
         
+        // Reset loader state for the new URL (keep the previous image visible during active loading to prevent the flashing flicker)
+        self.hasFailed = false
         currentUrl = url
 
         let key = url.absoluteString as NSString
 
-        // 1. Memory cache hit → instant
+        // 1. Memory cache hit → instant swap
         if let cached = ImageCache.shared.object(forKey: key) {
             self.image = cached
             self.hasFailed = false

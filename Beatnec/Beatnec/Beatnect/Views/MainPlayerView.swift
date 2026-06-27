@@ -852,10 +852,15 @@ struct PlayerDetailView: View {
     
     @State private var isDraggingSlider = false
     @State private var progress: Double = 0
-    @State private var artworkColor: Color = .orange
+    @State private var artworkColor: Color = Color(red: 0.08, green: 0.08, blue: 0.09)
     @State private var isShowingQueue = false
     private func updateArtworkColor() {
-        guard let url = playerService.currentTrack?.fullArtworkUrl else { return }
+        guard let url = playerService.currentTrack?.fullArtworkUrl else {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                artworkColor = Color(red: 0.08, green: 0.08, blue: 0.09)
+            }
+            return
+        }
 
         URLSession.shared.dataTask(with: url) { data, _, _ in
             guard
