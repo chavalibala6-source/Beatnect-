@@ -222,8 +222,7 @@ struct MainPlayerView: View {
             .padding(.bottom, playerService.currentTrack != nil ? 140 : 80)
         } else if selectedLibraryTab == .songs {
             LazyVStack(spacing: 8) {
-            
-                ForEach(Array(playerService.libraryTracks.enumerated()), id: \.element.id) { index, track in
+                ForEach(Array(playerService.libraryTracks.enumerated()), id: \.offset) { index, track in
                     TrackRowView(
                         track: track,
                         isCurrent: playerService.currentTrack?.id == track.id,
@@ -2621,7 +2620,7 @@ struct QueueListView: View {
                     let nextIndex = (playerService.currentTrackIndex ?? -1) + 1
                     if nextIndex < playerService.tracks.count {
                         let upcomingTracks = playerService.tracks[nextIndex...]
-                        ForEach(Array(upcomingTracks.enumerated()), id: \.element.id) { offset, track in
+                        ForEach(Array(upcomingTracks.enumerated()), id: \.offset) { offset, track in
                             let absoluteIndex = nextIndex + offset
                             HStack(spacing: 16) {
                                 Group {

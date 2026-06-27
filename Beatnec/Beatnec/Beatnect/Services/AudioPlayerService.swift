@@ -468,7 +468,8 @@ class AudioPlayerService: NSObject, ObservableObject {
                     
                     let nextAlbumTracks = libraryTracks.filter { $0.displayAlbum == nextAlbumInfo.album && $0.displayArtist == nextAlbumInfo.artist }
                     if !nextAlbumTracks.isEmpty {
-                        setPlaylist(tracks: nextAlbumTracks, startAtIndex: 0)
+                        self.tracks.append(contentsOf: nextAlbumTracks)
+                        playTrack(at: next)
                         return
                     }
                 }
@@ -476,7 +477,9 @@ class AudioPlayerService: NSObject, ObservableObject {
                 // Fallback: random track
                 if let randomTrack = libraryTracks.randomElement() {
                     let randomAlbumTracks = libraryTracks.filter { $0.displayAlbum == randomTrack.displayAlbum && $0.displayArtist == randomTrack.displayArtist }
-                    setPlaylist(tracks: randomAlbumTracks.isEmpty ? [randomTrack] : randomAlbumTracks, startAtIndex: 0)
+                    let tracksToAdd = randomAlbumTracks.isEmpty ? [randomTrack] : randomAlbumTracks
+                    self.tracks.append(contentsOf: tracksToAdd)
+                    playTrack(at: next)
                 }
             } else if isRepeatEnabled {
                 playTrack(at: 0)
