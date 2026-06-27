@@ -131,8 +131,10 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         return Group {
             if let imageToDisplay = cachedImage ?? loader.image {
                 content(Image(uiImage: imageToDisplay))
-            } else {
+            } else if alreadyFailed || loader.hasFailed {
                 MusicPlaceholderView()
+            } else {
+                Color.clear
             }
         }
         .onAppear {
