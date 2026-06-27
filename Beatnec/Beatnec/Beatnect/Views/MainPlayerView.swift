@@ -1,4 +1,5 @@
 import SwiftUI
+import AVKit
 import MediaPlayer
 import Combine
 import UIKit
@@ -1160,202 +1161,79 @@ struct PlayerDetailView: View {
                         
                         Spacer(minLength: isSmallScreen ? 16 : 32)
                         
-                        // Big Artwork Vinyl
-                        if let track = playerService.currentTrack {
-                            ZStack {
-                                if let url = track.fullArtworkUrl {
-                                    // Main Artwork image
-                                    CachedAsyncImage(url: url) { image in
-                                        image.resizable()
-                                             .aspectRatio(contentMode: .fit)
-                                             .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                    } placeholder: {
-                                        ProgressView()
-                                             .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                    }
-                                    .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                    .cornerRadius(20)
-                                    .cornerRadius(8)
-                                    .scaleEffect(artworkScale)
-                                    .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
-                                    .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
-                                } else {
-                                    Image(systemName: "music.note")
-                                        .font(.system(size: portraitArtworkSize * 0.27))
-                                        .foregroundColor(.secondary)
-                                        .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                        .background(Color(.secondarySystemBackground))
-                                        .cornerRadius(20)
-                                        .shadow(radius: 10)
-                                }
-                            }
-                            .gesture(
-                                DragGesture()
-                                    .onEnded { value in
-                                        if value.translation.height > 50 {
-                                            withAnimation {
-                                                isPresented = false
-                                            }
-                                        }
-                                    }
-                            )
-                        }
-                        
+                        // Middle Section: Dynamic Content (Now Playing vs Queue)
                         if isShowingQueue {
-                            Spacer(minLength: 4)
+                            QueueListView(playerService: playerService, isSmallScreen: isSmallScreen)
                         } else {
-                            Spacer(minLength: isSmallScreen ? 12 : 24)
-                        }
-                        
-                        // Floating Liquid Glass-Morphic Card for Controls
-                        VStack(spacing: 0) {
+                            // Big Artwork Vinyl & Track Info
                             if let track = playerService.currentTrack {
-                                HStack {
-                                    if isShowingQueue {
-                                        // Shrunken Artwork
+                                VStack(spacing: 0) {
+                                    ZStack {
                                         if let url = track.fullArtworkUrl {
+                                            // Main Artwork image
                                             CachedAsyncImage(url: url) { image in
                                                 image.resizable()
                                                      .aspectRatio(contentMode: .fit)
-                                                     .frame(width: 60, height: 60)
-                                                     .cornerRadius(8)
+                                                     .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                             } placeholder: {
                                                 ProgressView()
+                                                     .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                             }
+                                            .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                            .cornerRadius(12)
+                                            .scaleEffect(artworkScale)
+                                            .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
+                                            .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
+                                        } else {
+                                            Image(systemName: "music.note")
+                                                .font(.system(size: portraitArtworkSize * 0.27))
+                                                .foregroundColor(.secondary)
+                                                .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                .background(Color(.secondarySystemBackground))
+                                                .cornerRadius(12)
+                                                .shadow(radius: 10)
                                         }
                                     }
+                                    .gesture(
+                                        DragGesture()
+                                            .onEnded { value in
+                                                if value.translation.height > 50 {
+                                                    withAnimation {
+                                                        isPresented = false
+                                                    }
+                                                }
+                                            }
+                                    )
                                     
-                                    VStack(alignment: isShowingQueue ? .leading : .center, spacing: 6) {
-                                        ScrollingTextView(text: track.displayName, font: isSmallScreen ? .headline : .title2, fontWeight: .bold, color: .white, isCentered: !isShowingQueue)
-                                            .padding(.horizontal, isShowingQueue ? 0 : 16)
+                                    Spacer(minLength: isSmallScreen ? 32 : 64)
+                                    
+                                    // Track Info
+                                    VStack(spacing: 6) {
+                                        ScrollingTextView(text: track.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
+                                            .padding(.horizontal, 16)
                                         
                                         Text(track.displayArtist)
                                             .font(isSmallScreen ? .subheadline : .title3)
                                             .foregroundColor(.white.opacity(0.7))
+                                            .lineLimit(1)
                                     }
-                                    if isShowingQueue { Spacer() }
-                                }
-                                .padding(.horizontal, isShowingQueue ? 24 : 0)
-                                .padding(.top, isSmallScreen ? 24 : 32)
-                                .gesture(
-                                    DragGesture()
-                                        .onEnded { value in
-                                            if value.translation.height > 50 {
-                                                withAnimation {
-                                                    isPresented = false
-                                                }
-                                            }
-                                        }
-                                )
-                            }
-                            
-                            if isShowingQueue {
-                                iPadUpNextPane(playerService: playerService, width: geometry.size.width, height: geometry.size.height * 0.6)
-                                    .frame(maxHeight: .infinity)
-                                    .padding(.top, 16)
-                                    .environment(\.colorScheme, themeManager.isDarkMode ? .dark : .light)
-                            } else {
-                            
-                            Spacer()
-                            
-                            Spacer()
-                            
-                            // Waveform Visualizer
-                          
-                            
-                            Spacer(minLength: 24)
-                            
-                            // Progress Slider
-                            VStack(spacing: 4) {
-                                PlayerProgressSlider(
-                                    value: $progress,
-                                    range: 0...max(playerService.duration, 1),
-                                    onEditingChanged: { editing in
-                                        isDraggingSlider = editing
-                                        if !editing {
-                                            playerService.seek(to: progress)
-                                        }
-                                    }
-                                )
-                                .frame(height: 20)
-                                
-                                HStack {
-                                    Text(formatTime(playerService.currentTime))
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.6))
+                                    .padding(.horizontal, 24)
+                                    
                                     Spacer()
-                                    Text(formatTime(playerService.duration))
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.6))
                                 }
-                            }
-                            .padding(.horizontal, 16)
-                            
-                            Spacer()
-                            
-                             // Playback Controls (Row 1)
-                             HStack {
-                                 Spacer()
-                                 PlayerToolbar(playerService: playerService, isSmallScreen: isSmallScreen)
-                                 Spacer()
-                             }
-                             Spacer()
-                            
-                            // Volume Control (Row 2, replacing Shuffle & Repeat)
-                            HStack(alignment: .center, spacing: 12) {
-                                Image(systemName: "speaker.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.white.opacity(0.6))
-                                    .frame(width: 16, height: 16)
-                                
-                                VolumeSlider(tintColor: .white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 22)
-                                
-                                Image(systemName: "speaker.wave.3.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.white.opacity(0.6))
-                                    .frame(width: 16, height: 16)
-                            }
-                            .padding(.horizontal, 4)
-                            
-                            Spacer()
-                            
-                            // Shuffle, Sleep & Repeat Controls
-                            HStack {
-                                // Shuffle
-                                Button(action: { playerService.toggleShuffle() }) {
-                                    Image(systemName: "shuffle")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(playerService.isShuffleEnabled ? .white : .gray)
-                                        .frame(width: 44, height: 44)
-                                }
-                                
+                            } else {
                                 Spacer()
-                                
-                                // Sleep / Moon
-                                Button(action: { /* Sleep Timer */ }) {
-                                    Image(systemName: "moon.fill")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(.gray)
-                                        .frame(width: 44, height: 44)
-                                }
-                                
-                                Spacer()
-                                
-                                // Repeat
-                                Button(action: { playerService.toggleRepeat() }) {
-                                    Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(playerService.isRepeatEnabled ? .white : .gray)
-                                        .frame(width: 44, height: 44)
-                                }
-                            }
-                            .padding(.horizontal, 40)
                             }
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, isSmallScreen ? 8 : 16)
+                        
+                        // Static Bottom Controls (Always visible!)
+                        PortraitBottomControlsView(
+                            playerService: playerService,
+                            progress: $progress,
+                            isDraggingSlider: $isDraggingSlider,
+                            isShowingQueue: $isShowingQueue,
+                            isSmallScreen: isSmallScreen
+                        )
                     }
                     }
                 }
@@ -2450,7 +2328,7 @@ struct PlayerToolbar: View {
     var isSmallScreen: Bool
     
     var body: some View {
-        HStack(spacing: 32) {
+        HStack(spacing: 48) {
             Button {
                 playerService.previousTrack()
             } label: {
@@ -2463,15 +2341,9 @@ struct PlayerToolbar: View {
             Button {
                 playerService.togglePlayPause()
             } label: {
-                ZStack {
-                    Circle()
-                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                        .frame(width: isSmallScreen ? 64 : 80, height: isSmallScreen ? 64 : 80)
-                    
-                    Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: isSmallScreen ? 28 : 36))
-                        .foregroundColor(.white)
-                }
+                Image(systemName: playerService.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: isSmallScreen ? 44 : 56))
+                    .foregroundColor(.white)
             }
             .buttonStyle(PlainButtonStyle())
 
@@ -2680,4 +2552,248 @@ struct EnhancedProgressSlider: View {
         }
         .frame(height: 20)
     }
+}
+
+extension Double {
+    var formattedTimeString: String {
+        guard !self.isNaN else { return "0:00" }
+        let mins = Int(self) / 60
+        let secs = Int(self) % 60
+        return String(format: "%d:%02d", mins, secs)
+    }
+}
+
+// MARK: - Queue List View
+struct QueueListView: View {
+    @ObservedObject var playerService: AudioPlayerService
+    let isSmallScreen: Bool
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            if let track = playerService.currentTrack {
+                HStack(spacing: 12) {
+                    if let url = track.fullArtworkUrl {
+                        CachedAsyncImage(url: url) { image in
+                            image.resizable().aspectRatio(contentMode: .fill).frame(width: 54, height: 54).cornerRadius(8)
+                        } placeholder: {
+                            ProgressView().frame(width: 54, height: 54)
+                        }
+                    } else {
+                        Image(systemName: "music.note").frame(width: 54, height: 54).background(Color.secondary).cornerRadius(8)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(track.displayName).font(.headline).fontWeight(.semibold).foregroundColor(.white).lineLimit(1)
+                        Text(track.displayArtist).font(.subheadline).foregroundColor(.white.opacity(0.7)).lineLimit(1)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {}) {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 20))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(10)
+                            .background(Color.white.opacity(0.15))
+                            .clipShape(Circle())
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, isSmallScreen ? 12 : 24)
+                .padding(.bottom, 20)
+            }
+            
+            // 3 Action Buttons
+            HStack(spacing: 12) {
+                QueueActionButton(icon: "shuffle", isActive: playerService.isShuffleEnabled) {
+                    playerService.toggleShuffle()
+                }
+                QueueActionButton(icon: playerService.isRepeatEnabled ? "repeat.1" : "repeat", isActive: playerService.isRepeatEnabled) {
+                    playerService.toggleRepeat()
+                }
+                QueueActionButton(icon: "infinity", isActive: playerService.isAutoPlayEnabled) {
+                    playerService.toggleAutoPlay()
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
+            
+            // Queue List
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Continue Playing")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 4)
+                    
+                    let nextIndex = (playerService.currentTrackIndex ?? -1) + 1
+                    if nextIndex < playerService.tracks.count {
+                        let upcomingTracks = playerService.tracks[nextIndex...]
+                        ForEach(Array(upcomingTracks.enumerated()), id: \.element.id) { offset, track in
+                            let absoluteIndex = nextIndex + offset
+                            HStack(spacing: 16) {
+                                if let url = track.fullArtworkUrl {
+                                    CachedAsyncImage(url: url) { image in
+                                        image.resizable().aspectRatio(contentMode: .fill).frame(width: 48, height: 48).cornerRadius(6)
+                                    } placeholder: {
+                                        Color.gray.opacity(0.3).frame(width: 48, height: 48).cornerRadius(6)
+                                    }
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(track.displayName).font(.callout).foregroundColor(.white).lineLimit(1)
+                                    Text(track.displayArtist).font(.caption).foregroundColor(.white.opacity(0.6)).lineLimit(1)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "line.3.horizontal")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.4))
+                            }
+                            .padding(.horizontal, 24)
+                            .onTapGesture {
+                                playerService.playTrack(at: absoluteIndex)
+                            }
+                        }
+                    } else {
+                        Text("No upcoming tracks")
+                            .font(.callout)
+                            .foregroundColor(.white.opacity(0.6))
+                            .padding(.horizontal, 24)
+                    }
+                }
+                .padding(.bottom, 40)
+            }
+        }
+    }
+}
+
+struct QueueActionButton: View {
+    let icon: String
+    let isActive: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(isActive ? .black : .white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(isActive ? Color.white.opacity(0.9) : Color.white.opacity(0.15))
+                .cornerRadius(12)
+        }
+    }
+}
+
+// MARK: - Portrait Bottom Controls View
+struct PortraitBottomControlsView: View {
+    @ObservedObject var playerService: AudioPlayerService
+    @Binding var progress: Double
+    @Binding var isDraggingSlider: Bool
+    @Binding var isShowingQueue: Bool
+    let isSmallScreen: Bool
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 40)
+            
+            // Progress Slider
+            VStack(spacing: 6) {
+                PlayerProgressSlider(
+                    value: $progress,
+                    range: 0...max(playerService.duration, 1),
+                    onEditingChanged: { editing in
+                        isDraggingSlider = editing
+                        if !editing {
+                            playerService.seek(to: progress)
+                        }
+                    }
+                )
+                .frame(height: 20)
+                
+                HStack {
+                    Text(playerService.currentTime.formattedTimeString)
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.6))
+                    Spacer()
+                    Text("-" + (playerService.duration - playerService.currentTime).formattedTimeString)
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+            
+            Spacer().frame(height: 24)
+            
+            // Playback Controls
+            HStack {
+                Spacer()
+                PlayerToolbar(playerService: playerService, isSmallScreen: isSmallScreen)
+                Spacer()
+            }
+            
+            Spacer().frame(height: 24)
+            
+            // Volume Control
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "speaker.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.6))
+                    .frame(width: 16, height: 16)
+                
+                VolumeSlider(tintColor: .white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 22)
+                
+                Image(systemName: "speaker.wave.3.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.6))
+                    .frame(width: 16, height: 16)
+            }
+            .padding(.horizontal, 4)
+            
+            Spacer().frame(height: 24)
+            
+            // Bottom Toolbar (Airplay, Queue)
+            HStack {
+                AirPlayView()
+                    .frame(width: 44, height: 44)
+                
+                Spacer()
+                
+                Button(action: {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                        isShowingQueue.toggle()
+                    }
+                }) {
+                    Image(systemName: "list.bullet")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(isShowingQueue ? .black : .white.opacity(0.6))
+                        .frame(width: 44, height: 44)
+                        .background(isShowingQueue ? Color.white.opacity(0.9) : Color.clear)
+                        .clipShape(Circle())
+                }
+            }
+            .padding(.horizontal, 40)
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, isSmallScreen ? 12 : 24)
+    }
+}
+
+// MARK: - AirPlay View
+struct AirPlayView: UIViewRepresentable {
+    func makeUIView(context: Context) -> AVRoutePickerView {
+        let routePickerView = AVRoutePickerView()
+        routePickerView.backgroundColor = .clear
+        routePickerView.activeTintColor = .white
+        routePickerView.tintColor = .white
+        return routePickerView
+    }
+    
+    func updateUIView(_ uiView: AVRoutePickerView, context: Context) {}
 }

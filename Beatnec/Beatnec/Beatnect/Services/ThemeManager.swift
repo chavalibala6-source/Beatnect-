@@ -17,6 +17,7 @@ class ThemeManager: ObservableObject {
     var backgroundColor: Color {
         isDarkMode ? Color.black : Color.white
     }
+
     
     var secondaryBackgroundColor: Color {
         isDarkMode ? Color(red: 0.08, green: 0.08, blue: 0.09) : Color(red: 0.96, green: 0.96, blue: 0.96)

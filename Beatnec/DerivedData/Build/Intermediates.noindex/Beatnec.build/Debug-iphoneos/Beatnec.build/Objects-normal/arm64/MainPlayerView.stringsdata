@@ -1,0 +1,200 @@
+{
+  "source": "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/MainPlayerView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 66,
+          "startingLine": 231
+        }
+      },
+      {
+        "comment": "",
+        "key": "Beatnect",
+        "location": {
+          "startingColumn": 71,
+          "startingLine": 231
+        }
+      },
+      {
+        "comment": "",
+        "key": "Loading library...",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 167
+        }
+      },
+      {
+        "comment": "",
+        "key": "Beatnect Library is Empty",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 178
+        }
+      },
+      {
+        "comment": "",
+        "key": "Connect to your Flask server to load tracks",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 181
+        }
+      },
+      {
+        "comment": "",
+        "key": "Configure Server",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 186
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld songs",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 500
+        }
+      },
+      {
+        "comment": "",
+        "key": "Settings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 870
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 872
+        }
+      },
+      {
+        "comment": "",
+        "key": "Save",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 873
+        }
+      },
+      {
+        "comment": "",
+        "key": "Display",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 841
+        }
+      },
+      {
+        "comment": "",
+        "key": "Flask Server Settings",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 851
+        }
+      },
+      {
+        "comment": "",
+        "key": "Document Filter",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 858
+        }
+      },
+      {
+        "comment": "",
+        "key": "Connection Instructions",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 864
+        }
+      },
+      {
+        "comment": "",
+        "key": "Dark Mode",
+        "location": {
+          "startingColumn": 60,
+          "startingLine": 846
+        }
+      },
+      {
+        "comment": "",
+        "key": "Light Mode",
+        "location": {
+          "startingColumn": 74,
+          "startingLine": 846
+        }
+      },
+      {
+        "comment": "",
+        "key": "Server Address (e.g. https://noteslook.shop)",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 852
+        }
+      },
+      {
+        "comment": "",
+        "key": "Document Name (e.g. global or file1)",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 859
+        }
+      },
+      {
+        "comment": "",
+        "key": "Enter the full URL (including port) of your Flask backend running Frame/Beatnect. Make sure both your iPhone/iPad and server are on the same Wi-Fi network.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 865
+        }
+      },
+      {
+        "comment": "",
+        "key": "Up Next",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1684
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld songs",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1688
+        }
+      },
+      {
+        "comment": "",
+        "key": "No upcoming tracks",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1708
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1734
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 2319
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,32 @@
+{
+  "source": "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/AlbumDetailView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%lld Songs",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 88
+        }
+      },
+      {
+        "comment": "",
+        "key": "Play Album",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 127
+        }
+      }
+    ]
+  },
+  "version": 1
+}

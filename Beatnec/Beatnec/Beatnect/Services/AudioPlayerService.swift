@@ -139,6 +139,7 @@ class AudioPlayerService: NSObject, ObservableObject {
     @Published var duration: Double = 0
     @Published var isShuffleEnabled = false
     @Published var isRepeatEnabled = false
+    @Published var isAutoPlayEnabled = true
 
     var currentTrack: Track? {
         guard let i = currentTrackIndex, i < tracks.count else { return nil }
@@ -281,7 +282,7 @@ class AudioPlayerService: NSObject, ObservableObject {
             player?.seek(to: .zero)
             player?.play()
         } else {
-            nextTrack()
+            nextTrack(isAuto: true)
         }
     }
 
@@ -440,12 +441,49 @@ class AudioPlayerService: NSObject, ObservableObject {
 
     func togglePlayPause() { isPlaying ? pause() : play() }
 
-    func nextTrack() {
+    func nextTrack(isAuto: Bool = false) {
         guard !tracks.isEmpty else { return }
+        
+        let currentIndex = currentTrackIndex ?? 0
         let next = isShuffleEnabled
             ? Int.random(in: 0..<tracks.count)
-            : ((currentTrackIndex ?? 0) + 1) % tracks.count
-        playTrack(at: next)
+            : currentIndex + 1
+            
+        if next < tracks.count {
+            playTrack(at: next)
+        } else {
+            // Reached end of current tracks
+            if isAutoPlayEnabled, let currentTrack = currentTrack {
+                // Find next album from libraryTracks
+                var uniqueAlbums: [(album: String, artist: String)] = []
+                for t in libraryTracks {
+                    if !uniqueAlbums.contains(where: { $0.album == t.displayAlbum && $0.artist == t.displayArtist }) {
+                        uniqueAlbums.append((album: t.displayAlbum, artist: t.displayArtist))
+                    }
+                }
+                
+                if let currentAlbumIndex = uniqueAlbums.firstIndex(where: { $0.album == currentTrack.displayAlbum && $0.artist == currentTrack.displayArtist }) {
+                    let nextAlbumIndex = (currentAlbumIndex + 1) % uniqueAlbums.count
+                    let nextAlbumInfo = uniqueAlbums[nextAlbumIndex]
+                    
+                    let nextAlbumTracks = libraryTracks.filter { $0.displayAlbum == nextAlbumInfo.album && $0.displayArtist == nextAlbumInfo.artist }
+                    if !nextAlbumTracks.isEmpty {
+                        setPlaylist(tracks: nextAlbumTracks, startAtIndex: 0)
+                        return
+                    }
+                }
+                
+                // Fallback: random track
+                if let randomTrack = libraryTracks.randomElement() {
+                    let randomAlbumTracks = libraryTracks.filter { $0.displayAlbum == randomTrack.displayAlbum && $0.displayArtist == randomTrack.displayArtist }
+                    setPlaylist(tracks: randomAlbumTracks.isEmpty ? [randomTrack] : randomAlbumTracks, startAtIndex: 0)
+                }
+            } else if isRepeatEnabled {
+                playTrack(at: 0)
+            } else {
+                pause()
+            }
+        }
     }
 
     func previousTrack() {
@@ -455,15 +493,43 @@ class AudioPlayerService: NSObject, ObservableObject {
             currentTime = 0
             return
         }
+        
+        let currentIndex = currentTrackIndex ?? 0
         let prev = isShuffleEnabled
             ? Int.random(in: 0..<tracks.count)
-            : ((currentTrackIndex ?? 0) - 1 + tracks.count) % tracks.count
-        playTrack(at: prev)
+            : currentIndex - 1
+            
+        if prev >= 0 {
+            playTrack(at: prev)
+        } else {
+            // Reached beginning, go to previous album if autoplay is on
+            if isAutoPlayEnabled, let currentTrack = currentTrack {
+                var uniqueAlbums: [(album: String, artist: String)] = []
+                for t in libraryTracks {
+                    if !uniqueAlbums.contains(where: { $0.album == t.displayAlbum && $0.artist == t.displayArtist }) {
+                        uniqueAlbums.append((album: t.displayAlbum, artist: t.displayArtist))
+                    }
+                }
+                
+                if let currentAlbumIndex = uniqueAlbums.firstIndex(where: { $0.album == currentTrack.displayAlbum && $0.artist == currentTrack.displayArtist }) {
+                    let prevAlbumIndex = (currentAlbumIndex - 1 + uniqueAlbums.count) % uniqueAlbums.count
+                    let prevAlbumInfo = uniqueAlbums[prevAlbumIndex]
+                    
+                    let prevAlbumTracks = libraryTracks.filter { $0.displayAlbum == prevAlbumInfo.album && $0.displayArtist == prevAlbumInfo.artist }
+                    if !prevAlbumTracks.isEmpty {
+                        setPlaylist(tracks: prevAlbumTracks, startAtIndex: prevAlbumTracks.count - 1)
+                        return
+                    }
+                }
+            }
+            // Fallback
+            playTrack(at: tracks.count - 1)
+        }
     }
 
     func toggleShuffle() { isShuffleEnabled.toggle() }
     func toggleRepeat()  { isRepeatEnabled.toggle() }
-
+    func toggleAutoPlay() { isAutoPlayEnabled.toggle() }
     func seek(to seconds: Double) {
         let target = CMTime(seconds: seconds, preferredTimescale: 1000)
         player?.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
