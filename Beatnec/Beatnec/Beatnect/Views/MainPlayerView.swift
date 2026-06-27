@@ -1176,8 +1176,10 @@ struct PlayerDetailView: View {
                                                      .aspectRatio(contentMode: .fit)
                                                      .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                             } placeholder: {
-                                                ProgressView()
-                                                     .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                Image("music_thumb")
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                                    .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                             }
                                             .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                             .cornerRadius(12)
@@ -1185,13 +1187,14 @@ struct PlayerDetailView: View {
                                             .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
                                             .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
                                         } else {
-                                            Image(systemName: "music.note")
-                                                .font(.system(size: portraitArtworkSize * 0.27))
-                                                .foregroundColor(.secondary)
+                                            Image("music_thumb")
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fill)
                                                 .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                                .background(Color(.secondarySystemBackground))
                                                 .cornerRadius(12)
-                                                .shadow(radius: 10)
+                                                .scaleEffect(artworkScale)
+                                                .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
+                                                .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
                                         }
                                     }
                                     .gesture(
@@ -2644,18 +2647,20 @@ struct QueueListView: View {
                                                 .clipped()
                                                 .cornerRadius(6)
                                         } placeholder: {
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.3))
-                                                Image(systemName: "music.note").foregroundColor(.white.opacity(0.6))
-                                            }
-                                            .frame(width: 48, height: 48)
+                                            Image("music_thumb")
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fill)
+                                                .frame(width: 48, height: 48)
+                                                .clipped()
+                                                .cornerRadius(6)
                                         }
                                     } else {
-                                        ZStack {
-                                            RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.3))
-                                            Image(systemName: "music.note").foregroundColor(.white.opacity(0.6))
-                                        }
-                                        .frame(width: 48, height: 48)
+                                        Image("music_thumb")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 48, height: 48)
+                                            .clipped()
+                                            .cornerRadius(6)
                                     }
                                 }
                                 

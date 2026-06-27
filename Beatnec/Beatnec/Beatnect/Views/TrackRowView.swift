@@ -13,17 +13,20 @@ struct TrackRowView: View {
                     image.resizable()
                          .aspectRatio(contentMode: .fill)
                 } placeholder: {
-                    ProgressView()
+                    Image("music_thumb")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
                 }
                 .frame(width: 54, height: 54)
                 .cornerRadius(10)
                 .clipped()
             } else {
-                Image(systemName: "music.note")
-                    .foregroundColor(.secondary)
+                Image("music_thumb")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
                     .frame(width: 54, height: 54)
-                    .background(Color(.secondarySystemBackground))
                     .cornerRadius(10)
+                    .clipped()
             }
             
             // Text Meta
