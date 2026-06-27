@@ -907,7 +907,7 @@ struct PlayerDetailView: View {
                     .gesture(
                         DragGesture()
                             .onEnded { value in
-                                if value.translation.height > 60 {
+                                if value.translation.height > 60 && abs(value.translation.width) < 50 {
                                     withAnimation {
                                         isPresented = false
                                     }
