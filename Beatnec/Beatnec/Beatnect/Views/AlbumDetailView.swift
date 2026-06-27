@@ -32,9 +32,7 @@ struct AlbumDetailView: View {
                                 .cornerRadius(12)
                                 .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
                             } else {
-                                Image("music_thumb")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
+                                MusicPlaceholderView()
                                     .frame(width: 220, height: 220)
                                     .cornerRadius(12)
                                     .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)

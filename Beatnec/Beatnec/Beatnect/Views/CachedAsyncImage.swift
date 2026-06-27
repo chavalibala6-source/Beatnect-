@@ -132,7 +132,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             if let imageToDisplay = cachedImage ?? loader.image {
                 content(Image(uiImage: imageToDisplay))
             } else {
-                placeholder()
+                MusicPlaceholderView()
             }
         }
         .onAppear {
@@ -140,6 +140,19 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         }
         .onChange(of: url) { newUrl in
             loader.load(url: newUrl)
+        }
+    }
+}
+
+struct MusicPlaceholderView: View {
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                Color(red: 0.13, green: 0.13, blue: 0.14)
+                Image(systemName: "music.note")
+                    .font(.system(size: min(geo.size.width, geo.size.height) * 0.4))
+                    .foregroundColor(.white.opacity(0.25))
+            }
         }
     }
 }

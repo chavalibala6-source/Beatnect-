@@ -21,12 +21,9 @@ struct TrackRowView: View {
                 .cornerRadius(10)
                 .clipped()
             } else {
-                Image("music_thumb")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
+                MusicPlaceholderView()
                     .frame(width: 54, height: 54)
                     .cornerRadius(10)
-                    .clipped()
             }
             
             // Text Meta

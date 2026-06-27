@@ -411,13 +411,10 @@ struct AlbumCardView: View {
             .aspectRatio(1.0, contentMode: .fit)
             .cornerRadius(12)
         } else {
-            Image("music_thumb")
-                 .resizable()
-                 .aspectRatio(1.0, contentMode: .fill)
+            MusicPlaceholderView()
                  .frame(maxWidth: .infinity)
                  .aspectRatio(1.0, contentMode: .fit)
                  .cornerRadius(12)
-                 .clipped()
         }
     }
     
