@@ -397,31 +397,27 @@ struct AlbumCardView: View {
         if let url = album.artworkUrl {
             CachedAsyncImage(url: url) { image in
                 image.resizable()
-                     .aspectRatio(1.0, contentMode: .fit)
+                     .aspectRatio(1.0, contentMode: .fill)
                      .frame(maxWidth: .infinity)
+                     .clipped()
             } placeholder: {
-                Rectangle()
-                     .fill(Color.white.opacity(0.05))
-                     .overlay(ProgressView())
+                Image("music_thumb")
+                     .resizable()
+                     .aspectRatio(1.0, contentMode: .fill)
                      .frame(maxWidth: .infinity)
-                     .aspectRatio(1.0, contentMode: .fit)
+                     .clipped()
             }
             .frame(maxWidth: .infinity)
             .aspectRatio(1.0, contentMode: .fit)
-            .background(Color.black)
             .cornerRadius(12)
-            .clipped()
         } else {
-            Rectangle()
-                .fill(Color(.secondarySystemBackground))
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1.0, contentMode: .fit)
-                .cornerRadius(12)
-                .overlay(
-                    Image(systemName: "music.note")
-                        .font(.system(size: 32))
-                        .foregroundColor(.secondary)
-                )
+            Image("music_thumb")
+                 .resizable()
+                 .aspectRatio(1.0, contentMode: .fill)
+                 .frame(maxWidth: .infinity)
+                 .aspectRatio(1.0, contentMode: .fit)
+                 .cornerRadius(12)
+                 .clipped()
         }
     }
     
