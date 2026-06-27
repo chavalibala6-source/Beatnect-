@@ -86,14 +86,6 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         return Group {
             if let imageToDisplay = cachedImage ?? loader.image {
                 content(Image(uiImage: imageToDisplay))
-            } else if loader.hasFailed {
-                ZStack {
-                    Rectangle()
-                        .fill(Color(.secondarySystemBackground))
-                    Image(systemName: "music.note")
-                        .font(.system(size: 32))
-                        .foregroundColor(.secondary)
-                }
             } else {
                 placeholder()
             }

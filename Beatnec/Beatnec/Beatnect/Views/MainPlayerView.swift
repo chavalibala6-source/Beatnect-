@@ -2635,11 +2635,27 @@ struct QueueListView: View {
                         ForEach(Array(upcomingTracks.enumerated()), id: \.element.id) { offset, track in
                             let absoluteIndex = nextIndex + offset
                             HStack(spacing: 16) {
-                                if let url = track.fullArtworkUrl {
-                                    CachedAsyncImage(url: url) { image in
-                                        image.resizable().aspectRatio(contentMode: .fill).frame(width: 48, height: 48).cornerRadius(6)
-                                    } placeholder: {
-                                        Color.gray.opacity(0.3).frame(width: 48, height: 48).cornerRadius(6)
+                                Group {
+                                    if let url = track.fullArtworkUrl {
+                                        CachedAsyncImage(url: url) { image in
+                                            image.resizable()
+                                                .aspectRatio(contentMode: .fill)
+                                                .frame(width: 48, height: 48)
+                                                .clipped()
+                                                .cornerRadius(6)
+                                        } placeholder: {
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.3))
+                                                Image(systemName: "music.note").foregroundColor(.white.opacity(0.6))
+                                            }
+                                            .frame(width: 48, height: 48)
+                                        }
+                                    } else {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.3))
+                                            Image(systemName: "music.note").foregroundColor(.white.opacity(0.6))
+                                        }
+                                        .frame(width: 48, height: 48)
                                     }
                                 }
                                 

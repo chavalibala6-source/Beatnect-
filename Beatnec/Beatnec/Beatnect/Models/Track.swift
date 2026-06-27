@@ -40,15 +40,19 @@ struct Track: Identifiable, Codable, Equatable {
     }
     
     var fullArtworkUrl: URL? {
-        guard let artworkUrl = artworkUrl else { return nil }
-        if artworkUrl.hasPrefix("http://") || artworkUrl.hasPrefix("https://") {
-            return URL(string: artworkUrl)
+        let defaultPath = "/static/images/music_thumb.jpg?v=3"
+        let trimmed = artworkUrl?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let isInvalid = trimmed.isEmpty || trimmed.lowercased() == "none" || trimmed.lowercased() == "null"
+        let path = isInvalid ? defaultPath : trimmed
+        
+        if path.hasPrefix("http://") || path.hasPrefix("https://") {
+            return URL(string: path)
         }
         var cleanAddress = APIService.shared.serverAddress.trimmingCharacters(in: .whitespacesAndNewlines)
         if !cleanAddress.hasPrefix("http://") && !cleanAddress.hasPrefix("https://") {
             cleanAddress = "http://" + cleanAddress
         }
-        let prefix = artworkUrl.hasPrefix("/") ? "" : "/"
-        return URL(string: "\(cleanAddress)\(prefix)\(artworkUrl)")
+        let prefix = path.hasPrefix("/") ? "" : "/"
+        return URL(string: "\(cleanAddress)\(prefix)\(path)")
     }
 }
