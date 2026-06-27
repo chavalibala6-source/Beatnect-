@@ -1164,38 +1164,97 @@ struct PlayerDetailView: View {
                             if let track = playerService.currentTrack {
                                 VStack(spacing: 0) {
                                     ZStack {
-                                        if let url = track.fullArtworkUrl {
-                                            // Main Artwork image
-                                            CachedAsyncImage(url: url) { image in
-                                                image.resizable()
-                                                     .aspectRatio(contentMode: .fill)
-                                                     .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                                     .clipped()
-                                            } placeholder: {
-                                                Image("music_thumb")
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fill)
+                                        let currentIndex = playerService.currentTrackIndex ?? 0
+                                        
+                                        // 1. Previous Card
+                                        if currentIndex - 1 >= 0 {
+                                            let prevTrack = playerService.tracks[currentIndex - 1]
+                                            Group {
+                                                if let url = prevTrack.fullArtworkUrl {
+                                                    CachedAsyncImage(url: url) { image in
+                                                        image.resizable()
+                                                             .aspectRatio(contentMode: .fill)
+                                                             .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                             .clipped()
+                                                    } placeholder: {
+                                                        MusicPlaceholderView()
+                                                            .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                    }
                                                     .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                                    .clipped()
+                                                    .cornerRadius(12)
+                                                    .scaleEffect(artworkScale)
+                                                    .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
+                                                } else {
+                                                    MusicPlaceholderView()
+                                                        .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                        .cornerRadius(12)
+                                                        .scaleEffect(artworkScale)
+                                                        .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
+                                                }
                                             }
-                                            .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                            .cornerRadius(12)
-                                            .scaleEffect(artworkScale)
-                                            .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
-                                            .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
-                                        } else {
-                                            Image("music_thumb")
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fill)
+                                            .offset(x: dragOffset - geometry.size.width - 40)
+                                            .rotation3DEffect(.degrees(Double((dragOffset - geometry.size.width) / geometry.size.width) * -35), axis: (x: 0.0, y: 1.0, z: 0.0), perspective: 0.55)
+                                        }
+                                        
+                                        // 2. Current Card
+                                        Group {
+                                            if let url = track.fullArtworkUrl {
+                                                CachedAsyncImage(url: url) { image in
+                                                    image.resizable()
+                                                         .aspectRatio(contentMode: .fill)
+                                                         .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                         .clipped()
+                                                } placeholder: {
+                                                    MusicPlaceholderView()
+                                                        .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                }
                                                 .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                                 .cornerRadius(12)
                                                 .scaleEffect(artworkScale)
                                                 .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
                                                 .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
+                                            } else {
+                                                MusicPlaceholderView()
+                                                    .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                    .cornerRadius(12)
+                                                    .scaleEffect(artworkScale)
+                                                    .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
+                                                    .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
+                                            }
+                                        }
+                                        .offset(x: dragOffset)
+                                        .rotation3DEffect(.degrees(Double(dragOffset / geometry.size.width) * -35), axis: (x: 0.0, y: 1.0, z: 0.0), perspective: 0.55)
+                                        
+                                        // 3. Next Card
+                                        if currentIndex + 1 < playerService.tracks.count {
+                                            let nextTrack = playerService.tracks[currentIndex + 1]
+                                            Group {
+                                                if let url = nextTrack.fullArtworkUrl {
+                                                    CachedAsyncImage(url: url) { image in
+                                                        image.resizable()
+                                                             .aspectRatio(contentMode: .fill)
+                                                             .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                             .clipped()
+                                                    } placeholder: {
+                                                        MusicPlaceholderView()
+                                                            .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                    }
+                                                    .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                    .cornerRadius(12)
+                                                    .scaleEffect(artworkScale)
+                                                    .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
+                                                } else {
+                                                    MusicPlaceholderView()
+                                                        .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                        .cornerRadius(12)
+                                                        .scaleEffect(artworkScale)
+                                                        .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
+                                                }
+                                            }
+                                            .offset(x: dragOffset + geometry.size.width + 40)
+                                            .rotation3DEffect(.degrees(Double((dragOffset + geometry.size.width) / geometry.size.width) * -35), axis: (x: 0.0, y: 1.0, z: 0.0), perspective: 0.55)
                                         }
                                     }
-                                    .offset(x: dragOffset)
-                                    .rotation3DEffect(.degrees(Double(dragOffset / geometry.size.width) * -35), axis: (x: 0.0, y: 1.0, z: 0.0), perspective: 0.55)
                                     .gesture(
                                         DragGesture()
                                             .onChanged { value in
@@ -1250,8 +1309,26 @@ struct PlayerDetailView: View {
                                     
                                     // Track Info
                                     VStack(spacing: 6) {
-                                        ScrollingTextView(text: track.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
-                                            .padding(.horizontal, 16)
+                                        let currentIndex = playerService.currentTrackIndex ?? 0
+                                        ZStack {
+                                            if currentIndex - 1 >= 0 {
+                                                let prevTrack = playerService.tracks[currentIndex - 1]
+                                                ScrollingTextView(text: prevTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
+                                                    .offset(x: dragOffset - geometry.size.width)
+                                            }
+                                            
+                                            ScrollingTextView(text: track.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
+                                                .offset(x: dragOffset)
+                                            
+                                            if currentIndex + 1 < playerService.tracks.count {
+                                                let nextTrack = playerService.tracks[currentIndex + 1]
+                                                ScrollingTextView(text: nextTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
+                                                    .offset(x: dragOffset + geometry.size.width)
+                                            }
+                                        }
+                                        .frame(height: isSmallScreen ? 30 : 40)
+                                        .padding(.horizontal, 16)
+                                        .clipped()
                                         
                                         Text(track.displayArtist)
                                             .font(isSmallScreen ? .subheadline : .title3)
@@ -1260,6 +1337,7 @@ struct PlayerDetailView: View {
                                             .opacity(isDraggingArtwork ? 0.0 : 1.0)
                                             .animation(.easeInOut(duration: 0.2), value: isDraggingArtwork)
                                     }
+                                    .padding(.horizontal, 24)
                                     .padding(.horizontal, 24)
                                     
                                     Spacer()
