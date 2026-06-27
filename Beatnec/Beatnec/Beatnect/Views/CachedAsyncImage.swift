@@ -127,7 +127,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             if let imageToDisplay = cachedImage ?? loader.image {
                 content(Image(uiImage: imageToDisplay))
             } else {
-                Color.clear
+                placeholder()
             }
         }
         .onAppear {
