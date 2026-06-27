@@ -18,25 +18,26 @@ struct AlbumDetailView: View {
                         // Album Art Cover
                         ZStack {
                             if let url = album.artworkUrl {
-                                AsyncImage(url: url) { image in
+                                CachedAsyncImage(url: url) { image in
                                     image.resizable()
                                          .aspectRatio(contentMode: .fit)
                                          .frame(width: 220, height: 220)
                                 } placeholder: {
-                                    ProgressView()
-                                         .frame(width: 220, height: 220)
+                                    Image("music_thumb")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 220, height: 220)
                                 }
                                 .frame(width: 220, height: 220)
                                 .cornerRadius(12)
                                 .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
                             } else {
-                                Image(systemName: "music.note")
-                                    .font(.system(size: 64))
-                                    .foregroundColor(themeManager.secondaryTextColor)
-                                    .frame(width: 180, height: 180)
-                                    .background(Color(.secondarySystemBackground))
-                                    .cornerRadius(16)
-                                    .shadow(radius: 8)
+                                Image("music_thumb")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 220, height: 220)
+                                    .cornerRadius(12)
+                                    .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
                             }
                         }
                         

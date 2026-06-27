@@ -221,30 +221,21 @@ struct MainPlayerView: View {
             .padding(.vertical, 12)
             .padding(.bottom, playerService.currentTrack != nil ? 140 : 80)
         } else if selectedLibraryTab == .songs {
-            LazyVStack(spacing: 0) {
-                ForEach(playerService.libraryTracks) { track in
-                    TrackRowView(track: track, isCurrent: playerService.currentTrack?.id == track.id, isPlaying: playerService.isPlaying)
-                    .onTapGesture {
-                        if let index = playerService.libraryTracks.firstIndex(where: { $0.id == track.id }) {
-                            playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: index)
-                        }
-                    }
+            LazyVStack(spacing: 8) {
+            
+                ForEach(Array(playerService.libraryTracks.enumerated()), id: \.element.id) { index, track in
+                    TrackRowView(
+                        track: track,
+                        isCurrent: playerService.currentTrack?.id == track.id,
+                        isPlaying: playerService.isPlaying && playerService.currentTrack?.id == track.id
+                    )
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .onTapGesture {
+                        playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: index)
+                    }
                 }
             }
-            .padding(.bottom, playerService.currentTrack != nil ? 140 : 80)
-        } else {
-            VStack {
-                Spacer(minLength: 100)
-                Image(systemName: "music.note.list")
-                    .font(.system(size: 48))
-                    .foregroundColor(.secondary)
-                    .padding(.bottom, 8)
-                Text("Playlists coming soon")
-                    .foregroundColor(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.top, 8)
             .padding(.bottom, playerService.currentTrack != nil ? 140 : 80)
         }
     }
@@ -295,7 +286,7 @@ struct MainPlayerView: View {
                 dict[normalizedAlbumName] = Album(
                     name: track.displayAlbum,
                     artist: track.displayArtist,
-                    artworkUrl: track.fullArtworkUrl,
+                    artworkUrl: track.fullArtworkUrl,  // may be nil; resolved below
                     tracks: [track]
                 )
             }
@@ -309,12 +300,14 @@ struct MainPlayerView: View {
                 }
             )
 
+            // Pick the first track that actually has an artwork URL
+            let resolvedArtwork = album.artworkUrl ?? album.tracks.compactMap { $0.fullArtworkUrl }.first
             return Album(
                 name: album.name,
                 artist: uniqueArtists.count == 1
                     ? (uniqueArtists.first ?? "")
                     : "Various Artists",
-                artworkUrl: album.artworkUrl,
+                artworkUrl: resolvedArtwork,
                 tracks: album.tracks.sorted {
                     $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
                 }
@@ -659,17 +652,22 @@ private struct iPadMiniPlayer: View {
         if let url = track.fullArtworkUrl {
             CachedAsyncImage(url: url) { image in
                 image.resizable().aspectRatio(contentMode: .fill)
-            } placeholder: { ProgressView() }
+            } placeholder: {
+                Image("music_thumb")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            }
             .frame(width: 48, height: 48)
             .cornerRadius(12)
             .clipped()
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.2), lineWidth: 0.8))
         } else {
-            Image(systemName: "music.note")
-                .foregroundColor(.secondary)
+            Image("music_thumb")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
                 .frame(width: 48, height: 48)
-                .background(Color.primary.opacity(0.08))
                 .cornerRadius(12)
+                .clipped()
         }
     }
 
@@ -701,7 +699,9 @@ private struct iPhoneMiniPlayer: View {
                              .aspectRatio(contentMode: .fill)
                              .frame(width: 48, height: 48)
                     } placeholder: {
-                        ProgressView()
+                        Image("music_thumb")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
                             .frame(width: 48, height: 48)
                     }
                     .frame(width: 48, height: 48)
@@ -712,11 +712,16 @@ private struct iPhoneMiniPlayer: View {
                             .stroke(Color.white.opacity(0.2), lineWidth: 0.8)
                     )
                 } else {
-                    Image(systemName: "music.note")
-                        .foregroundColor(.white.opacity(0.8))
+                    Image("music_thumb")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
                         .frame(width: 48, height: 48)
-                        .background(Color.white.opacity(0.08))
                         .cornerRadius(12)
+                        .clipped()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.2), lineWidth: 0.8)
+                        )
                 }
                 
                 // Info
@@ -941,57 +946,38 @@ struct PlayerDetailView: View {
                                 Spacer()
                                 if let track = playerService.currentTrack {
                                     ZStack {
-                                        if let url = track.fullArtworkUrl {
-                                            // Glowing Artwork Drop Shadow (Blurred and offset copy of the artwork)
-                                            CachedAsyncImage(url: url) { image in
-                                                 image.resizable()
-                                                      .aspectRatio(contentMode: .fit)
-                                                      .frame(maxHeight: landscapeArtworkSize)
-                                             } placeholder: {
-                                                 ProgressView()
-                                                     .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
-                                             }
-                                            .frame(maxHeight: landscapeArtworkSize)
-                                            .scaleEffect(artworkScale)
-                                            .blur(radius: playerService.isPlaying ? 24 : 16)
-                                            .opacity(playerService.isPlaying ? 0.75 : 0.4)
-                                            .offset(y: playerService.isPlaying ? 12 : 6)
-                                            .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
-                                            
-                                            // Main Artwork image
-                                            CachedAsyncImage(url: url) { image in
-                                                image.resizable()
-                                                     .aspectRatio(contentMode: .fit)
-                                                     .frame(maxHeight: landscapeArtworkSize)
-                                            } placeholder: {
-                                                ProgressView()
-                                                    .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
-                                            }
-                                            .frame(maxHeight: landscapeArtworkSize)
-                                            .cornerRadius(16)
-                                            //.overlay(
-                                              //  RoundedRectangle(cornerRadius: 16)
-                                               //     .stroke(
-                                                //        LinearGradient(
-                                            //            gradient: Gradient(colors: [.white.opacity(0.35), .clear, //.black.opacity(0.2)]),
-                                               //             startPoint: .topLeading,
-                                               //             endPoint: .bottomTrailing
-                                               //         ),
-                                                //        lineWidth: 1.5
-                                                //    )
-                                           // )
-                                            .scaleEffect(artworkScale)
-                                            .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 10 : 5)
-                                            .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
-                                        } else {
-                                            Image(systemName: "music.note")
-                                                .font(.system(size: landscapeArtworkSize * 0.27))
-                                                .foregroundColor(.secondary)
+                                        let artUrl = track.fullArtworkUrl
+                                        // Glowing Artwork Drop Shadow
+                                        CachedAsyncImage(url: artUrl) { image in
+                                             image.resizable()
+                                                  .aspectRatio(contentMode: .fill)
+                                                  .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
+                                         } placeholder: {
+                                             Image("music_thumb").resizable().aspectRatio(contentMode: .fill)
+                                                 .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
+                                         }
+                                        .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
+                                        .scaleEffect(artworkScale)
+                                        .blur(radius: playerService.isPlaying ? 24 : 16)
+                                        .opacity(playerService.isPlaying ? 0.75 : 0.4)
+                                        .offset(y: playerService.isPlaying ? 12 : 6)
+                                        .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
+                                        
+                                        // Main Artwork image
+                                        CachedAsyncImage(url: artUrl) { image in
+                                            image.resizable()
+                                                 .aspectRatio(contentMode: .fill)
+                                                 .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
+                                        } placeholder: {
+                                            Image("music_thumb").resizable().aspectRatio(contentMode: .fill)
                                                 .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
-                                                .background(Color(.secondarySystemBackground))
-                                                .cornerRadius(16)
-                                                .shadow(radius: 8)
                                         }
+                                        .frame(width: landscapeArtworkSize, height: landscapeArtworkSize)
+                                        .cornerRadius(16)
+                                        .clipped()
+                                        .scaleEffect(artworkScale)
+                                        .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 10 : 5)
+                                        .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
                                     }
                                     .gesture(
                                         DragGesture()
@@ -1164,6 +1150,7 @@ struct PlayerDetailView: View {
                         // Middle Section: Dynamic Content (Now Playing vs Queue)
                         if isShowingQueue {
                             QueueListView(playerService: playerService, isSmallScreen: isSmallScreen)
+                                .frame(maxHeight: .infinity)
                         } else {
                             // Big Artwork Vinyl & Track Info
                             if let track = playerService.currentTrack {
@@ -1173,13 +1160,15 @@ struct PlayerDetailView: View {
                                             // Main Artwork image
                                             CachedAsyncImage(url: url) { image in
                                                 image.resizable()
-                                                     .aspectRatio(contentMode: .fit)
+                                                     .aspectRatio(contentMode: .fill)
                                                      .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                     .clipped()
                                             } placeholder: {
                                                 Image("music_thumb")
                                                     .resizable()
                                                     .aspectRatio(contentMode: .fill)
                                                     .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                                    .clipped()
                                             }
                                             .frame(width: portraitArtworkSize, height: portraitArtworkSize)
                                             .cornerRadius(12)
@@ -1435,47 +1424,46 @@ struct iPadPlayerLeftPane: View {
 
     @ViewBuilder
     private var artworkView: some View {
-        if let track = playerService.currentTrack, let url = track.fullArtworkUrl {
-            ZStack {
-                CachedAsyncImage(url: url) { img in
-                    img.resizable().aspectRatio(contentMode: .fit)
-                       .frame(width: artworkSize, height: artworkSize)
-                } placeholder: { Color.clear.frame(width: artworkSize, height: artworkSize) }
-                .blur(radius: playerService.isPlaying ? 28 : 16)
-                .opacity(playerService.isPlaying ? 0.7 : 0.35)
-                .offset(y: playerService.isPlaying ? 14 : 6)
-                .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
-
-                CachedAsyncImage(url: url) { img in
-                    img.resizable().aspectRatio(contentMode: .fit)
-                       .frame(width: artworkSize, height: artworkSize)
-                } placeholder: {
-                    ProgressView().frame(width: artworkSize, height: artworkSize)
-                }
-                .frame(width: artworkSize, height: artworkSize)
-                .cornerRadius(22)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 22)
-                        .stroke(
-                            LinearGradient(
-                                colors: [.white.opacity(0.3), .clear, .black.opacity(0.2)],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.5
-                        )
-                )
-                .shadow(color: .black.opacity(playerService.isPlaying ? 0.45 : 0.25),
-                        radius: playerService.isPlaying ? 16 : 8, x: 0, y: 10)
-                .scaleEffect(playerService.isPlaying ? 1.04 : 1.0)
-                .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
+        let currentUrl = playerService.currentTrack?.fullArtworkUrl
+        ZStack {
+            // Background blurred glow
+            CachedAsyncImage(url: currentUrl) { img in
+                img.resizable().aspectRatio(contentMode: .fill)
+                   .frame(width: artworkSize, height: artworkSize)
+            } placeholder: {
+                Image("music_thumb").resizable().aspectRatio(contentMode: .fill)
+                    .frame(width: artworkSize, height: artworkSize)
             }
-        } else {
-            Image(systemName: "music.note")
-                .font(.system(size: artworkSize * 0.25))
-                .foregroundColor(.secondary)
-                .frame(width: artworkSize, height: artworkSize)
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(22)
+            .blur(radius: playerService.isPlaying ? 28 : 16)
+            .opacity(playerService.isPlaying ? 0.7 : 0.35)
+            .offset(y: playerService.isPlaying ? 14 : 6)
+            .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
+
+            // Main artwork
+            CachedAsyncImage(url: currentUrl) { img in
+                img.resizable().aspectRatio(contentMode: .fill)
+                   .frame(width: artworkSize, height: artworkSize)
+            } placeholder: {
+                Image("music_thumb").resizable().aspectRatio(contentMode: .fill)
+                    .frame(width: artworkSize, height: artworkSize)
+            }
+            .frame(width: artworkSize, height: artworkSize)
+            .cornerRadius(22)
+            .clipped()
+            .overlay(
+                RoundedRectangle(cornerRadius: 22)
+                    .stroke(
+                        LinearGradient(
+                            colors: [.white.opacity(0.3), .clear, .black.opacity(0.2)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.5
+                    )
+            )
+            .shadow(color: .black.opacity(playerService.isPlaying ? 0.45 : 0.25),
+                    radius: playerService.isPlaying ? 16 : 8, x: 0, y: 10)
+            .scaleEffect(playerService.isPlaying ? 1.04 : 1.0)
+            .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
         }
     }
 
@@ -2191,26 +2179,22 @@ struct CoverFlowCard: View {
                         if let url = album.artworkUrl {
                             CachedAsyncImage(url: url) { image in
                                 image.resizable()
-                                     .aspectRatio(contentMode: .fit)
+                                     .aspectRatio(contentMode: .fill)
                             } placeholder: {
-                                Rectangle()
-                                    .fill(Color.white.opacity(0.06))
-                                    .overlay(ProgressView())
+                                Image("music_thumb")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
                             }
                             .frame(width: width, height: height)
-                            .background(Color.black)
                             .cornerRadius(8)
                             .clipped()
                         } else {
-                            Rectangle()
-                                .fill(Color(.secondarySystemBackground))
+                            Image("music_thumb")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
                                 .frame(width: width, height: height)
                                 .cornerRadius(8)
-                                .overlay(
-                                    Image(systemName: "music.note")
-                                        .font(.system(size: 54))
-                                        .foregroundColor(.secondary)
-                                )
+                                .clipped()
                         }
                         
                         // Subtle dark overlay
@@ -2260,12 +2244,13 @@ struct CoverFlowCard: View {
             // Fading Reflection
             ZStack {
                 if !isFlipped {
-                    if let url = album.artworkUrl {
+                    let reflectionUrl = album.artworkUrl
+                    if let url = reflectionUrl {
                         CachedAsyncImage(url: url) { image in
                             image.resizable()
                                  .aspectRatio(contentMode: .fill)
                         } placeholder: {
-                            Color.clear
+                            Image("music_thumb").resizable().aspectRatio(contentMode: .fill)
                         }
                         .frame(width: width, height: height)
                         .scaleEffect(y: -1)
@@ -2283,8 +2268,9 @@ struct CoverFlowCard: View {
                         .frame(width: width, height: reflectionHeight, alignment: .top)
                         .clipped()
                     } else {
-                        Rectangle()
-                            .fill(Color(.secondarySystemBackground))
+                        Image("music_thumb")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
                             .frame(width: width, height: reflectionHeight)
                             .scaleEffect(y: -1)
                             .mask(
@@ -2624,7 +2610,7 @@ struct QueueListView: View {
             
             // Queue List
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                LazyVStack(alignment: .leading, spacing: 20) {
                     Text("Continue Playing")
                         .font(.title3)
                         .fontWeight(.semibold)
