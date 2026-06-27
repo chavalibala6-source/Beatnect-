@@ -862,6 +862,15 @@ struct PlayerDetailView: View {
             return
         }
 
+        let key = url.absoluteString as NSString
+        if let cachedImage = ImageCache.shared.object(forKey: key) {
+            let uiColor = cachedImage.dominantColor()
+            withAnimation(.easeInOut(duration: 0.5)) {
+                artworkColor = Color(uiColor)
+            }
+            return
+        }
+
         URLSession.shared.dataTask(with: url) { data, _, _ in
             guard
                 let data,
