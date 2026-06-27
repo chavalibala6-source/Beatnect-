@@ -454,7 +454,9 @@ class AudioPlayerService: NSObject, ObservableObject {
         } else {
             // Reached end of current tracks
             if isAutoPlayEnabled, let currentTrack = currentTrack {
-                // Find next album from libraryTracks
+                var generatedTracks: [Track] = []
+                
+                // First try to add the next album in the library
                 var uniqueAlbums: [(album: String, artist: String)] = []
                 for t in libraryTracks {
                     if !uniqueAlbums.contains(where: { $0.album == t.displayAlbum && $0.artist == t.displayArtist }) {
@@ -465,22 +467,20 @@ class AudioPlayerService: NSObject, ObservableObject {
                 if let currentAlbumIndex = uniqueAlbums.firstIndex(where: { $0.album == currentTrack.displayAlbum && $0.artist == currentTrack.displayArtist }) {
                     let nextAlbumIndex = (currentAlbumIndex + 1) % uniqueAlbums.count
                     let nextAlbumInfo = uniqueAlbums[nextAlbumIndex]
-                    
                     let nextAlbumTracks = libraryTracks.filter { $0.displayAlbum == nextAlbumInfo.album && $0.displayArtist == nextAlbumInfo.artist }
-                    if !nextAlbumTracks.isEmpty {
-                        self.tracks.append(contentsOf: nextAlbumTracks)
-                        playTrack(at: next)
-                        return
+                    generatedTracks.append(contentsOf: nextAlbumTracks)
+                }
+                
+                // If we haven't generated enough tracks (e.g., next album was a single), fill the rest with random tracks to ensure queue visibility
+                while generatedTracks.count < 20 {
+                    if let randomTrack = libraryTracks.randomElement(), !generatedTracks.contains(where: { $0.id == randomTrack.id }) {
+                        let randomAlbumTracks = libraryTracks.filter { $0.displayAlbum == randomTrack.displayAlbum && $0.displayArtist == randomTrack.displayArtist }
+                        generatedTracks.append(contentsOf: randomAlbumTracks.isEmpty ? [randomTrack] : randomAlbumTracks)
                     }
                 }
                 
-                // Fallback: random track
-                if let randomTrack = libraryTracks.randomElement() {
-                    let randomAlbumTracks = libraryTracks.filter { $0.displayAlbum == randomTrack.displayAlbum && $0.displayArtist == randomTrack.displayArtist }
-                    let tracksToAdd = randomAlbumTracks.isEmpty ? [randomTrack] : randomAlbumTracks
-                    self.tracks.append(contentsOf: tracksToAdd)
-                    playTrack(at: next)
-                }
+                self.tracks.append(contentsOf: generatedTracks)
+                playTrack(at: next)
             } else if isRepeatEnabled {
                 playTrack(at: 0)
             } else {
