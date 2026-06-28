@@ -112,6 +112,7 @@ struct MainPlayerView: View {
     @State private var selectedLibraryTab: LibraryTab = .albums
     @State private var scrollToTopTrigger = false
     @State private var autoRefreshTimer: AnyCancellable? = nil
+    @State private var searchText: String = ""
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -243,6 +244,7 @@ struct MainPlayerView: View {
                         }
                     }
                 )
+                .searchable(text: $searchText, prompt: "Search music")
             }
             // Bottom Bar with Mini Player and Icon Segmented Picker
             bottomTabBar()
@@ -316,7 +318,12 @@ struct MainPlayerView: View {
             .padding(.bottom, playerService.currentTrack != nil ? 140 : 80)
         } else if selectedLibraryTab == .songs {
             LazyVStack(spacing: 8) {
-                ForEach(Array(playerService.libraryTracks.enumerated()), id: \.offset) { index, track in
+                let filteredTracks = searchText.isEmpty ? playerService.libraryTracks : playerService.libraryTracks.filter {
+                    $0.displayName.localizedCaseInsensitiveContains(searchText) ||
+                    $0.displayArtist.localizedCaseInsensitiveContains(searchText) ||
+                    $0.displayAlbum.localizedCaseInsensitiveContains(searchText)
+                }
+                ForEach(Array(filteredTracks.enumerated()), id: \.offset) { index, track in
                     TrackRowView(
                         track: track,
                         isCurrent: playerService.currentTrack?.id == track.id,
@@ -324,7 +331,7 @@ struct MainPlayerView: View {
                     )
                     .padding(.horizontal, 16)
                     .onTapGesture {
-                        playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: index)
+                        playerService.setPlaylist(tracks: filteredTracks, startAtIndex: index)
                     }
                 }
             }
@@ -343,7 +350,10 @@ struct MainPlayerView: View {
                     }
                     .padding(.top, 60)
                 } else {
-                    ForEach(playlistStore.playlists) { playlist in
+                    let filteredPlaylists = searchText.isEmpty ? playlistStore.playlists : playlistStore.playlists.filter {
+                        $0.name.localizedCaseInsensitiveContains(searchText)
+                    }
+                    ForEach(filteredPlaylists) { playlist in
                         NavigationLink(destination: PlaylistDetailView(playlist: playlist).environmentObject(themeManager)) {
                             HStack(spacing: 16) {
                                 Image(systemName: "music.note.list")
@@ -382,50 +392,20 @@ struct MainPlayerView: View {
     @ViewBuilder
     private func bottomTabBar() -> some View {
         if UIDevice.current.userInterfaceIdiom == .pad {
-            VStack(spacing: 10) {
+            VStack(spacing: 16) {
                 if let currentTrack = playerService.currentTrack {
                     MiniPlayerBar(track: currentTrack,
                                   isPlaying: playerService.isPlaying,
                                   onToggle: { playerService.togglePlayPause() },
                                   onTap: { isShowingPlayerDetail = true })
                         .transition(.move(edge: .bottom))
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 24)
                 }
 
-                VStack(spacing: 12) {
-                    HStack(spacing: 12) {
-                        Text("Beatnect")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(themeManager.primaryTextColor)
-
-                        Spacer()
-
-                        Button(action: { iPadShowNewPlaylistAlert = true }) {
-                            Label("New Playlist", systemImage: "plus")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 7)
-                                .background(Capsule().fill(Color.primary.opacity(0.06)))
-                        }
-                        .buttonStyle(PlainButtonStyle())
-
-                        Button(action: {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                                themeManager.isDarkMode.toggle()
-                            }
-                        }) {
-                            Image(systemName: themeManager.isDarkMode ? "sun.max.fill" : "moon.fill")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.secondary)
-                                .frame(width: 32, height: 32)
-                                .background(Circle().fill(Color.primary.opacity(0.06)))
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-
+                // Liquid glass toolbar
+                HStack(spacing: 16) {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
+                        HStack(spacing: 12) {
                             ForEach(LibrarySection.allCases) { section in
                                 Button(action: {
                                     iPadSelectedSection = section
@@ -435,38 +415,37 @@ struct MainPlayerView: View {
                                 }) {
                                     HStack(spacing: 6) {
                                         Image(systemName: section.icon)
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.system(size: 14, weight: .medium))
                                         Text(section.rawValue)
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.system(size: 14, weight: .medium))
                                     }
-                                    .foregroundColor(iPadSelectedSection == section && iPadSelectedPlaylist == nil ? .white : .secondary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
+                                    .foregroundColor(iPadSelectedSection == section && iPadSelectedPlaylist == nil ? themeManager.primaryTextColor : themeManager.primaryTextColor.opacity(0.6))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
                                     .background(
                                         Capsule()
-                                            .fill(iPadSelectedSection == section && iPadSelectedPlaylist == nil ? Color.accentColor : Color.primary.opacity(0.06))
+                                            .fill(iPadSelectedSection == section && iPadSelectedPlaylist == nil ? Color.accentColor.opacity(themeManager.isDarkMode ? 0.3 : 0.15) : Color.clear)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
-                        }
-                        .padding(.horizontal, 12)
-                    }
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
+                            Divider()
+                                .frame(height: 24)
+                                .background(themeManager.primaryTextColor.opacity(0.2))
+
                             Button(action: {
                                 iPadSelectedSection = .playlists
                                 iPadSelectedPlaylist = nil
                             }) {
                                 Text("All Playlists")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(iPadSelectedSection == .playlists && iPadSelectedPlaylist == nil ? .white : .secondary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(iPadSelectedSection == .playlists && iPadSelectedPlaylist == nil ? themeManager.primaryTextColor : themeManager.primaryTextColor.opacity(0.6))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
                                     .background(
                                         Capsule()
-                                            .fill(iPadSelectedSection == .playlists && iPadSelectedPlaylist == nil ? Color.accentColor : Color.primary.opacity(0.06))
+                                            .fill(iPadSelectedSection == .playlists && iPadSelectedPlaylist == nil ? Color.accentColor.opacity(themeManager.isDarkMode ? 0.3 : 0.15) : Color.clear)
                                     )
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -477,28 +456,54 @@ struct MainPlayerView: View {
                                     iPadSelectedPlaylist = playlist
                                 }) {
                                     Text(playlist.name)
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(iPadSelectedPlaylist?.id == playlist.id ? .white : .secondary)
-                                        .lineLimit(1)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(iPadSelectedPlaylist?.id == playlist.id ? themeManager.primaryTextColor : themeManager.primaryTextColor.opacity(0.6))
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 10)
                                         .background(
                                             Capsule()
-                                                .fill(iPadSelectedPlaylist?.id == playlist.id ? Color.accentColor : Color.primary.opacity(0.06))
+                                                .fill(iPadSelectedPlaylist?.id == playlist.id ? Color.accentColor.opacity(themeManager.isDarkMode ? 0.3 : 0.15) : Color.clear)
                                         )
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 2)
+                        .padding(.horizontal, 16)
                     }
+
+                    Spacer(minLength: 8)
+
+                    Button(action: { iPadShowNewPlaylistAlert = true }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(themeManager.primaryTextColor)
+                            .frame(width: 40, height: 40)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Button(action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                            themeManager.isDarkMode.toggle()
+                        }
+                    }) {
+                        Image(systemName: themeManager.isDarkMode ? "sun.max.fill" : "moon.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(themeManager.primaryTextColor)
+                            .frame(width: 40, height: 40)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(themeManager.isDarkMode ? 0.1 : 0.2), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.12), radius: 15, x: 0, y: 6)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 16)
             }
-            .padding(.top, 8)
-            .background(themeManager.backgroundColor.opacity(0.9).ignoresSafeArea())
         } else if verticalSizeClass != .compact {
             VStack(spacing: 12) {
                 if let currentTrack = playerService.currentTrack {
@@ -529,7 +534,13 @@ struct MainPlayerView: View {
     }
     
     private var albums: [Album] {
-        return playerService.precomputedAlbums
+        if searchText.isEmpty {
+            return playerService.precomputedAlbums
+        }
+        return playerService.precomputedAlbums.filter {
+            $0.name.localizedCaseInsensitiveContains(searchText) ||
+            $0.artist.localizedCaseInsensitiveContains(searchText)
+        }
     }
 
     private var recentlyAddedAlbums: [Album] {
@@ -971,17 +982,14 @@ private struct iPadMiniPlayer: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(themeManager.cardBackgroundColor)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(
-                            themeManager.borderColor,
-                            lineWidth: 1.2
-                        )
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.white.opacity(themeManager.isDarkMode ? 0.12 : 0.2), lineWidth: 1)
                 )
         )
-        .shadow(color: themeManager.shadowColor, radius: 8, x: 0, y: 4)
+        .shadow(color: .black.opacity(0.15), radius: 15, x: 0, y: 6)
     }
 
     @ViewBuilder private var artworkView: some View {
@@ -1326,7 +1334,7 @@ struct PlayerDetailView: View {
 
     @ViewBuilder
     private func landscapeLayoutView(geometry: GeometryProxy, isSmallScreen: Bool, artworkScale: CGFloat, artworkShadowRadius: CGFloat, artworkShadowOpacity: Double) -> some View {
-        let landscapeArtworkSize = max(120.0, min(280.0, geometry.size.height - (isSmallScreen ? 48.0 : 64.0)))
+        let landscapeArtworkSize = max(120.0, min(geometry.size.width * 0.45, geometry.size.height - (isSmallScreen ? 48.0 : 64.0)))
         let cardHeight = geometry.size.height - (isSmallScreen ? 36.0 : 48.0)
         
         VStack(spacing: 0) {
@@ -1958,10 +1966,10 @@ struct iPadPlayerLeftPane: View {
 
     @EnvironmentObject var themeManager: ThemeManager
 
-    var artworkSize: CGFloat { min(width * 0.68, height * 0.40) }
+    var artworkSize: CGFloat { min(width * 0.85, height * 0.55) }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 24) {
             // Handle
             Capsule()
                 .fill(Color.white.opacity(0.35))
