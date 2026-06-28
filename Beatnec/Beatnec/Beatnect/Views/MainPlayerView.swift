@@ -1132,8 +1132,8 @@ struct PlayerDetailView: View {
                         Capsule()
                             .fill(Color.primary.opacity(0.4))
                             .frame(width: 40, height: 5)
-                            .padding(.top, (isSmallScreen ? 12 : 24) + geometry.safeAreaInsets.top)
-                            .padding(.bottom, 12)
+                            .padding(.top, (isSmallScreen ? 22 : 36) + geometry.safeAreaInsets.top)
+                            .padding(.bottom, 16)
                             .contentShape(Rectangle())
                         
                         Spacer() // Flexible space above artwork pushes it downwards
@@ -1211,7 +1211,7 @@ struct PlayerDetailView: View {
                 }
                 .offset(y: verticalDragOffset)
                 .scaleEffect(verticalDragOffset > 0 ? max(0.92, 1.0 - (verticalDragOffset / (geometry.size.height * 2.5))) : 1.0)
-                .cornerRadius(verticalDragOffset > 0 ? min(38, verticalDragOffset / 6) : 0)
+                .cornerRadius(32)
                 .clipped()
                 .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.86), value: verticalDragOffset)
                 .gesture(
