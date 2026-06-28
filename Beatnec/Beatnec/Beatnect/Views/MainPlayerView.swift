@@ -1189,7 +1189,7 @@ struct PlayerDetailView: View {
                                     VStack(spacing: 6) {
                                         let currentIndex = playerService.currentTrackIndex ?? 0
                                         ZStack {
-                                            if currentIndex - 1 >= 0 {
+                                            if isDraggingArtwork && dragOffset > 0 && currentIndex - 1 >= 0 {
                                                 let prevTrack = playerService.tracks[currentIndex - 1]
                                                 ScrollingTextView(text: prevTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
                                                     .offset(x: dragOffset - geometry.size.width)
@@ -1198,7 +1198,7 @@ struct PlayerDetailView: View {
                                             ScrollingTextView(text: track.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
                                                 .offset(x: dragOffset)
                                             
-                                            if currentIndex + 1 < playerService.tracks.count {
+                                            if isDraggingArtwork && dragOffset < 0 && currentIndex + 1 < playerService.tracks.count {
                                                 let nextTrack = playerService.tracks[currentIndex + 1]
                                                 ScrollingTextView(text: nextTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
                                                     .offset(x: dragOffset + geometry.size.width)
