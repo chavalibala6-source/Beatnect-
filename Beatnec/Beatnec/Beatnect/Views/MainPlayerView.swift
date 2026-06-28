@@ -90,6 +90,7 @@ struct MainPlayerView: View {
     }
     @StateObject private var playerService = AudioPlayerService.shared
     @EnvironmentObject var themeManager: ThemeManager
+    @ObservedObject var playlistStore = PlaylistStore.shared
     
     @State private var serverInput: String = ""
     @State private var documentInput: String = ""
@@ -100,6 +101,7 @@ struct MainPlayerView: View {
     @State private var currentPlayerColor: Color = Color(red: 0.13, green: 0.13, blue: 0.14)
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var selectedAlbum: Album? = nil
+    @State private var selectedArtist: String? = nil
     enum LibraryTab: String {
         case albums, songs, playlists
     }
@@ -130,6 +132,21 @@ struct MainPlayerView: View {
                         isActive: Binding(
                             get: { selectedAlbum != nil },
                             set: { if !$0 { selectedAlbum = nil } }
+                        ),
+                        label: { EmptyView() }
+                    )
+                    .hidden()
+                    
+                    // Hidden NavigationLink for Artist detail selection
+                    NavigationLink(
+                        destination: Group {
+                            if let artist = selectedArtist {
+                                ArtistDetailView(artist: artist, tracks: playerService.libraryTracks.filter { $0.displayArtist == artist })
+                            }
+                        },
+                        isActive: Binding(
+                            get: { selectedArtist != nil },
+                            set: { if !$0 { selectedArtist = nil } }
                         ),
                         label: { EmptyView() }
                     )
@@ -226,7 +243,19 @@ struct MainPlayerView: View {
                     .transition(.opacity)
                     .zIndex(9)
                 
-                PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail, artworkColor: $currentPlayerColor)
+                PlayerDetailView(
+                    playerService: playerService,
+                    isPresented: $isShowingPlayerDetail,
+                    artworkColor: $currentPlayerColor,
+                    onGoToAlbum: { album in
+                        self.selectedAlbum = album
+                        self.isShowingPlayerDetail = false
+                    },
+                    onGoToArtist: { artistName in
+                        self.selectedArtist = artistName
+                        self.isShowingPlayerDetail = false
+                    }
+                )
                     .environmentObject(themeManager)
                     .preferredColorScheme(.dark)
                     .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .identity))
@@ -279,6 +308,52 @@ struct MainPlayerView: View {
                 }
             }
             .padding(.top, 8)
+            .padding(.bottom, playerService.currentTrack != nil ? 140 : 80)
+        } else if selectedLibraryTab == .playlists {
+            LazyVStack(spacing: 0) {
+                if playlistStore.playlists.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "music.note.list")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        Text("No playlists yet")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 60)
+                } else {
+                    ForEach(playlistStore.playlists) { playlist in
+                        NavigationLink(destination: PlaylistDetailView(playlist: playlist).environmentObject(themeManager)) {
+                            HStack(spacing: 16) {
+                                Image(systemName: "music.note.list")
+                                    .font(.title2)
+                                    .foregroundColor(.blue)
+                                    .frame(width: 48, height: 48)
+                                    .background(Color.white.opacity(0.12))
+                                    .cornerRadius(8)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(playlist.name)
+                                        .font(.headline)
+                                        .foregroundColor(themeManager.primaryTextColor)
+                                    Text("\(playlistStore.tracks(for: playlist, allTracks: playerService.libraryTracks).count) songs")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 24)
+                        }
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.leading, 88)
+                    }
+                }
+            }
             .padding(.bottom, playerService.currentTrack != nil ? 140 : 80)
         }
     }
@@ -894,6 +969,9 @@ struct PlayerDetailView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @Binding var artworkColor: Color
+    
+    let onGoToAlbum: (Album) -> Void
+    let onGoToArtist: (String) -> Void
     
     @State private var isDraggingSlider = false
     @State private var progress: Double = 0
@@ -1520,6 +1598,10 @@ struct PlayerDetailView: View {
                         
                         Button(action: {
                             withAnimation { showingOptionsMenu = false }
+                            let normalized = track.displayAlbum.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                            if let album = playerService.libraryTracks.first(where: { $0.displayAlbum.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalized }).map({ Album(name: $0.displayAlbum, artist: $0.displayArtist, artworkUrl: $0.fullArtworkUrl, tracks: playerService.libraryTracks.filter { t in t.displayAlbum.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalized }) }) {
+                                onGoToAlbum(album)
+                            }
                         }) {
                             HStack {
                                 Image(systemName: "music.note")
@@ -1545,6 +1627,7 @@ struct PlayerDetailView: View {
                         
                         Button(action: {
                             withAnimation { showingOptionsMenu = false }
+                            onGoToArtist(track.displayArtist)
                         }) {
                             HStack {
                                 Image(systemName: "person.fill")
