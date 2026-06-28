@@ -472,7 +472,7 @@ struct iPadLibraryView: View {
                 Color.clear.frame(height: 1).id("top")
                 LazyVGrid(
                 columns: [
-                    GridItem(.adaptive(minimum: 160), spacing: 24)
+                    GridItem(.adaptive(minimum: 190), spacing: 24)
                 ],
                 spacing: 24
             ){
@@ -983,7 +983,8 @@ struct iPadLibraryView: View {
                                 )
                         }
                     }
-                    .frame(width: 220, height: 220)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
