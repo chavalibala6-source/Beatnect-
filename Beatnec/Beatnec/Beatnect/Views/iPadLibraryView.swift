@@ -472,7 +472,7 @@ struct iPadLibraryView: View {
                 Color.clear.frame(height: 1).id("top")
                 LazyVGrid(
                 columns: [
-                    GridItem(.adaptive(minimum: 190), spacing: 24)
+                    GridItem(.adaptive(minimum: 190, maximum: 220), spacing: 24)
                 ],
                 spacing: 24
             ){
@@ -555,7 +555,7 @@ struct iPadLibraryView: View {
     
     private var playlistsOverview: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), spacing: 16)], spacing: 16) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 180, maximum: 220), spacing: 16)], spacing: 16) {
                 // New playlist card
                 Button(action: { showNewPlaylistAlert = true }) {
                     VStack(spacing: 12) {
