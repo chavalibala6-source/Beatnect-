@@ -224,7 +224,7 @@ struct MainPlayerView: View {
                 PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail, artworkColor: $currentPlayerColor)
                     .environmentObject(themeManager)
                     .preferredColorScheme(.dark)
-                    .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .opacity))
+                    .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .identity))
                     .zIndex(10)
                     .ignoresSafeArea()
             }
@@ -1239,11 +1239,15 @@ struct PlayerDetailView: View {
                             if isDraggingVertically {
                                 isDraggingVertically = false
                                 if verticalDragOffset > 100 {
-                                    withAnimation(.easeOut(duration: 0.2)) {
+                                    withAnimation(.easeOut(duration: 0.25)) {
                                         verticalDragOffset = geometry.size.height
                                     }
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                        isPresented = false
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                        var transaction = Transaction()
+                                        transaction.disablesAnimations = true
+                                        withTransaction(transaction) {
+                                            isPresented = false
+                                        }
                                     }
                                 } else {
                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
