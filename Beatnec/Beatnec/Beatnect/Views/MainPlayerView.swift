@@ -221,6 +221,11 @@ struct MainPlayerView: View {
             bottomTabBar()
             
             if isShowingPlayerDetail {
+                ArtworkBackground(color: currentPlayerColor)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .zIndex(9)
+                
                 PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail, artworkColor: $currentPlayerColor)
                     .environmentObject(themeManager)
                     .preferredColorScheme(.dark)
