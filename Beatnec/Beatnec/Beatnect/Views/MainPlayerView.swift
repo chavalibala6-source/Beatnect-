@@ -108,6 +108,7 @@ struct MainPlayerView: View {
     
     @State private var selectedLibraryTab: LibraryTab = .albums
     @State private var scrollToTopTrigger = false
+    @State private var autoRefreshTimer: AnyCancellable? = nil
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -274,6 +275,10 @@ struct MainPlayerView: View {
             documentInput = apiService.documentName
             reloadLibrary()
             updateMainArtworkColor()
+            startAutoRefreshTimer()
+        }
+        .onDisappear {
+            autoRefreshTimer?.cancel()
         }
         .onChange(of: playerService.currentTrackIndex) { _ in
             updateMainArtworkColor()
@@ -473,6 +478,22 @@ struct MainPlayerView: View {
         apiService.serverAddress = serverInput
         apiService.documentName = documentInput
         reloadLibrary()
+    }
+
+    private func startAutoRefreshTimer() {
+        autoRefreshTimer = Timer.publish(every: 10, on: .main, in: .common)
+            .autoconnect()
+            .sink { _ in
+                apiService.fetchTracks { result in
+                    if case .success(let tracks) = result {
+                        if tracks != playerService.libraryTracks {
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                playerService.libraryTracks = tracks
+                            }
+                        }
+                    }
+                }
+            }
     }
 }
 
