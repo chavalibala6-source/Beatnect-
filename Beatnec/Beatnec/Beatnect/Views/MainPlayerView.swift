@@ -28,12 +28,10 @@ struct ArtworkBackground: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [color.opacity(0.8), .black]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            color
+                .ignoresSafeArea()
+            Color.black.opacity(0.18) // Subtle overlay for text readability
+                .ignoresSafeArea()
         }
     }
 }
