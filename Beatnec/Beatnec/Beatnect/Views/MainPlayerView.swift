@@ -1392,7 +1392,33 @@ struct PlayerDetailView: View {
             progress = 0
         }
         
-        // Custom Options Menu Overlay inside ZStack
+        optionsMenuOverlay(geometry: geometry)
+    }
+    .alert("Add to Playlist", isPresented: $showingNewPlaylistAlert) {
+        TextField("Playlist Name", text: $newPlaylistName)
+        Button("Cancel", role: .cancel) {
+            newPlaylistName = ""
+        }
+        Button("Create & Add") {
+            let name = newPlaylistName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let finalName = name.isEmpty ? "My Playlist" : name
+            PlaylistStore.shared.createPlaylist(name: finalName)
+            if let newPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == finalName }) {
+                if let track = menuTrack {
+                    PlaylistStore.shared.addTrack(track, to: newPlaylist)
+                }
+            }
+            newPlaylistName = ""
+            showingOptionsMenu = false
+        }
+    } message: {
+        Text("Enter a name for the new playlist.")
+    }
+    .ignoresSafeArea()
+    }
+    
+    @ViewBuilder
+    private func optionsMenuOverlay(geometry: GeometryProxy) -> some View {
         if showingOptionsMenu, let track = menuTrack {
             Color.black.opacity(0.45)
                 .ignoresSafeArea()
@@ -1544,28 +1570,6 @@ struct PlayerDetailView: View {
             .transition(.move(edge: .bottom))
             .zIndex(201)
         }
-    }
-    .alert("Add to Playlist", isPresented: $showingNewPlaylistAlert) {
-        TextField("Playlist Name", text: $newPlaylistName)
-        Button("Cancel", role: .cancel) {
-            newPlaylistName = ""
-        }
-        Button("Create & Add") {
-            let name = newPlaylistName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let finalName = name.isEmpty ? "My Playlist" : name
-            PlaylistStore.shared.createPlaylist(name: finalName)
-            if let newPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == finalName }) {
-                if let track = menuTrack {
-                    PlaylistStore.shared.addTrack(track, to: newPlaylist)
-                }
-            }
-            newPlaylistName = ""
-            showingOptionsMenu = false
-        }
-    } message: {
-        Text("Enter a name for the new playlist.")
-    }
-    .ignoresSafeArea()
     }
     
     private func formatTime(_ seconds: Double) -> String {
