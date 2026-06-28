@@ -31,18 +31,36 @@ class PlaylistStore: ObservableObject {
     }
 
     func addTrack(_ track: Track, to playlist: Playlist) {
-        guard let i = playlists.firstIndex(where: { $0.id == playlist.id }),
-              !playlists[i].trackIDs.contains(track.id) else { return }
-        playlists[i].trackIDs.append(track.id)
+        guard let i = playlists.firstIndex(where: { $0.id == playlist.id }) else { return }
+        let compositeKey = "\(track.displayName)||\(track.displayArtist)"
+        if !playlists[i].trackIDs.contains(track.id) {
+            playlists[i].trackIDs.append(track.id)
+        }
+        if !playlists[i].trackIDs.contains(compositeKey) {
+            playlists[i].trackIDs.append(compositeKey)
+        }
     }
 
     func removeTrack(id: String, from playlist: Playlist) {
         guard let i = playlists.firstIndex(where: { $0.id == playlist.id }) else { return }
-        playlists[i].trackIDs.removeAll { $0 == id }
+        // Find track in allTracks to compute composite key if needed
+        let compositeKey: String? = AudioPlayerService.shared.libraryTracks.first { $0.id == id }.map { "\($0.displayName)||\($0.displayArtist)" }
+        playlists[i].trackIDs.removeAll { $0 == id || (compositeKey != nil && $0 == compositeKey) }
     }
 
     func tracks(for playlist: Playlist, allTracks: [Track]) -> [Track] {
-        playlist.trackIDs.compactMap { id in allTracks.first { $0.id == id } }
+        var matchedTracks = [Track]()
+        var seenIDs = Set<String>()
+        
+        for key in playlist.trackIDs {
+            if let track = allTracks.first(where: { $0.id == key || "\($0.displayName)||\($0.displayArtist)" == key }) {
+                if !seenIDs.contains(track.id) {
+                    matchedTracks.append(track)
+                    seenIDs.insert(track.id)
+                }
+            }
+        }
+        return matchedTracks
     }
 
     // MARK: - Persistence
