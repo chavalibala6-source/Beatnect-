@@ -1138,10 +1138,10 @@ struct PlayerDetailView: View {
                     VStack(spacing: 0) {
                         // Top Pill Capsule Handle bar
                         Capsule()
-                            .fill(Color.primary.opacity(0.4))
+                            .fill(Color.white.opacity(0.5))
                             .frame(width: 40, height: 5)
-                            .padding(.top, (isSmallScreen ? 22 : 36) + geometry.safeAreaInsets.top)
-                            .padding(.bottom, 16)
+                            .padding(.top, isSmallScreen ? 24 : 48)
+                            .padding(.bottom, 12)
                             .contentShape(Rectangle())
                         
                         Spacer() // Flexible space above artwork pushes it downwards
