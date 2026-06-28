@@ -49,7 +49,7 @@ struct iPadLibraryView: View {
     
     @EnvironmentObject var themeManager: ThemeManager
     
-    @State private var searchText: String = ""
+    @Binding var searchText: String
     @State private var sortColumn: SongColumn = .title
     @State private var sortAscending: Bool = true
     @State private var newPlaylistName = ""
@@ -89,6 +89,8 @@ struct iPadLibraryView: View {
             : lhs.localizedCaseInsensitiveCompare(rhs) == .orderedDescending
         }
     }
+
+    private var contentBottomInset: CGFloat { 72 }
     
     var body: some View {
         contentArea
@@ -203,116 +205,6 @@ struct iPadLibraryView: View {
         .background(themeManager.secondaryBackgroundColor.opacity(themeManager.isDarkMode ? 0.95 : 1.0))
     }
 
-    private var compactBottomBar: some View {
-        VStack(spacing: 0) {
-            Divider().opacity(0.25)
-
-            VStack(spacing: 12) {
-                HStack(spacing: 12) {
-                    Text("Beatnect")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.primary)
-
-                    Spacer()
-
-                    Button(action: { showNewPlaylistAlert = true }) {
-                        Label("New Playlist", systemImage: "plus")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 7)
-                            .background(Capsule().fill(Color.primary.opacity(0.06)))
-                    }
-                    .buttonStyle(PlainButtonStyle())
-
-                    Button(action: {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                            themeManager.isDarkMode.toggle()
-                        }
-                    }) {
-                        Image(systemName: themeManager.isDarkMode ? "sun.max.fill" : "moon.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.secondary)
-                            .frame(width: 32, height: 32)
-                            .background(Circle().fill(Color.primary.opacity(0.06)))
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(LibrarySection.allCases) { section in
-                            Button(action: {
-                                selectedSection = section
-                                if section != .playlists {
-                                    selectedPlaylist = nil
-                                }
-                            }) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: section.icon)
-                                        .font(.system(size: 12, weight: .semibold))
-                                    Text(section.rawValue)
-                                        .font(.system(size: 12, weight: .semibold))
-                                }
-                                .foregroundColor(selectedSection == section && selectedPlaylist == nil ? .white : .secondary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(
-                                    Capsule()
-                                        .fill(selectedSection == section && selectedPlaylist == nil ? Color.accentColor : Color.primary.opacity(0.06))
-                                )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                }
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        Button(action: {
-                            selectedSection = .playlists
-                            selectedPlaylist = nil
-                        }) {
-                            Text("All Playlists")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(selectedSection == .playlists && selectedPlaylist == nil ? .white : .secondary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(
-                                    Capsule()
-                                        .fill(selectedSection == .playlists && selectedPlaylist == nil ? Color.accentColor : Color.primary.opacity(0.06))
-                                )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-
-                        ForEach(store.playlists) { playlist in
-                            Button(action: {
-                                selectedSection = .playlists
-                                selectedPlaylist = playlist
-                            }) {
-                                Text(playlist.name)
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(selectedPlaylist?.id == playlist.id ? .white : .secondary)
-                                    .lineLimit(1)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(
-                                        Capsule()
-                                            .fill(selectedPlaylist?.id == playlist.id ? Color.accentColor : Color.primary.opacity(0.06))
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 2)
-                }
-            }
-            .background(themeManager.secondaryBackgroundColor.opacity(themeManager.isDarkMode ? 0.95 : 1.0))
-        }
-    }
-    
     private func sidebarRow(section: LibrarySection, isSelected: Bool) -> some View {
         HStack(spacing: 10) {
             Image(systemName: section.icon)
@@ -425,29 +317,6 @@ struct iPadLibraryView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
-            
-            Spacer()
-            
-            // Search
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 13))
-                TextField("Search", text: $searchText)
-                    .foregroundColor(.primary)
-                    .font(.system(size: 14))
-                if !searchText.isEmpty {
-                    Button(action: { searchText = "" }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.primary.opacity(0.06))
-            .cornerRadius(10)
-            .frame(maxWidth: 220)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -554,8 +423,7 @@ struct iPadLibraryView: View {
                 }
             }
             .padding(20)
-            .padding(.bottom,
-                     playerService.currentTrack != nil ? 90 : 16)
+                .padding(.bottom, contentBottomInset)
         }
     }
     
@@ -594,7 +462,7 @@ struct iPadLibraryView: View {
                     Divider().opacity(0.1).padding(.leading, 72)
                 }
             }
-            .padding(.bottom, playerService.currentTrack != nil ? 90 : 16)
+            .padding(.bottom, contentBottomInset)
         }
     }
     
@@ -704,7 +572,7 @@ struct iPadLibraryView: View {
                             Divider().opacity(0.08).padding(.leading, 52)
                         }
                     }
-                    .padding(.bottom, playerService.currentTrack != nil ? 90 : 16)
+                    .padding(.bottom, contentBottomInset)
                 }
             }
         }
@@ -733,8 +601,16 @@ struct iPadLibraryView: View {
             }
         }
         
-        return dict.values.sorted {
+        let allAlbums = dict.values.sorted {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+        }
+        
+        if searchText.isEmpty {
+            return allAlbums
+        }
+        return allAlbums.filter {
+            $0.name.localizedCaseInsensitiveContains(searchText) ||
+            $0.artist.localizedCaseInsensitiveContains(searchText)
         }
     }
     

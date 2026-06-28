@@ -203,7 +203,8 @@ struct MainPlayerView: View {
                                     isShowingPlayerDetail: $isShowingPlayerDetail,
                                     selectedSection: $iPadSelectedSection,
                                     selectedPlaylist: $iPadSelectedPlaylist,
-                                    showNewPlaylistAlert: $iPadShowNewPlaylistAlert
+                                    showNewPlaylistAlert: $iPadShowNewPlaylistAlert,
+                                    searchText: $searchText
                                 )
                             } else if verticalSizeClass == .compact {
                                 CoverFlowView(albums: albums, selectedAlbum: $selectedAlbum)
