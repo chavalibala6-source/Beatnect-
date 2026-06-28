@@ -1209,6 +1209,7 @@ struct PlayerDetailView: View {
                             isShowingQueue: $isShowingQueue,
                             isSmallScreen: isSmallScreen
                         )
+                        .padding(.bottom, geometry.safeAreaInsets.bottom)
                     }
                     }
                 }
@@ -1300,6 +1301,7 @@ struct PlayerDetailView: View {
             progress = 0
         }
     }
+    .ignoresSafeArea()
     }
     
     private func formatTime(_ seconds: Double) -> String {
