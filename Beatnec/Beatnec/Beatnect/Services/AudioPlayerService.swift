@@ -126,12 +126,63 @@ class AudioPlayerService: NSObject, ObservableObject {
             }
         }
     }
+    @Published var precomputedAlbums: [Album] = []
     @Published var libraryTracks: [Track] = [] {
         didSet {
             if let e = try? JSONEncoder().encode(libraryTracks) {
                 UserDefaults.standard.set(e, forKey: "gmp_cached_library_tracks")
             }
+            updatePrecomputedAlbums()
         }
+    }
+    
+    private func updatePrecomputedAlbums() {
+        var dict = [String: Album]()
+
+        for track in libraryTracks {
+            let normalizedAlbumName = track.displayAlbum
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+
+            if var existingAlbum = dict[normalizedAlbumName] {
+                existingAlbum.tracks.append(track)
+                dict[normalizedAlbumName] = existingAlbum
+            } else {
+                dict[normalizedAlbumName] = Album(
+                    name: track.displayAlbum,
+                    artist: track.displayArtist,
+                    artworkUrl: track.fullArtworkUrl,
+                    tracks: [track]
+                )
+            }
+        }
+        
+        var result = dict.values.map { album -> Album in
+            let uniqueArtists = Set(
+                album.tracks.map {
+                    $0.displayArtist.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            )
+
+            // Pick the first track that actually has an artwork URL
+            let resolvedArtwork = album.artworkUrl ?? album.tracks.compactMap { $0.fullArtworkUrl }.first
+            return Album(
+                name: album.name,
+                artist: uniqueArtists.count == 1
+                    ? (uniqueArtists.first ?? "")
+                    : "Various Artists",
+                artworkUrl: resolvedArtwork,
+                tracks: album.tracks.sorted {
+                    $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+                }
+            )
+        }
+
+        result.sort {
+            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+        }
+
+        self.precomputedAlbums = result
     }
     @Published var currentTrackIndex: Int?
     @Published var isPlaying = false

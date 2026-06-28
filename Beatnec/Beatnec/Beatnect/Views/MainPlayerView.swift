@@ -283,15 +283,22 @@ struct MainPlayerView: View {
     @ViewBuilder
     private func libraryContentView() -> some View {
         if selectedLibraryTab == .albums {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 16)], spacing: 16) {
-                ForEach(albums) { album in
-                    AlbumCardView(album: album,
-                                  currentTrack: playerService.currentTrack,
-                                  isPlaying: playerService.isPlaying)
+            VStack(alignment: .leading, spacing: 16) {
+                if !recentlyAddedAlbums.isEmpty {
+                    horizontalAlbumRow(title: "Recently Added", albumsToDisplay: recentlyAddedAlbums)
+                }
+                
+                Text("Artists")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(themeManager.primaryTextColor)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 16)
+                
+                ForEach(artistGroupedAlbums, id: \.artist) { group in
+                    horizontalAlbumRow(title: group.artist, albumsToDisplay: group.albums)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
             .padding(.bottom, playerService.currentTrack != nil ? 140 : 80)
         } else if selectedLibraryTab == .songs {
             LazyVStack(spacing: 8) {
@@ -390,53 +397,45 @@ struct MainPlayerView: View {
     }
     
     private var albums: [Album] {
-        var dict = [String: Album]()
+        return playerService.precomputedAlbums
+    }
 
-        for track in playerService.libraryTracks {
-            let normalizedAlbumName = track.displayAlbum
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .lowercased()
+    private var recentlyAddedAlbums: [Album] {
+        Array(albums.suffix(6).reversed())
+    }
 
-            if var existingAlbum = dict[normalizedAlbumName] {
-                existingAlbum.tracks.append(track)
-                dict[normalizedAlbumName] = existingAlbum
-            } else {
-                dict[normalizedAlbumName] = Album(
-                    name: track.displayAlbum,
-                    artist: track.displayArtist,
-                    artworkUrl: track.fullArtworkUrl,  // may be nil; resolved below
-                    tracks: [track]
-                )
+    private var artistGroupedAlbums: [(artist: String, albums: [Album])] {
+        var dict = [String: [Album]]()
+        for album in albums {
+            let artist = album.artist.isEmpty ? "Unknown Artist" : album.artist
+            dict[artist, default: []].append(album)
+        }
+        return dict.map { (artist: $0.key, albums: $0.value.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })) }
+            .sorted(by: { $0.artist.lowercased() < $1.artist.lowercased() })
+    }
+
+    @ViewBuilder
+    private func horizontalAlbumRow(title: String, albumsToDisplay: [Album]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(themeManager.primaryTextColor)
+                .padding(.horizontal, 24)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(albumsToDisplay) { album in
+                        AlbumCardView(album: album,
+                                      currentTrack: playerService.currentTrack,
+                                      isPlaying: playerService.isPlaying)
+                            .frame(width: 140)
+                    }
+                }
+                .padding(.horizontal, 24)
             }
         }
-
-        // Update artist label for albums containing multiple artists
-        var result = dict.values.map { album -> Album in
-            let uniqueArtists = Set(
-                album.tracks.map {
-                    $0.displayArtist.trimmingCharacters(in: .whitespacesAndNewlines)
-                }
-            )
-
-            // Pick the first track that actually has an artwork URL
-            let resolvedArtwork = album.artworkUrl ?? album.tracks.compactMap { $0.fullArtworkUrl }.first
-            return Album(
-                name: album.name,
-                artist: uniqueArtists.count == 1
-                    ? (uniqueArtists.first ?? "")
-                    : "Various Artists",
-                artworkUrl: resolvedArtwork,
-                tracks: album.tracks.sorted {
-                    $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
-                }
-            )
-        }
-
-        result.sort {
-            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-        }
-
-        return result
+        .padding(.vertical, 8)
     }
     
     private func reloadLibrary() {
