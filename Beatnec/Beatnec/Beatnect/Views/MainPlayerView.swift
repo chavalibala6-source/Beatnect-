@@ -1215,7 +1215,6 @@ struct PlayerDetailView: View {
                     }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
-                .background(ArtworkBackground(color: artworkColor).ignoresSafeArea())
                 .offset(y: verticalDragOffset)
                 .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.86), value: verticalDragOffset)
                 .gesture(
