@@ -2147,6 +2147,13 @@ struct iPadUpNextPane: View {
                     .lineLimit(1)
             }
             Spacer()
+            
+            // Reorder Handle
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white.opacity(0.4))
+                .frame(width: 32, height: 32)
+                .padding(.trailing, 8)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 10)
@@ -2158,6 +2165,7 @@ struct iPadUpNextPane: View {
                 playerService.playTrack(at: idx)
             }
         }
+        .instantQueueReorder(track: track, playerService: playerService)
     }
 }
 
