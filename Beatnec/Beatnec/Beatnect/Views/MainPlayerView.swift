@@ -401,110 +401,9 @@ struct MainPlayerView: View {
                                   onTap: { isShowingPlayerDetail = true })
                         .transition(.move(edge: .bottom))
                         .padding(.horizontal, 24)
-                        .frame(width: UIScreen.main.bounds.width / 2)
+                        .frame(width: UIScreen.main.bounds.width / 1.75)
+                        .padding(.bottom, 16)
                 }
-
-                // Liquid glass toolbar
-                HStack(spacing: 16) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(LibrarySection.allCases) { section in
-                                Button(action: {
-                                    iPadSelectedSection = section
-                                    if section != .playlists {
-                                        iPadSelectedPlaylist = nil
-                                    }
-                                }) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: section.icon)
-                                            .font(.system(size: 14, weight: .medium))
-                                        Text(section.rawValue)
-                                            .font(.system(size: 14, weight: .medium))
-                                    }
-                                    .foregroundColor(iPadSelectedSection == section && iPadSelectedPlaylist == nil ? themeManager.primaryTextColor : themeManager.primaryTextColor.opacity(0.6))
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 10)
-                                    .background(
-                                        Capsule()
-                                            .fill(iPadSelectedSection == section && iPadSelectedPlaylist == nil ? Color.accentColor.opacity(themeManager.isDarkMode ? 0.3 : 0.15) : Color.clear)
-                                    )
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-
-                            Divider()
-                                .frame(height: 24)
-                                .background(themeManager.primaryTextColor.opacity(0.2))
-
-                            Button(action: {
-                                iPadSelectedSection = .playlists
-                                iPadSelectedPlaylist = nil
-                            }) {
-                                Text("All Playlists")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(iPadSelectedSection == .playlists && iPadSelectedPlaylist == nil ? themeManager.primaryTextColor : themeManager.primaryTextColor.opacity(0.6))
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 10)
-                                    .background(
-                                        Capsule()
-                                            .fill(iPadSelectedSection == .playlists && iPadSelectedPlaylist == nil ? Color.accentColor.opacity(themeManager.isDarkMode ? 0.3 : 0.15) : Color.clear)
-                                    )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-
-                            ForEach(playlistStore.playlists) { playlist in
-                                Button(action: {
-                                    iPadSelectedSection = .playlists
-                                    iPadSelectedPlaylist = playlist
-                                }) {
-                                    Text(playlist.name)
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(iPadSelectedPlaylist?.id == playlist.id ? themeManager.primaryTextColor : themeManager.primaryTextColor.opacity(0.6))
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 10)
-                                        .background(
-                                            Capsule()
-                                                .fill(iPadSelectedPlaylist?.id == playlist.id ? Color.accentColor.opacity(themeManager.isDarkMode ? 0.3 : 0.15) : Color.clear)
-                                        )
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    Button(action: { iPadShowNewPlaylistAlert = true }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(themeManager.primaryTextColor)
-                            .frame(width: 40, height: 40)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-
-                    Button(action: {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                            themeManager.isDarkMode.toggle()
-                        }
-                    }) {
-                        Image(systemName: themeManager.isDarkMode ? "sun.max.fill" : "moon.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(themeManager.primaryTextColor)
-                            .frame(width: 40, height: 40)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                .padding(.vertical, 10)
-                .padding(.horizontal, 12)
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(Color.white.opacity(themeManager.isDarkMode ? 0.1 : 0.2), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.12), radius: 15, x: 0, y: 6)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 0)
             }
         } else if verticalSizeClass != .compact {
             VStack(spacing: 12) {
@@ -1933,24 +1832,43 @@ struct iPadPlayerDetailView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            HStack(spacing: 0) {
-                // ── LEFT: Player ──────────────────────────────────────────
-                iPadPlayerLeftPane(
-                    playerService: playerService,
-                    isPresented: $isPresented,
-                    isDraggingSlider: $isDraggingSlider,
-                    progress: $progress,
-                    width: geometry.size.width * 0.55,
-                    height: geometry.size.height
-                )
-
-                // ── RIGHT: Up Next ────────────────────────────────────────
-                iPadUpNextPane(
-                    playerService: playerService,
-                    width: geometry.size.width * 0.45,
-                    height: geometry.size.height
-                )
+            ZStack(alignment: .top) {
+                HStack(spacing: 0) {
+                    // ── LEFT: Player ──────────────────────────────────────────
+                    iPadPlayerLeftPane(
+                        playerService: playerService,
+                        isPresented: $isPresented,
+                        isDraggingSlider: $isDraggingSlider,
+                        progress: $progress,
+                        width: geometry.size.width * 0.55,
+                        height: geometry.size.height
+                    )
+                    
+                    // ── RIGHT: Up Next ────────────────────────────────────────
+                    iPadUpNextPane(
+                        playerService: playerService,
+                        width: geometry.size.width * 0.45,
+                        height: geometry.size.height
+                    )
+                }
+                
+                // Centered Handle
+                Capsule()
+                    .fill(Color.white.opacity(0.35))
+                    .frame(width: 40, height: 5)
+                    .padding(.top, 18)
             }
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                DragGesture()
+                    .onEnded { value in
+                        if value.translation.height > 50 {
+                            withAnimation {
+                                isPresented = false
+                            }
+                        }
+                    }
+            )
         }
         .ignoresSafeArea()
     }
@@ -1972,12 +1890,6 @@ struct iPadPlayerLeftPane: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            // Handle
-            Capsule()
-                .fill(Color.white.opacity(0.35))
-                .frame(width: 40, height: 5)
-                .padding(.top, 18)
-
             // Album Artwork
             artworkView
 
@@ -2180,7 +2092,7 @@ struct iPadUpNextPane: View {
             }
         }
         .frame(width: width, height: height)
-        .background(Color.primary.opacity(0.02))
+        .background(Color.clear)
     }
 
     @ViewBuilder

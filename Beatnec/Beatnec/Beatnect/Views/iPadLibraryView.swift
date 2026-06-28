@@ -323,6 +323,69 @@ struct iPadLibraryView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
+            
+            Spacer()
+            
+            // Library Menu
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(LibrarySection.allCases) { section in
+                        Button(action: {
+                            selectedSection = section
+                            if section != .playlists {
+                                selectedPlaylist = nil
+                            }
+                        }) {
+                            Text(section.rawValue)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(selectedSection == section && selectedPlaylist == nil ? themeManager.primaryTextColor : themeManager.primaryTextColor.opacity(0.6))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(selectedSection == section && selectedPlaylist == nil ? Color.accentColor.opacity(themeManager.isDarkMode ? 0.3 : 0.15) : Color.clear)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    
+                    Divider().frame(height: 16).background(themeManager.primaryTextColor.opacity(0.2))
+                    
+                    Button(action: {
+                        selectedSection = .playlists
+                        selectedPlaylist = nil
+                    }) {
+                        Text("All Playlists")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(selectedSection == .playlists && selectedPlaylist == nil ? themeManager.primaryTextColor : themeManager.primaryTextColor.opacity(0.6))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(selectedSection == .playlists && selectedPlaylist == nil ? Color.accentColor.opacity(themeManager.isDarkMode ? 0.3 : 0.15) : Color.clear)
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    ForEach(store.playlists) { playlist in
+                        Button(action: {
+                            selectedSection = .playlists
+                            selectedPlaylist = playlist
+                        }) {
+                            Text(playlist.name)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(selectedPlaylist?.id == playlist.id ? themeManager.primaryTextColor : themeManager.primaryTextColor.opacity(0.6))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(selectedPlaylist?.id == playlist.id ? Color.accentColor.opacity(themeManager.isDarkMode ? 0.3 : 0.15) : Color.clear)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -408,7 +471,7 @@ struct iPadLibraryView: View {
                 Color.clear.frame(height: 1).id("top")
                 LazyVGrid(
                 columns: [
-                    GridItem(.adaptive(minimum: 260), spacing: 24)
+                    GridItem(.adaptive(minimum: 160), spacing: 24)
                 ],
                 spacing: 24
             ){
