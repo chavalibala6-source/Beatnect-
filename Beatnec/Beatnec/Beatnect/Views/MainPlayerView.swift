@@ -2899,6 +2899,7 @@ extension Double {
 struct QueueListView: View {
     @ObservedObject var playerService: AudioPlayerService
     let isSmallScreen: Bool
+    let onEllipsisTapped: (Track) -> Void
     @State private var draggedTrack: Track? = nil
     
     var body: some View {
@@ -2929,7 +2930,9 @@ struct QueueListView: View {
                     
                     Spacer()
                     
-                    Button(action: {}) {
+                    Button(action: {
+                        onEllipsisTapped(track)
+                    }) {
                         Image(systemName: "ellipsis")
                             .font(.system(size: 20))
                             .foregroundColor(.white.opacity(0.8))
@@ -2958,7 +2961,7 @@ struct QueueListView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
             
-            // Queue List
+            // Queue Queue
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 20) {
                     Text("Continue Playing")
@@ -2996,6 +2999,17 @@ struct QueueListView: View {
                                     }
                                     
                                     Spacer()
+                                    
+                                    Button(action: {
+                                        onEllipsisTapped(track)
+                                    }) {
+                                        Image(systemName: "ellipsis")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.white.opacity(0.6))
+                                            .frame(width: 32, height: 32)
+                                            .background(Color.white.opacity(0.1))
+                                            .clipShape(Circle())
+                                    }
                                     
                                     Image(systemName: "line.3.horizontal")
                                         .font(.system(size: 16, weight: .semibold))
