@@ -802,25 +802,24 @@ struct iPadLibraryView: View {
         
         var body: some View {
             VStack(alignment: .leading, spacing: 10) {
-                Group {
-                    if let url = firstArtwork {
-                        CachedAsyncImage(url: url) { img in
-                            img.resizable().aspectRatio(contentMode: .fill)
-                        } placeholder: { Color.gray.opacity(0.3) }
-                            .frame(maxWidth: .infinity)
-                            .aspectRatio(1, contentMode: .fit)
-                            .cornerRadius(10)
-                            .clipped()
-                    } else {
-                        Image(systemName: "music.note.list")
-                            .font(.system(size: 40))
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .aspectRatio(1, contentMode: .fit)
-                            .background(Color.primary.opacity(0.06))
-                            .cornerRadius(10)
-                    }
-                }
+                Color.clear
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay(
+                        Group {
+                            if let url = firstArtwork {
+                                CachedAsyncImage(url: url) { img in
+                                    img.resizable().aspectRatio(contentMode: .fill)
+                                } placeholder: { Color.gray.opacity(0.3) }
+                            } else {
+                                Image(systemName: "music.note.list")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.secondary)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .background(Color.primary.opacity(0.06))
+                            }
+                        }
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(playlist.name)
@@ -959,32 +958,34 @@ struct iPadLibraryView: View {
                 
                 // Artwork square
                 ZStack(alignment: .bottomLeading) {
-                    Group {
-                        if let url = album.artworkUrl {
-                            CachedAsyncImage(url: url) { img in
-                                img.resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            } placeholder: {
-                                Rectangle()
-                                    .fill(Color.primary.opacity(0.07))
-                                    .overlay(
-                                        Image(systemName: "music.note")
-                                            .font(.system(size: 36))
-                                            .foregroundColor(.secondary)
-                                    )
+                    Color.clear
+                        .aspectRatio(1, contentMode: .fit)
+                        .overlay(
+                            Group {
+                                if let url = album.artworkUrl {
+                                    CachedAsyncImage(url: url) { img in
+                                        img.resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                    } placeholder: {
+                                        Rectangle()
+                                            .fill(Color.primary.opacity(0.07))
+                                            .overlay(
+                                                Image(systemName: "music.note")
+                                                    .font(.system(size: 36))
+                                                    .foregroundColor(.secondary)
+                                            )
+                                    }
+                                } else {
+                                    Rectangle()
+                                        .fill(Color.white.opacity(0.07))
+                                        .overlay(
+                                            Image(systemName: "music.note")
+                                                .font(.system(size: 36))
+                                                .foregroundColor(.secondary)
+                                        )
+                                }
                             }
-                        } else {
-                            Rectangle()
-                                .fill(Color.white.opacity(0.07))
-                                .overlay(
-                                    Image(systemName: "music.note")
-                                        .font(.system(size: 36))
-                                        .foregroundColor(.secondary)
-                                )
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .aspectRatio(1, contentMode: .fit)
+                        )
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
