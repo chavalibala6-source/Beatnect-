@@ -1140,8 +1140,8 @@ struct PlayerDetailView: View {
                         Capsule()
                             .fill(Color.white.opacity(0.5))
                             .frame(width: 40, height: 5)
-                            .padding(.top, isSmallScreen ? 24 : 48)
-                            .padding(.bottom, 12)
+                            .padding(.top, isSmallScreen ? 32 : 64)
+                            .padding(.bottom, 20)
                             .contentShape(Rectangle())
                         
                         Spacer() // Flexible space above artwork pushes it downwards
@@ -1218,7 +1218,7 @@ struct PlayerDetailView: View {
                     }
                 }
                 .offset(y: verticalDragOffset)
-                .cornerRadius(32)
+                .cornerRadius(32, corners: [.topLeft, .topRight])
                 .clipped()
                 .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.86), value: verticalDragOffset)
                 .gesture(
@@ -2898,5 +2898,22 @@ struct QueueDropDelegate: DropDelegate {
                 }
             }
         }
+    }
+}
+
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
+    }
+}
+
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
     }
 }
