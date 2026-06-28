@@ -421,26 +421,44 @@ struct MainPlayerView: View {
 
     @ViewBuilder
     private func horizontalAlbumRow(title: String, albumsToDisplay: [Album]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(themeManager.primaryTextColor)
-                .padding(.horizontal, 24)
-            
+        VStack(alignment: .leading, spacing: 10) {
+            // Section Header with See All
+            HStack(alignment: .center) {
+                Text(title)
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(themeManager.primaryTextColor)
+                
+                Spacer()
+                
+                NavigationLink(destination: AlbumsGridView(title: title, albums: albumsToDisplay).environmentObject(themeManager)) {
+                    HStack(spacing: 4) {
+                        Text("See All")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.blue)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.blue)
+                    }
+                }
+            }
+            .padding(.horizontal, 24)
+
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
+                HStack(spacing: 18) {
                     ForEach(albumsToDisplay) { album in
                         AlbumCardView(album: album,
                                       currentTrack: playerService.currentTrack,
                                       isPlaying: playerService.isPlaying)
-                            .frame(width: 140)
+                            .frame(width: 180)
                     }
                 }
                 .padding(.horizontal, 24)
+                .padding(.vertical, 4)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
     }
     
     private func reloadLibrary() {
@@ -579,25 +597,67 @@ struct AlbumCardView: View {
             ZStack(alignment: .bottomTrailing) {
                 artworkView
                 hoverOverlay
+                
+                // Glassmorphic playing badge (no more green border)
+                if isCurrent {
+                    ZStack {
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .frame(width: 36, height: 36)
+                        
+                        if isPlaying {
+                            // Animated waveform bars
+                            HStack(spacing: 2.5) {
+                                ForEach(0..<3) { i in
+                                    Capsule()
+                                        .fill(Color.white)
+                                        .frame(width: 3, height: 12)
+                                        .scaleEffect(y: isPlaying ? CGFloat.random(in: 0.4...1.0) : 0.4, anchor: .center)
+                                        .animation(
+                                            Animation.easeInOut(duration: 0.5)
+                                                .repeatForever()
+                                                .delay(Double(i) * 0.15),
+                                            value: isPlaying
+                                        )
+                                }
+                            }
+                        } else {
+                            Image(systemName: "pause.fill")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .shadow(color: .black.opacity(0.3), radius: 6, x: 0, y: 2)
+                    .padding(10)
+                }
             }
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22).opacity(0.8) : Color.clear, lineWidth: 1.5)
+            // Subtle glowing shadow when current (no border)
+            .shadow(
+                color: isCurrent ? Color.white.opacity(0.25) : Color.black.opacity(0.1),
+                radius: isCurrent ? 14 : 6,
+                x: 0,
+                y: isCurrent ? 6 : 3
             )
-            .shadow(color: (isCurrent ? Color(red: 0.65, green: 0.8, blue: 0.22) : Color.black).opacity(isCurrent ? 0.2 : 0.1), radius: 6, x: 0, y: 3)
             
             // Text Details
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(album.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(themeManager.primaryTextColor)
+                    .foregroundColor(isCurrent ? .white : themeManager.primaryTextColor)
                     .lineLimit(1)
+                
+                if !album.artist.isEmpty {
+                    Text(album.artist)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 4)
         }
-        .scaleEffect(isCurrent ? 1.04 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCurrent)
+        .scaleEffect(isCurrent ? 1.05 : 1.0)
+        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: isCurrent)
         .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.2)) {
