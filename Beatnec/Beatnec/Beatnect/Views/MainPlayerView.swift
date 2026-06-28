@@ -1128,7 +1128,7 @@ struct PlayerDetailView: View {
                         Capsule()
                             .fill(Color.primary.opacity(0.4))
                             .frame(width: 40, height: 5)
-                            .padding(.top, isSmallScreen ? 18 : 28)
+                            .padding(.top, (isSmallScreen ? 12 : 24) + geometry.safeAreaInsets.top)
                             .padding(.bottom, 12)
                             .contentShape(Rectangle())
                         
