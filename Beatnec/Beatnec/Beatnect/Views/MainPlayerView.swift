@@ -224,7 +224,7 @@ struct MainPlayerView: View {
                 PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail, artworkColor: $currentPlayerColor)
                     .environmentObject(themeManager)
                     .preferredColorScheme(.dark)
-                    .transition(.move(edge: .bottom))
+                    .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .opacity))
                     .zIndex(10)
                     .ignoresSafeArea()
             }
