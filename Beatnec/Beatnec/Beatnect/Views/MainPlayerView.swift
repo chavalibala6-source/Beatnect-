@@ -1191,7 +1191,7 @@ struct PlayerDetailView: View {
                                         ZStack {
                                             if isDraggingArtwork && dragOffset > 0 && currentIndex - 1 >= 0 {
                                                 let prevTrack = playerService.tracks[currentIndex - 1]
-                                                ScrollingTextView(text: prevTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
+                                                ScrollingTextView(text: prevTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true, isScrollingEnabled: false)
                                                     .offset(x: dragOffset - geometry.size.width)
                                             }
                                             
@@ -1200,7 +1200,7 @@ struct PlayerDetailView: View {
                                             
                                             if isDraggingArtwork && dragOffset < 0 && currentIndex + 1 < playerService.tracks.count {
                                                 let nextTrack = playerService.tracks[currentIndex + 1]
-                                                ScrollingTextView(text: nextTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
+                                                ScrollingTextView(text: nextTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true, isScrollingEnabled: false)
                                                     .offset(x: dragOffset + geometry.size.width)
                                             }
                                         }
@@ -1646,6 +1646,7 @@ struct ScrollingTextView: View {
     var fontWeight: Font.Weight = .bold
     var color: Color = .primary
     var isCentered: Bool = true
+    var isScrollingEnabled: Bool = true
     
     @State private var position: CGFloat = 0.0
     @State private var textWidth: CGFloat = 0.0
@@ -1701,6 +1702,14 @@ struct ScrollingTextView: View {
             .onDisappear {
                 scrollTask?.cancel()
             }
+            .onChange(of: isScrollingEnabled) { enabled in
+                if enabled {
+                    setupScrolling(containerWidth: containerWidth)
+                } else {
+                    scrollTask?.cancel()
+                    position = 0.0
+                }
+            }
         }
         .frame(height: fontHeight())
     }
@@ -1716,6 +1725,10 @@ struct ScrollingTextView: View {
     
     private func setupScrolling(containerWidth: CGFloat) {
         scrollTask?.cancel()
+        guard isScrollingEnabled else {
+            position = 0.0
+            return
+        }
         scrollTask = Task {
             await startScrollingLoop(containerWidth: containerWidth)
         }
