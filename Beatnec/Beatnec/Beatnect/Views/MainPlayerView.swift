@@ -2616,6 +2616,7 @@ extension Double {
 struct QueueListView: View {
     @ObservedObject var playerService: AudioPlayerService
     let isSmallScreen: Bool
+    @State private var draggedTrack: Track? = nil
     
     var body: some View {
         VStack(spacing: 0) {
@@ -2721,6 +2722,11 @@ struct QueueListView: View {
                             .onTapGesture {
                                 playerService.playTrack(at: absoluteIndex)
                             }
+                            .onDrag {
+                                self.draggedTrack = track
+                                return NSItemProvider(object: track.id as NSString)
+                            }
+                            .onDrop(of: [.text], delegate: QueueDropDelegate(item: track, playerService: playerService, draggedItem: $draggedTrack))
                         }
                     } else {
                         Text("No upcoming tracks")
@@ -2859,4 +2865,39 @@ struct AirPlayView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: AVRoutePickerView, context: Context) {}
+}
+
+
+struct QueueDropDelegate: DropDelegate {
+    let item: Track
+    let playerService: AudioPlayerService
+    @Binding var draggedItem: Track?
+    
+    func performDrop(info: DropInfo) -> Bool {
+        self.draggedItem = nil
+        return true
+    }
+    
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem = draggedItem else { return }
+        if draggedItem != item {
+            guard let from = playerService.tracks.firstIndex(of: draggedItem),
+                  let to = playerService.tracks.firstIndex(of: item) else { return }
+            
+            withAnimation {
+                playerService.tracks.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
+                
+                // Keep playing track index aligned
+                if let currentIndex = playerService.currentTrackIndex {
+                    if currentIndex == from {
+                        playerService.currentTrackIndex = to
+                    } else if from < currentIndex && to >= currentIndex {
+                        playerService.currentTrackIndex = currentIndex - 1
+                    } else if from > currentIndex && to <= currentIndex {
+                        playerService.currentTrackIndex = currentIndex + 1
+                    }
+                }
+            }
+        }
+    }
 }
