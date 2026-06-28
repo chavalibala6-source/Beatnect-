@@ -907,6 +907,9 @@ struct PlayerDetailView: View {
             let isSmallScreen = geometry.size.height < 720
             
             ZStack {
+                ArtworkBackground(color: artworkColor)
+                    .ignoresSafeArea()
+                
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     // iPad: full split-view layout
                     iPadPlayerDetailView(
