@@ -907,12 +907,6 @@ struct PlayerDetailView: View {
             let isSmallScreen = geometry.size.height < 720
             
             ZStack {
-                // Always use Artwork background
-                ArtworkBackground(color: artworkColor)
-                    .ignoresSafeArea()
-                
-
-                
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     // iPad: full split-view layout
                     iPadPlayerDetailView(
@@ -921,6 +915,7 @@ struct PlayerDetailView: View {
                         isDraggingSlider: $isDraggingSlider,
                         progress: $progress
                     )
+                    .background(ArtworkBackground(color: artworkColor).ignoresSafeArea())
                 } else if verticalSizeClass == .compact {
                     // Landscape Layout: Image left side (60% width), controls right side (40% width)
                     let landscapeArtworkSize = max(120.0, min(280.0, geometry.size.height - (isSmallScreen ? 48.0 : 64.0)))
@@ -1129,6 +1124,7 @@ struct PlayerDetailView: View {
                         Spacer(minLength: 4)
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
+                    .background(ArtworkBackground(color: artworkColor).ignoresSafeArea())
                 } else {
                     // Portrait Layout
                     let portraitArtworkSize = max(120.0, min(300.0, min(geometry.size.width - 64.0, geometry.size.height - 380.0)))
@@ -1216,8 +1212,8 @@ struct PlayerDetailView: View {
                     }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
+                .background(ArtworkBackground(color: artworkColor).ignoresSafeArea())
                 .offset(y: verticalDragOffset)
-                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 32, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 32))
                 .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.86), value: verticalDragOffset)
                 .gesture(
                     isShowingQueue ? nil :
@@ -2684,46 +2680,47 @@ struct QueueListView: View {
                     
                     let nextIndex = (playerService.currentTrackIndex ?? -1) + 1
                     if nextIndex < playerService.tracks.count {
-                        let upcomingTracks = playerService.tracks[nextIndex...]
-                        ForEach(Array(upcomingTracks.enumerated()), id: \.offset) { offset, track in
-                            let absoluteIndex = nextIndex + offset
-                            HStack(spacing: 16) {
-                                Group {
-                                    if let url = track.fullArtworkUrl {
-                                        CachedAsyncImage(url: url) { image in
-                                            image.resizable()
-                                                 .aspectRatio(contentMode: .fill)
-                                        } placeholder: {
-                                            Color.clear
+                        let upcomingTracks = Array(playerService.tracks[nextIndex...])
+                        ForEach(upcomingTracks) { track in
+                            if let absoluteIndex = playerService.tracks.firstIndex(of: track) {
+                                HStack(spacing: 16) {
+                                    Group {
+                                        if let url = track.fullArtworkUrl {
+                                            CachedAsyncImage(url: url) { image in
+                                                image.resizable()
+                                                     .aspectRatio(contentMode: .fill)
+                                            } placeholder: {
+                                                Color.clear
+                                            }
+                                        } else {
+                                            MusicPlaceholderView()
                                         }
-                                    } else {
-                                        MusicPlaceholderView()
                                     }
+                                    .frame(width: 48, height: 48)
+                                    .cornerRadius(6)
+                                    .clipped()
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(track.displayName).font(.callout).foregroundColor(.white).lineLimit(1)
+                                        Text(track.displayArtist).font(.caption).foregroundColor(.white.opacity(0.6)).lineLimit(1)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "line.3.horizontal")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white.opacity(0.4))
                                 }
-                                .frame(width: 48, height: 48)
-                                .cornerRadius(6)
-                                .clipped()
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(track.displayName).font(.callout).foregroundColor(.white).lineLimit(1)
-                                    Text(track.displayArtist).font(.caption).foregroundColor(.white.opacity(0.6)).lineLimit(1)
+                                .padding(.horizontal, 24)
+                                .onTapGesture {
+                                    playerService.playTrack(at: absoluteIndex)
                                 }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "line.3.horizontal")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white.opacity(0.4))
+                                .onDrag {
+                                    self.draggedTrack = track
+                                    return NSItemProvider(object: track.id as NSString)
+                                }
+                                .onDrop(of: [.text], delegate: QueueDropDelegate(item: track, playerService: playerService, draggedItem: $draggedTrack))
                             }
-                            .padding(.horizontal, 24)
-                            .onTapGesture {
-                                playerService.playTrack(at: absoluteIndex)
-                            }
-                            .onDrag {
-                                self.draggedTrack = track
-                                return NSItemProvider(object: track.id as NSString)
-                            }
-                            .onDrop(of: [.text], delegate: QueueDropDelegate(item: track, playerService: playerService, draggedItem: $draggedTrack))
                         }
                     } else {
                         Text("No upcoming tracks")
@@ -2881,19 +2878,11 @@ struct QueueDropDelegate: DropDelegate {
             guard let from = playerService.tracks.firstIndex(of: draggedItem),
                   let to = playerService.tracks.firstIndex(of: item) else { return }
             
+            let nextIndex = (playerService.currentTrackIndex ?? -1) + 1
+            guard from >= nextIndex, to >= nextIndex else { return }
+            
             withAnimation {
                 playerService.tracks.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
-                
-                // Keep playing track index aligned
-                if let currentIndex = playerService.currentTrackIndex {
-                    if currentIndex == from {
-                        playerService.currentTrackIndex = to
-                    } else if from < currentIndex && to >= currentIndex {
-                        playerService.currentTrackIndex = currentIndex - 1
-                    } else if from > currentIndex && to <= currentIndex {
-                        playerService.currentTrackIndex = currentIndex + 1
-                    }
-                }
             }
         }
     }
