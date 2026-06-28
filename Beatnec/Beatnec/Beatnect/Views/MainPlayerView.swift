@@ -902,6 +902,50 @@ struct PlayerDetailView: View {
     @State private var isDraggingArtwork = false
     @State private var verticalDragOffset: CGFloat = 0.0
     @State private var isDraggingVertically = false
+    
+    @State private var showingOptionsMenu = false
+    @State private var menuTrack: Track? = nil
+    @State private var showingNewPlaylistAlert = false
+    @State private var newPlaylistName = ""
+    
+    private func isTrackFavorited(_ track: Track) -> Bool {
+        if let favPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == "Favorites" }) {
+            return favPlaylist.trackIDs.contains(track.id)
+        }
+        return false
+    }
+    
+    private func toggleFavorite(_ track: Track) {
+        if let favPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == "Favorites" }) {
+            if favPlaylist.trackIDs.contains(track.id) {
+                PlaylistStore.shared.removeTrack(id: track.id, from: favPlaylist)
+            } else {
+                PlaylistStore.shared.addTrack(track, to: favPlaylist)
+            }
+        } else {
+            PlaylistStore.shared.createPlaylist(name: "Favorites")
+            if let favPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == "Favorites" }) {
+                PlaylistStore.shared.addTrack(track, to: favPlaylist)
+            }
+        }
+    }
+    
+    private func handleAddToPlaylist(_ track: Track) {
+        showingNewPlaylistAlert = true
+    }
+    
+    private func shareTrack(_ track: Track) {
+        let text = "Check out this song: \(track.displayName) by \(track.displayArtist)"
+        let av = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+            var topVC = rootVC
+            while let presented = topVC.presentedViewController {
+                topVC = presented
+            }
+            topVC.present(av, animated: true, completion: nil)
+        }
+    }
 
     var body: some View {
         let artworkScale = playerService.isPlaying ? 1.20 : 1.0
@@ -1162,7 +1206,12 @@ struct PlayerDetailView: View {
                         Spacer() // Flexible space above artwork pushes it downwards
                         
                         if isShowingQueue {
-                            QueueListView(playerService: playerService, isSmallScreen: isSmallScreen)
+                            QueueListView(playerService: playerService, isSmallScreen: isSmallScreen, onEllipsisTapped: { track in
+                                menuTrack = track
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    showingOptionsMenu = true
+                                }
+                            })
                                 .frame(maxHeight: .infinity)
                         } else {
                             if let track = playerService.currentTrack {
@@ -1189,32 +1238,62 @@ struct PlayerDetailView: View {
                                 Spacer() // Flexible space below artwork centers it vertically
                                 
                                 // Track Info (directly above progress bar, no Spacer below)
-                                VStack(spacing: 6) {
-                                    let currentIndex = playerService.currentTrackIndex ?? 0
-                                    ZStack {
-                                        if isDraggingArtwork && dragOffset > 0 && currentIndex - 1 >= 0 {
-                                            let prevTrack = playerService.tracks[currentIndex - 1]
-                                            ScrollingTextView(text: prevTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true, isScrollingEnabled: false)
-                                                .offset(x: dragOffset - geometry.size.width)
-                                        }
-                                        
-                                        ScrollingTextView(text: track.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
-                                            .offset(x: dragOffset)
-                                        
-                                        if isDraggingArtwork && dragOffset < 0 && currentIndex + 1 < playerService.tracks.count {
-                                            let nextTrack = playerService.tracks[currentIndex + 1]
-                                            ScrollingTextView(text: nextTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true, isScrollingEnabled: false)
-                                                .offset(x: dragOffset + geometry.size.width)
-                                        }
+                                HStack(alignment: .center, spacing: 0) {
+                                    // Balanced invisible placeholder for alignment
+                                    Button(action: {}) {
+                                        Image(systemName: "ellipsis")
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.clear)
+                                            .frame(width: 44, height: 44)
                                     }
-                                    .frame(height: isSmallScreen ? 30 : 40)
-                                    .padding(.horizontal, 16)
-                                    .clipped()
+                                    .disabled(true)
                                     
-                                    Text(track.displayArtist)
-                                        .font(isSmallScreen ? .subheadline : .title3)
-                                        .foregroundColor(.white.opacity(0.7))
-                                        .lineLimit(1)
+                                    Spacer()
+                                    
+                                    VStack(spacing: 6) {
+                                        let currentIndex = playerService.currentTrackIndex ?? 0
+                                        ZStack {
+                                            if isDraggingArtwork && dragOffset > 0 && currentIndex - 1 >= 0 {
+                                                let prevTrack = playerService.tracks[currentIndex - 1]
+                                                ScrollingTextView(text: prevTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true, isScrollingEnabled: false)
+                                                    .offset(x: dragOffset - geometry.size.width)
+                                            }
+                                            
+                                            ScrollingTextView(text: track.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
+                                                .offset(x: dragOffset)
+                                            
+                                            if isDraggingArtwork && dragOffset < 0 && currentIndex + 1 < playerService.tracks.count {
+                                                let nextTrack = playerService.tracks[currentIndex + 1]
+                                                ScrollingTextView(text: nextTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true, isScrollingEnabled: false)
+                                                    .offset(x: dragOffset + geometry.size.width)
+                                            }
+                                        }
+                                        .frame(height: isSmallScreen ? 30 : 40)
+                                        .padding(.horizontal, 16)
+                                        .clipped()
+                                        
+                                        Text(track.displayArtist)
+                                            .font(isSmallScreen ? .subheadline : .title3)
+                                            .foregroundColor(.white.opacity(0.7))
+                                            .lineLimit(1)
+                                    }
+                                    .frame(maxWidth: geometry.size.width - 120)
+                                    
+                                    Spacer()
+                                    
+                                    Button(action: {
+                                        menuTrack = track
+                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                            showingOptionsMenu = true
+                                        }
+                                    }) {
+                                        Image(systemName: "ellipsis")
+                                            .font(.system(size: 20, weight: .semibold))
+                                            .foregroundColor(.white.opacity(0.8))
+                                            .frame(width: 44, height: 44)
+                                            .background(Color.white.opacity(0.12))
+                                            .clipShape(Circle())
+                                    }
                                 }
                                 .padding(.horizontal, 24)
                             }
@@ -1312,6 +1391,179 @@ struct PlayerDetailView: View {
             isDraggingSlider = false
             progress = 0
         }
+        
+        // Custom Options Menu Overlay inside ZStack
+        if showingOptionsMenu, let track = menuTrack {
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        showingOptionsMenu = false
+                    }
+                }
+                .zIndex(200)
+            
+            VStack {
+                Spacer()
+                
+                VStack(spacing: 0) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.3))
+                        .frame(width: 36, height: 5)
+                        .padding(.top, 10)
+                        .padding(.bottom, 20)
+                    
+                    // Header Row: Add, Favorite, Share
+                    HStack(spacing: 0) {
+                        Button(action: {
+                            handleAddToPlaylist(track)
+                        }) {
+                            VStack(spacing: 8) {
+                                Image(systemName: "plus.circle")
+                                    .font(.title2)
+                                Text("Add")
+                                    .font(.caption)
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                        }
+                        
+                        let isFav = isTrackFavorited(track)
+                        Button(action: {
+                            toggleFavorite(track)
+                        }) {
+                            VStack(spacing: 8) {
+                                Image(systemName: isFav ? "star.fill" : "star")
+                                    .font(.title2)
+                                    .foregroundColor(isFav ? .yellow : .white)
+                                Text("Favorite")
+                                    .font(.caption)
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                        }
+                        
+                        Button(action: {
+                            shareTrack(track)
+                        }) {
+                            VStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.title2)
+                                Text("Share")
+                                    .font(.caption)
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(.bottom, 20)
+                    
+                    Divider()
+                        .background(Color.white.opacity(0.2))
+                    
+                    VStack(spacing: 0) {
+                        Button(action: {
+                            handleAddToPlaylist(track)
+                        }) {
+                            HStack {
+                                Image(systemName: "music.note.list")
+                                    .font(.title3)
+                                    .frame(width: 24)
+                                Text("Add to Playlist")
+                                    .font(.body)
+                                Spacer()
+                            }
+                            .foregroundColor(.white)
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 24)
+                        }
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.horizontal, 24)
+                        
+                        Button(action: {
+                            withAnimation { showingOptionsMenu = false }
+                        }) {
+                            HStack {
+                                Image(systemName: "music.note")
+                                    .font(.title3)
+                                    .frame(width: 24)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Go to Album")
+                                        .font(.body)
+                                    Text(track.displayAlbum)
+                                        .font(.caption)
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                Spacer()
+                            }
+                            .foregroundColor(.white)
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 24)
+                        }
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.1))
+                            .padding(.horizontal, 24)
+                        
+                        Button(action: {
+                            withAnimation { showingOptionsMenu = false }
+                        }) {
+                            HStack {
+                                Image(systemName: "person.fill")
+                                    .font(.title3)
+                                    .frame(width: 24)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Go to Artist")
+                                        .font(.body)
+                                    Text(track.displayArtist)
+                                        .font(.caption)
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                Spacer()
+                            }
+                            .foregroundColor(.white)
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 24)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(Color(red: 0.15, green: 0.15, blue: 0.15))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 24)
+            }
+            .transition(.move(edge: .bottom))
+            .zIndex(201)
+        }
+    }
+    .alert("Add to Playlist", isPresented: $showingNewPlaylistAlert) {
+        TextField("Playlist Name", text: $newPlaylistName)
+        Button("Cancel", role: .cancel) {
+            newPlaylistName = ""
+        }
+        Button("Create & Add") {
+            let name = newPlaylistName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let finalName = name.isEmpty ? "My Playlist" : name
+            PlaylistStore.shared.createPlaylist(name: finalName)
+            if let newPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == finalName }) {
+                if let track = menuTrack {
+                    PlaylistStore.shared.addTrack(track, to: newPlaylist)
+                }
+            }
+            newPlaylistName = ""
+            showingOptionsMenu = false
+        }
+    } message: {
+        Text("Enter a name for the new playlist.")
     }
     .ignoresSafeArea()
     }
