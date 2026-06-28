@@ -109,10 +109,21 @@ struct PlaylistDetailView: View {
                                         
                                         // Title & Artist
                                         VStack(alignment: .leading, spacing: 2) {
-                                            Text(track.displayName)
-                                                .font(.system(size: 15, weight: .bold))
-                                                .foregroundColor(isCurrent ? .blue : themeManager.primaryTextColor)
-                                                .lineLimit(1)
+                                            HStack(spacing: 6) {
+                                                Text(track.displayName)
+                                                    .font(.system(size: 15, weight: .bold))
+                                                    .foregroundColor(isCurrent ? .blue : themeManager.primaryTextColor)
+                                                    .lineLimit(1)
+                                                
+                                                if let favPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == "Favorites" }) {
+                                                    let compositeKey = "\(track.displayName)||\(track.displayArtist)"
+                                                    if favPlaylist.trackIDs.contains(track.id) || favPlaylist.trackIDs.contains(compositeKey) {
+                                                        Image(systemName: "star.fill")
+                                                            .font(.system(size: 11))
+                                                            .foregroundColor(.yellow)
+                                                    }
+                                                }
+                                            }
                                             
                                             Text(track.displayArtist)
                                                 .font(.system(size: 13, weight: .regular))

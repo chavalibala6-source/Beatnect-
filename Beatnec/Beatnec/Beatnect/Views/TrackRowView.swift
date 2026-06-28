@@ -28,10 +28,21 @@ struct TrackRowView: View {
             
             // Text Meta
             VStack(alignment: .leading, spacing: 4) {
-                Text(track.displayName)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(isCurrent ? .blue : .primary)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(track.displayName)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(isCurrent ? .blue : .primary)
+                        .lineLimit(1)
+                    
+                    if let favPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == "Favorites" }) {
+                        let compositeKey = "\(track.displayName)||\(track.displayArtist)"
+                        if favPlaylist.trackIDs.contains(track.id) || favPlaylist.trackIDs.contains(compositeKey) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.yellow)
+                        }
+                    }
+                }
                 
                 Text(track.displayArtist)
                     .font(.system(size: 13, weight: .medium))
