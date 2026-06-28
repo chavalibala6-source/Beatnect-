@@ -217,7 +217,7 @@ struct MainPlayerView: View {
                                         
                                         libraryContentView()
                                     }
-                                    .onChange(of: scrollToTopTrigger) {
+                                    .onChange(of: scrollToTopTrigger) { _ in
                                         withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                                             proxy.scrollTo("scroll_to_top_dummy", anchor: .top)
                                         }
@@ -227,7 +227,7 @@ struct MainPlayerView: View {
                         }
                     }
                 }
-                .navigationTitle(verticalSizeClass == .compact ? "" : "Beatnect")
+                .navigationTitle("")
                 .navigationBarHidden(verticalSizeClass == .compact)
                 .navigationBarItems(
                     leading: Group {
@@ -401,6 +401,7 @@ struct MainPlayerView: View {
                                   onTap: { isShowingPlayerDetail = true })
                         .transition(.move(edge: .bottom))
                         .padding(.horizontal, 24)
+                        .frame(width: UIScreen.main.bounds.width / 2)
                 }
 
                 // Liquid glass toolbar
@@ -503,7 +504,7 @@ struct MainPlayerView: View {
                 )
                 .shadow(color: .black.opacity(0.12), radius: 15, x: 0, y: 6)
                 .padding(.horizontal, 24)
-                .padding(.bottom, 16)
+                .padding(.bottom, 0)
             }
         } else if verticalSizeClass != .compact {
             VStack(spacing: 12) {

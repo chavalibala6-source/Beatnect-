@@ -54,6 +54,7 @@ struct iPadLibraryView: View {
     @State private var sortAscending: Bool = true
     @State private var newPlaylistName = ""
     @State private var dropTargetPlaylist: UUID? = nil
+    @State private var scrollToTopTrigger = false
     
     // Columns definition
     enum SongColumn: String, CaseIterable {
@@ -149,6 +150,9 @@ struct iPadLibraryView: View {
             ForEach([LibrarySection.songs, .albums, .artists]) { section in
                 sidebarRow(section: section, isSelected: selectedSection == section && selectedPlaylist == nil)
                     .onTapGesture {
+                        if selectedSection == section && selectedPlaylist == nil {
+                            scrollToTopTrigger.toggle()
+                        }
                         selectedSection = section
                         selectedPlaylist = nil
                     }
@@ -280,12 +284,7 @@ struct iPadLibraryView: View {
     
     @ViewBuilder
     private var contentArea: some View {
-        VStack(spacing: 0) {
-            // Toolbar
-            contentToolbar
-            
-            Divider().opacity(0.3)
-            
+        Group {
             switch selectedSection {
             case .songs:
                 songsTable
@@ -300,6 +299,13 @@ struct iPadLibraryView: View {
                     playlistsOverview
                 }
             }
+        }
+        .safeAreaInset(edge: .top) {
+            VStack(spacing: 0) {
+                contentToolbar
+                Divider().opacity(0.3)
+            }
+            .background(.ultraThinMaterial)
         }
     }
     
@@ -341,8 +347,10 @@ struct iPadLibraryView: View {
             
             Divider().opacity(0.2)
             
-            ScrollView {
-                LazyVStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    Color.clear.frame(height: 1).id("top")
+                    LazyVStack(spacing: 0) {
                     ForEach(Array(filteredTracks.enumerated()), id: \.element.id) { idx, track in
                         SongTableRow(
                             track: track,
@@ -361,6 +369,11 @@ struct iPadLibraryView: View {
                     }
                 }
                 .padding(.bottom, playerService.currentTrack != nil ? 90 : 16)
+                .onChange(of: scrollToTopTrigger) { _ in
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                        proxy.scrollTo("top", anchor: .top)
+                    }
+                }
             }
         }
     }
@@ -390,8 +403,10 @@ struct iPadLibraryView: View {
     // MARK: - Albums Grid
     
     private var albumsGrid: some View {
-        ScrollView {
-            LazyVGrid(
+        ScrollViewReader { proxy in
+            ScrollView {
+                Color.clear.frame(height: 1).id("top")
+                LazyVGrid(
                 columns: [
                     GridItem(.adaptive(minimum: 260), spacing: 24)
                 ],
@@ -423,7 +438,12 @@ struct iPadLibraryView: View {
                 }
             }
             .padding(20)
-                .padding(.bottom, contentBottomInset)
+            .padding(.bottom, contentBottomInset)
+            .onChange(of: scrollToTopTrigger) { _ in
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                    proxy.scrollTo("top", anchor: .top)
+                }
+            }
         }
     }
     
