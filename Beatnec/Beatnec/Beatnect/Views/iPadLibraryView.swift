@@ -440,6 +440,7 @@ struct iPadLibraryView: View {
             }
         }
     }
+}
     
     private func columnHeader(_ col: SongColumn, width: CGFloat?) -> some View {
         Button(action: {
@@ -509,6 +510,7 @@ struct iPadLibraryView: View {
             }
         }
     }
+}
     
     // MARK: - Artists List
     
