@@ -747,10 +747,20 @@ struct iPadLibraryView: View {
                 
                 // Title + artist (flex)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(track.displayName)
-                        .font(.system(size: 14, weight: isCurrent ? .semibold : .regular))
-                        .foregroundColor(isCurrent ? themeManager.accentColor : .primary)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(track.displayName)
+                            .font(.system(size: 14, weight: isCurrent ? .semibold : .regular))
+                            .foregroundColor(isCurrent ? themeManager.accentColor : .primary)
+                            .lineLimit(1)
+                        
+                        if let favPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == "Favorites" }) {
+                            if favPlaylist.trackIDs.contains(track.id) {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.yellow)
+                            }
+                        }
+                    }
                     Text(track.displayArtist)
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
@@ -785,6 +795,41 @@ struct iPadLibraryView: View {
             .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
             .onHover { isHovered = $0 }
             .contentShape(Rectangle())
+            .contextMenu {
+                // Favorite Button
+                Button(action: {
+                    if let favPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == "Favorites" }) {
+                        if favPlaylist.trackIDs.contains(track.id) {
+                            PlaylistStore.shared.removeTrack(id: track.id, from: favPlaylist)
+                        } else {
+                            PlaylistStore.shared.addTrack(track, to: favPlaylist)
+                        }
+                    } else {
+                        PlaylistStore.shared.createPlaylist(name: "Favorites")
+                        if let favPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == "Favorites" }) {
+                            PlaylistStore.shared.addTrack(track, to: favPlaylist)
+                        }
+                    }
+                }) {
+                    let isFav = PlaylistStore.shared.playlists.first(where: { $0.name == "Favorites" })?.trackIDs.contains(track.id) ?? false
+                    Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "heart.slash" : "heart")
+                }
+                
+                Divider()
+                
+                // Add to Playlist Submenu
+                Menu {
+                    ForEach(PlaylistStore.shared.playlists) { playlist in
+                        Button(action: {
+                            PlaylistStore.shared.addTrack(track, to: playlist)
+                        }) {
+                            Label(playlist.name, systemImage: "music.note.list")
+                        }
+                    }
+                } label: {
+                    Label("Add to Playlist", systemImage: "text.badge.plus")
+                }
+            }
         }
     }
     

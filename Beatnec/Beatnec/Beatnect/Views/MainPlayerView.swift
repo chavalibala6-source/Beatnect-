@@ -1342,13 +1342,25 @@ struct PlayerDetailView: View {
                             .frame(maxHeight: .infinity)
                     } else {
                         if let track = playerService.currentTrack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                ScrollingTextView(text: track.displayName, font: .title3, fontWeight: .bold, color: .white, isCentered: false)
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    ScrollingTextView(text: track.displayName, font: .title3, fontWeight: .bold, color: .white, isCentered: false)
+                                    
+                                    Text(track.displayArtist)
+                                        .font(.subheadline)
+                                        .foregroundColor(.white.opacity(0.7))
+                                        .lineLimit(1)
+                                }
                                 
-                                Text(track.displayArtist)
-                                    .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .lineLimit(1)
+                                Spacer()
+                                
+                                Button(action: {
+                                    toggleFavorite(track)
+                                }) {
+                                    Image(systemName: isTrackFavorited(track) ? "heart.fill" : "heart")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(isTrackFavorited(track) ? .red : .white.opacity(0.6))
+                                }
                             }
                             .padding(.top, 4)
                         }
@@ -1514,13 +1526,14 @@ struct PlayerDetailView: View {
                     // Track Info (directly above progress bar, no Spacer below)
                     HStack(alignment: .center, spacing: 0) {
                         // Balanced invisible placeholder for alignment
-                        Button(action: {}) {
-                            Image(systemName: "ellipsis")
+                        Button(action: {
+                            toggleFavorite(track)
+                        }) {
+                            Image(systemName: isTrackFavorited(track) ? "heart.fill" : "heart")
                                 .font(.system(size: 20))
-                                .foregroundColor(.clear)
+                                .foregroundColor(isTrackFavorited(track) ? .red : .white.opacity(0.8))
                                 .frame(width: 44, height: 44)
                         }
-                        .disabled(true)
                         
                         Spacer()
                         
@@ -3127,7 +3140,7 @@ struct QueueListView: View {
     @ObservedObject var playerService: AudioPlayerService
     let isSmallScreen: Bool
     let onEllipsisTapped: (Track) -> Void
-    @State private var draggedTrack: Track? = nil
+    @State private var editMode: EditMode = .active
     
     var body: some View {
         VStack(spacing: 0) {
@@ -3188,81 +3201,93 @@ struct QueueListView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
             
-            // Queue Queue
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 20) {
-                    Text("Continue Playing")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 4)
-                    
+            // Queue List
+            List {
+                Section(header: Text("Continue Playing")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 4)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                ) {
                     let nextIndex = (playerService.currentTrackIndex ?? -1) + 1
                     if nextIndex < playerService.tracks.count {
                         let upcomingTracks = Array(playerService.tracks[nextIndex...])
                         ForEach(upcomingTracks) { track in
-                            if let absoluteIndex = playerService.tracks.firstIndex(of: track) {
-                                HStack(spacing: 16) {
-                                    Group {
-                                        if let url = track.fullArtworkUrl {
-                                            CachedAsyncImage(url: url) { image in
-                                                image.resizable()
-                                                     .aspectRatio(contentMode: .fill)
-                                            } placeholder: {
-                                                Color.clear
-                                            }
-                                        } else {
-                                            MusicPlaceholderView()
+                            HStack(spacing: 16) {
+                                Group {
+                                    if let url = track.fullArtworkUrl {
+                                        CachedAsyncImage(url: url) { image in
+                                            image.resizable()
+                                                 .aspectRatio(contentMode: .fill)
+                                        } placeholder: {
+                                            Color.clear
                                         }
+                                    } else {
+                                        MusicPlaceholderView()
                                     }
-                                    .frame(width: 48, height: 48)
-                                    .cornerRadius(6)
-                                    .clipped()
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(track.displayName).font(.callout).foregroundColor(.white).lineLimit(1)
-                                        Text(track.displayArtist).font(.caption).foregroundColor(.white.opacity(0.6)).lineLimit(1)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Button(action: {
-                                        onEllipsisTapped(track)
-                                    }) {
-                                        Image(systemName: "ellipsis")
-                                            .font(.system(size: 16))
-                                            .foregroundColor(.white.opacity(0.6))
-                                            .frame(width: 32, height: 32)
-                                            .background(Color.white.opacity(0.1))
-                                            .clipShape(Circle())
-                                    }
-                                    
-                                    Image(systemName: "line.3.horizontal")
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(.white.opacity(0.4))
                                 }
-                                .padding(.horizontal, 24)
-                                .onTapGesture {
+                                .frame(width: 48, height: 48)
+                                .cornerRadius(6)
+                                .clipped()
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(track.displayName).font(.callout).foregroundColor(.white).lineLimit(1)
+                                    Text(track.displayArtist).font(.caption).foregroundColor(.white.opacity(0.6)).lineLimit(1)
+                                }
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    onEllipsisTapped(track)
+                                }) {
+                                    Image(systemName: "ellipsis")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.white.opacity(0.6))
+                                        .frame(width: 32, height: 32)
+                                        .background(Color.white.opacity(0.1))
+                                        .clipShape(Circle())
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .padding(.trailing, 8)
+                            }
+                            .padding(.vertical, 4)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if let absoluteIndex = playerService.tracks.firstIndex(of: track) {
                                     playerService.playTrack(at: absoluteIndex)
                                 }
-                                .onDrag {
-                                    self.draggedTrack = track
-                                    return NSItemProvider(object: track.id as NSString)
-                                }
-                                .onDrop(of: [.text], delegate: QueueDropDelegate(item: track, playerService: playerService, draggedItem: $draggedTrack))
                             }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 24, bottom: 4, trailing: 0))
                         }
+                        .onMove { source, destination in
+                            var actualSource = IndexSet()
+                            for offset in source {
+                                actualSource.insert(offset + nextIndex)
+                            }
+                            let actualDestination = destination + nextIndex
+                            playerService.tracks.move(fromOffsets: actualSource, toOffset: actualDestination)
+                        }
+                        .deleteDisabled(true)
                     } else {
                         Text("No upcoming tracks")
                             .font(.callout)
                             .foregroundColor(.white.opacity(0.6))
-                            .padding(.horizontal, 24)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 24, bottom: 4, trailing: 0))
                     }
                 }
-                .padding(.bottom, 40)
             }
+            .listStyle(.plain)
+            .tint(.white) // Ensures edit controls (drag handles) are visible on dark background
+            .padding(.bottom, 40)
         }
+        .environment(\.editMode, $editMode)
     }
 }
 
