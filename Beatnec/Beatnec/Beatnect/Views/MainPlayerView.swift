@@ -1001,7 +1001,7 @@ struct PlayerDetailView: View {
                                 }
                                 Spacer()
                             }
-                            .frame(width: geometry.size.width * 0.58)
+                            .frame(width: geometry.size.width * 0.48)
                             
                             // Right Side: Controls and Info wrapped in a liquid glass-morphic card (40% width split)
                             VStack(alignment: .leading, spacing: 0) {
@@ -1137,7 +1137,7 @@ struct PlayerDetailView: View {
                                 }
                             }
                             .padding(18)
-                            .frame(width: geometry.size.width * 0.38, height: cardHeight)
+                            .frame(width: geometry.size.width * 0.48, height: cardHeight)
 
                         }
                         .padding(.horizontal, 16)
