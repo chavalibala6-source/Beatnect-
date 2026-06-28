@@ -2057,6 +2057,7 @@ struct iPadUpNextPane: View {
     @ObservedObject var playerService: AudioPlayerService
     let width: CGFloat
     let height: CGFloat
+    @State private var draggedTrack: Track? = nil
 
     var upNextTracks: [Track] {
         guard let idx = playerService.currentTrackIndex,
@@ -2165,7 +2166,11 @@ struct iPadUpNextPane: View {
                 playerService.playTrack(at: idx)
             }
         }
-        .instantQueueReorder(track: track, playerService: playerService)
+        .onDrag {
+            self.draggedTrack = track
+            return NSItemProvider(object: track.id.uuidString as NSString)
+        }
+        .onDrop(of: [.text], delegate: QueueDropDelegate(item: track, playerService: playerService, draggedItem: $draggedTrack))
     }
 }
 
@@ -3148,6 +3153,7 @@ struct QueueListView: View {
     @ObservedObject var playerService: AudioPlayerService
     let isSmallScreen: Bool
     let onEllipsisTapped: (Track) -> Void
+    @State private var draggedTrack: Track? = nil
     
     var body: some View {
         VStack(spacing: 0) {
@@ -3267,7 +3273,11 @@ struct QueueListView: View {
                                 .onTapGesture {
                                     playerService.playTrack(at: absoluteIndex)
                                 }
-                                .instantQueueReorder(track: track, playerService: playerService)
+                                .onDrag {
+                                    self.draggedTrack = track
+                                    return NSItemProvider(object: track.id.uuidString as NSString)
+                                }
+                                .onDrop(of: [.text], delegate: QueueDropDelegate(item: track, playerService: playerService, draggedItem: $draggedTrack))
                             }
                         }
                     } else {
