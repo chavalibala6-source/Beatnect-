@@ -1,0 +1,199 @@
+{
+  "" : {
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Beatnec-primary.dia",
+    "emit-module-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Beatnec-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Beatnec-primary-emit-module.dia",
+    "pch" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Beatnec-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Beatnec-primary.swiftdeps"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Models/Album.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Album.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Album.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Album.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Album.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Album.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Album.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Album.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Album~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Models/Playlist.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Playlist.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Playlist.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Playlist.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Playlist.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Playlist.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Playlist.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Playlist.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Playlist~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Models/Track.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Track.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Track.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Track.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Track.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Track.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Track.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Track.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/Track~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Services/APIService.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/APIService.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/APIService.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/APIService.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/APIService.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/APIService.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/APIService.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/APIService.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/APIService~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Services/AudioPlayerService.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AudioPlayerService.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AudioPlayerService.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AudioPlayerService.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AudioPlayerService.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AudioPlayerService.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AudioPlayerService.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AudioPlayerService.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AudioPlayerService~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Services/PlaylistStore.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistStore.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistStore.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistStore.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistStore.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistStore.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistStore.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistStore.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistStore~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Services/ThemeManager.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ThemeManager.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ThemeManager.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ThemeManager.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ThemeManager.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ThemeManager.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ThemeManager.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ThemeManager.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ThemeManager~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/AlbumDetailView.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumDetailView.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumDetailView.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumDetailView.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumDetailView.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumDetailView.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumDetailView.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumDetailView.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumDetailView~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/AlbumsGridView.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumsGridView.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumsGridView.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumsGridView.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumsGridView.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumsGridView.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumsGridView.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumsGridView.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/AlbumsGridView~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/ArtistDetailView.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ArtistDetailView.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ArtistDetailView.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ArtistDetailView.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ArtistDetailView.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ArtistDetailView.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ArtistDetailView.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ArtistDetailView.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/ArtistDetailView~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/BeatnectApp.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/BeatnectApp.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/BeatnectApp.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/BeatnectApp.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/BeatnectApp.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/BeatnectApp.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/BeatnectApp.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/BeatnectApp.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/BeatnectApp~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/CachedAsyncImage.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CachedAsyncImage.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CachedAsyncImage.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CachedAsyncImage.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CachedAsyncImage.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CachedAsyncImage.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CachedAsyncImage.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CachedAsyncImage.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CachedAsyncImage~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/CarPlaySceneDelegate.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CarPlaySceneDelegate.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CarPlaySceneDelegate.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CarPlaySceneDelegate.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CarPlaySceneDelegate.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CarPlaySceneDelegate.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CarPlaySceneDelegate.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CarPlaySceneDelegate.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/CarPlaySceneDelegate~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/MainPlayerView.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/MainPlayerView.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/MainPlayerView.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/MainPlayerView.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/MainPlayerView.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/MainPlayerView.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/MainPlayerView.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/MainPlayerView.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/MainPlayerView~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/PlaylistDetailView.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistDetailView.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistDetailView.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistDetailView.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistDetailView.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistDetailView.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistDetailView.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistDetailView.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistDetailView~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/PlaylistPickerView.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistPickerView.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistPickerView.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistPickerView.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistPickerView.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistPickerView.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistPickerView.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistPickerView.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/PlaylistPickerView~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/TrackRowView.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/TrackRowView.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/TrackRowView.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/TrackRowView.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/TrackRowView.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/TrackRowView.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/TrackRowView.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/TrackRowView.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/TrackRowView~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/iPadLibraryView.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/iPadLibraryView.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/iPadLibraryView.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/iPadLibraryView.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/iPadLibraryView.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/iPadLibraryView.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/iPadLibraryView.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/iPadLibraryView.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/iPadLibraryView~partial.swiftmodule"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataDevice/Build/Intermediates.noindex/Beatnec.build/Debug-iphoneos/Beatnec.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Models/Album.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Album.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Album.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Album.dia",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Album.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Album.swiftdeps"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Models/Playlist.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Playlist.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Playlist.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Playlist.dia",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Playlist.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Playlist.swiftdeps"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Models/Track.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Track.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Track.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Track.dia",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Track.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/Track.swiftdeps"
+  }
+}

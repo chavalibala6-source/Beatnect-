@@ -2168,7 +2168,7 @@ struct iPadUpNextPane: View {
         }
         .onDrag {
             self.draggedTrack = track
-            return NSItemProvider(object: track.id.uuidString as NSString)
+            return NSItemProvider(object: track.id as NSString)
         }
         .onDrop(of: [.text], delegate: QueueDropDelegate(item: track, playerService: playerService, draggedItem: $draggedTrack))
     }
@@ -3275,7 +3275,7 @@ struct QueueListView: View {
                                 }
                                 .onDrag {
                                     self.draggedTrack = track
-                                    return NSItemProvider(object: track.id.uuidString as NSString)
+                                    return NSItemProvider(object: track.id as NSString)
                                 }
                                 .onDrop(of: [.text], delegate: QueueDropDelegate(item: track, playerService: playerService, draggedItem: $draggedTrack))
                             }

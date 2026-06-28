@@ -1,0 +1,23 @@
+{
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Services/APIService.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/APIService.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/APIService.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/APIService.dia",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/APIService.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/APIService.swiftdeps"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Services/AudioPlayerService.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/AudioPlayerService.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/AudioPlayerService.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/AudioPlayerService.dia",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/AudioPlayerService.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/AudioPlayerService.swiftdeps"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Services/PlaylistStore.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/PlaylistStore.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/PlaylistStore.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/PlaylistStore.dia",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/PlaylistStore.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/arm64/PlaylistStore.swiftdeps"
+  }
+}

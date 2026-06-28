@@ -1,0 +1,23 @@
+{
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Services/ThemeManager.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/ThemeManager.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/ThemeManager.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/ThemeManager.dia",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/ThemeManager.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/ThemeManager.swiftdeps"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/AlbumDetailView.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/AlbumDetailView.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/AlbumDetailView.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/AlbumDetailView.dia",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/AlbumDetailView.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/AlbumDetailView.swiftdeps"
+  },
+  "/Users/bala/Beatnect-/Beatnec/Beatnec/Beatnect/Views/AlbumsGridView.swift" : {
+    "const-values" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/AlbumsGridView.swiftconstvalues",
+    "dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/AlbumsGridView.d",
+    "diagnostics" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/AlbumsGridView.dia",
+    "object" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/AlbumsGridView.o",
+    "swift-dependencies" : "/Users/bala/Beatnect-/Beatnec/Build/DerivedDataTest/Build/Intermediates.noindex/Beatnec.build/Debug-iphonesimulator/Beatnec.build/Objects-normal/x86_64/AlbumsGridView.swiftdeps"
+  }
+}
