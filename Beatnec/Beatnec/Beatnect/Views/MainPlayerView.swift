@@ -1221,7 +1221,7 @@ struct PlayerDetailView: View {
             
             Spacer(minLength: 4)
             
-            HStack(spacing: 16) {
+            HStack(spacing: 20) {
                 // Left Side: Artwork Vinyl (60% width split)
                 VStack {
                     Spacer()
@@ -1413,10 +1413,13 @@ struct PlayerDetailView: View {
                         }
                     }
                 }
-                .padding(18)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 18)
                 .frame(width: geometry.size.width * 0.48, height: cardHeight)
             }
-            .padding(.horizontal, 16)
+            // Respect safe area insets on both sides (notch + home bar in landscape)
+            .padding(.leading, max(16, geometry.safeAreaInsets.leading))
+            .padding(.trailing, max(16, geometry.safeAreaInsets.trailing))
             
             Spacer(minLength: 4)
         }
