@@ -1219,7 +1219,6 @@ struct PlayerDetailView: View {
                 }
                 .offset(y: verticalDragOffset)
                 .cornerRadius(32, corners: [.topLeft, .topRight])
-                .clipped()
                 .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.86), value: verticalDragOffset)
                 .gesture(
                     isShowingQueue ? nil :
