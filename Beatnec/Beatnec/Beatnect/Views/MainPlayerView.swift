@@ -985,6 +985,7 @@ struct PlayerDetailView: View {
     @State private var menuTrack: Track? = nil
     @State private var showingNewPlaylistAlert = false
     @State private var newPlaylistName = ""
+    @State private var showingPlaylistPicker = false
     
     private func isTrackFavorited(_ track: Track) -> Bool {
         if let favPlaylist = PlaylistStore.shared.playlists.first(where: { $0.name == "Favorites" }) {
@@ -1009,7 +1010,7 @@ struct PlayerDetailView: View {
     }
     
     private func handleAddToPlaylist(_ track: Track) {
-        showingNewPlaylistAlert = true
+        showingPlaylistPicker = true
     }
     
     private func shareTrack(_ track: Track) {
@@ -1083,6 +1084,16 @@ struct PlayerDetailView: View {
             }
         } message: {
             Text("Enter a name for the new playlist.")
+        }
+        .sheet(isPresented: $showingPlaylistPicker) {
+            PlaylistPickerView(track: menuTrack) {
+                showingPlaylistPicker = false
+                showingOptionsMenu = false
+            } onNewPlaylist: {
+                showingPlaylistPicker = false
+                showingNewPlaylistAlert = true
+            }
+            .environmentObject(themeManager)
         }
         .ignoresSafeArea()
     }
