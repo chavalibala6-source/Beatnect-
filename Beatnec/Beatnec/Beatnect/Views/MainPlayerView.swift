@@ -1138,72 +1138,66 @@ struct PlayerDetailView: View {
                         
                         Spacer(minLength: isSmallScreen ? 16 : 32)
                         
-                        // Middle Section: Dynamic Content (Now Playing vs Queue)
                         if isShowingQueue {
                             QueueListView(playerService: playerService, isSmallScreen: isSmallScreen)
                                 .frame(maxHeight: .infinity)
                         } else {
-                            // Big Artwork Vinyl & Track Info
                             if let track = playerService.currentTrack {
-                                VStack(spacing: 0) {
-                                    // Static Artwork View
-                                    Group {
-                                        if let url = track.fullArtworkUrl {
-                                            CachedAsyncImage(url: url) { image in
-                                                image.resizable()
-                                                     .aspectRatio(contentMode: .fill)
-                                            } placeholder: {
-                                                Color.clear
-                                            }
-                                        } else {
-                                            MusicPlaceholderView()
+                                // Static Artwork View
+                                Group {
+                                    if let url = track.fullArtworkUrl {
+                                        CachedAsyncImage(url: url) { image in
+                                            image.resizable()
+                                                 .aspectRatio(contentMode: .fill)
+                                        } placeholder: {
+                                            Color.clear
                                         }
+                                    } else {
+                                        MusicPlaceholderView()
                                     }
-                                    .frame(width: portraitArtworkSize, height: portraitArtworkSize)
-                                    .cornerRadius(12)
-                                    .clipped()
-                                    .scaleEffect(artworkScale)
-                                    .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
-                                    .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
-                                    
-                                    Spacer(minLength: isSmallScreen ? 32 : 64)
-                                    
-                                    // Track Info
-                                    VStack(spacing: 6) {
-                                        let currentIndex = playerService.currentTrackIndex ?? 0
-                                        ZStack {
-                                            if isDraggingArtwork && dragOffset > 0 && currentIndex - 1 >= 0 {
-                                                let prevTrack = playerService.tracks[currentIndex - 1]
-                                                ScrollingTextView(text: prevTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true, isScrollingEnabled: false)
-                                                    .offset(x: dragOffset - geometry.size.width)
-                                            }
-                                            
-                                            ScrollingTextView(text: track.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
-                                                .offset(x: dragOffset)
-                                            
-                                            if isDraggingArtwork && dragOffset < 0 && currentIndex + 1 < playerService.tracks.count {
-                                                let nextTrack = playerService.tracks[currentIndex + 1]
-                                                ScrollingTextView(text: nextTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true, isScrollingEnabled: false)
-                                                    .offset(x: dragOffset + geometry.size.width)
-                                            }
-                                        }
-                                        .frame(height: isSmallScreen ? 30 : 40)
-                                        .padding(.horizontal, 16)
-                                        .clipped()
-                                        
-                                        Text(track.displayArtist)
-                                            .font(isSmallScreen ? .subheadline : .title3)
-                                            .foregroundColor(.white.opacity(0.7))
-                                            .lineLimit(1)
-                                    }
-                                    .padding(.horizontal, 24)
-                                    
-                                    Spacer()
                                 }
-                            } else {
-                                Spacer()
+                                .frame(width: portraitArtworkSize, height: portraitArtworkSize)
+                                .cornerRadius(12)
+                                .clipped()
+                                .scaleEffect(artworkScale)
+                                .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
+                                .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
+                                
+                                Spacer(minLength: isSmallScreen ? 32 : 64)
+                                
+                                // Track Info
+                                VStack(spacing: 6) {
+                                    let currentIndex = playerService.currentTrackIndex ?? 0
+                                    ZStack {
+                                        if isDraggingArtwork && dragOffset > 0 && currentIndex - 1 >= 0 {
+                                            let prevTrack = playerService.tracks[currentIndex - 1]
+                                            ScrollingTextView(text: prevTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true, isScrollingEnabled: false)
+                                                .offset(x: dragOffset - geometry.size.width)
+                                        }
+                                        
+                                        ScrollingTextView(text: track.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true)
+                                            .offset(x: dragOffset)
+                                        
+                                        if isDraggingArtwork && dragOffset < 0 && currentIndex + 1 < playerService.tracks.count {
+                                            let nextTrack = playerService.tracks[currentIndex + 1]
+                                            ScrollingTextView(text: nextTrack.displayName, font: isSmallScreen ? .title3 : .title2, fontWeight: .bold, color: .white, isCentered: true, isScrollingEnabled: false)
+                                                .offset(x: dragOffset + geometry.size.width)
+                                        }
+                                    }
+                                    .frame(height: isSmallScreen ? 30 : 40)
+                                    .padding(.horizontal, 16)
+                                    .clipped()
+                                    
+                                    Text(track.displayArtist)
+                                        .font(isSmallScreen ? .subheadline : .title3)
+                                        .foregroundColor(.white.opacity(0.7))
+                                        .lineLimit(1)
+                                }
+                                .padding(.horizontal, 24)
                             }
                         }
+                        
+                        Spacer()
                         
                         // Static Bottom Controls (Always visible!)
                         PortraitBottomControlsView(
@@ -1284,10 +1278,7 @@ struct PlayerDetailView: View {
                             }
                         }
                 )
-        .background(
-            Color.black
-                .ignoresSafeArea()
-        )
+
         .onAppear {
             updateArtworkColor()
         }
