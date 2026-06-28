@@ -1215,8 +1215,9 @@ struct PlayerDetailView: View {
                     }
                     }
                 }
+                .frame(width: geometry.size.width, height: geometry.size.height)
                 .offset(y: verticalDragOffset)
-                .cornerRadius(32, corners: [.topLeft, .topRight])
+                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 32, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 32))
                 .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.86), value: verticalDragOffset)
                 .gesture(
                     isShowingQueue ? nil :
@@ -2899,18 +2900,3 @@ struct QueueDropDelegate: DropDelegate {
 }
 
 
-struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
-        return Path(path.cgPath)
-    }
-}
-
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCorner(radius: radius, corners: corners))
-    }
-}
