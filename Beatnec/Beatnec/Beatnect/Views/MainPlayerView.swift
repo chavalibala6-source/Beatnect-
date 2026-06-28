@@ -29,9 +29,7 @@ struct ArtworkBackground: View {
     var body: some View {
         ZStack {
             color
-                .ignoresSafeArea()
             Color.black.opacity(0.18) // Subtle overlay for text readability
-                .ignoresSafeArea()
         }
     }
 }
