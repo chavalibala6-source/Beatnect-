@@ -1136,7 +1136,7 @@ struct PlayerDetailView: View {
                             .padding(.bottom, 12)
                             .contentShape(Rectangle())
                         
-                        Spacer(minLength: isSmallScreen ? 16 : 32)
+                        Spacer() // Flexible space above artwork pushes it downwards
                         
                         if isShowingQueue {
                             QueueListView(playerService: playerService, isSmallScreen: isSmallScreen)
@@ -1163,9 +1163,9 @@ struct PlayerDetailView: View {
                                 .shadow(color: Color.black.opacity(artworkShadowOpacity), radius: artworkShadowRadius, x: 0, y: playerService.isPlaying ? 12 : 6)
                                 .animation(.spring(response: 0.45, dampingFraction: 0.7), value: playerService.isPlaying)
                                 
-                                Spacer(minLength: isSmallScreen ? 32 : 64)
+                                Spacer() // Flexible space below artwork centers it vertically
                                 
-                                // Track Info
+                                // Track Info (directly above progress bar, no Spacer below)
                                 VStack(spacing: 6) {
                                     let currentIndex = playerService.currentTrackIndex ?? 0
                                     ZStack {
@@ -1196,8 +1196,6 @@ struct PlayerDetailView: View {
                                 .padding(.horizontal, 24)
                             }
                         }
-                        
-                        Spacer()
                         
                         // Static Bottom Controls (Always visible!)
                         PortraitBottomControlsView(
@@ -2769,7 +2767,7 @@ struct PortraitBottomControlsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 40)
+            Spacer().frame(height: 12)
             
             // Progress Slider
             VStack(spacing: 6) {
