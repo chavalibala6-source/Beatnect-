@@ -3140,7 +3140,6 @@ struct QueueListView: View {
     @ObservedObject var playerService: AudioPlayerService
     let isSmallScreen: Bool
     let onEllipsisTapped: (Track) -> Void
-    @State private var editMode: EditMode = .active
     
     var body: some View {
         VStack(spacing: 0) {
@@ -3201,93 +3200,78 @@ struct QueueListView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
             
-            // Queue List
-            List {
-                Section(header: Text("Continue Playing")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 4)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                ) {
+            // Queue Queue
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 20) {
+                    Text("Continue Playing")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 4)
+                    
                     let nextIndex = (playerService.currentTrackIndex ?? -1) + 1
                     if nextIndex < playerService.tracks.count {
                         let upcomingTracks = Array(playerService.tracks[nextIndex...])
                         ForEach(upcomingTracks) { track in
-                            HStack(spacing: 16) {
-                                Group {
-                                    if let url = track.fullArtworkUrl {
-                                        CachedAsyncImage(url: url) { image in
-                                            image.resizable()
-                                                 .aspectRatio(contentMode: .fill)
-                                        } placeholder: {
-                                            Color.clear
+                            if let absoluteIndex = playerService.tracks.firstIndex(of: track) {
+                                HStack(spacing: 16) {
+                                    Group {
+                                        if let url = track.fullArtworkUrl {
+                                            CachedAsyncImage(url: url) { image in
+                                                image.resizable()
+                                                     .aspectRatio(contentMode: .fill)
+                                            } placeholder: {
+                                                Color.clear
+                                            }
+                                        } else {
+                                            MusicPlaceholderView()
                                         }
-                                    } else {
-                                        MusicPlaceholderView()
                                     }
-                                }
-                                .frame(width: 48, height: 48)
-                                .cornerRadius(6)
-                                .clipped()
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(track.displayName).font(.callout).foregroundColor(.white).lineLimit(1)
-                                    Text(track.displayArtist).font(.caption).foregroundColor(.white.opacity(0.6)).lineLimit(1)
-                                }
-                                
-                                Spacer()
-                                
-                                Button(action: {
-                                    onEllipsisTapped(track)
-                                }) {
-                                    Image(systemName: "ellipsis")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.white.opacity(0.6))
+                                    .frame(width: 48, height: 48)
+                                    .cornerRadius(6)
+                                    .clipped()
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(track.displayName).font(.callout).foregroundColor(.white).lineLimit(1)
+                                        Text(track.displayArtist).font(.caption).foregroundColor(.white.opacity(0.6)).lineLimit(1)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Button(action: {
+                                        onEllipsisTapped(track)
+                                    }) {
+                                        Image(systemName: "ellipsis")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.white.opacity(0.6))
+                                            .frame(width: 32, height: 32)
+                                            .background(Color.white.opacity(0.1))
+                                            .clipShape(Circle())
+                                    }
+                                    
+                                    Image(systemName: "line.3.horizontal")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white.opacity(0.4))
                                         .frame(width: 32, height: 32)
-                                        .background(Color.white.opacity(0.1))
-                                        .clipShape(Circle())
                                 }
-                                .buttonStyle(PlainButtonStyle())
-                                .padding(.trailing, 8)
-                            }
-                            .padding(.vertical, 4)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                if let absoluteIndex = playerService.tracks.firstIndex(of: track) {
+                                .padding(.horizontal, 24)
+                                .onTapGesture {
                                     playerService.playTrack(at: absoluteIndex)
                                 }
+                                .instantQueueReorder(track: track, playerService: playerService)
                             }
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 4, leading: 24, bottom: 4, trailing: 0))
                         }
-                        .onMove { source, destination in
-                            var actualSource = IndexSet()
-                            for offset in source {
-                                actualSource.insert(offset + nextIndex)
-                            }
-                            let actualDestination = destination + nextIndex
-                            playerService.tracks.move(fromOffsets: actualSource, toOffset: actualDestination)
-                        }
-                        .deleteDisabled(true)
                     } else {
                         Text("No upcoming tracks")
                             .font(.callout)
                             .foregroundColor(.white.opacity(0.6))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 4, leading: 24, bottom: 4, trailing: 0))
+                            .padding(.horizontal, 24)
                     }
                 }
+                .padding(.bottom, 40)
             }
-            .listStyle(.plain)
-            .tint(.white) // Ensures edit controls (drag handles) are visible on dark background
-            .padding(.bottom, 40)
         }
-        .environment(\.editMode, $editMode)
     }
 }
 
