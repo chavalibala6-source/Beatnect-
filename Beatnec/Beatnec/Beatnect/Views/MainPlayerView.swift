@@ -57,6 +57,39 @@ struct AudioBarVisualizer: View {
 
 struct MainPlayerView: View {
     @StateObject private var apiService = APIService.shared
+    
+    private func updateMainArtworkColor() {
+        guard let url = playerService.currentTrack?.fullArtworkUrl else {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                currentPlayerColor = Color(red: 0.13, green: 0.13, blue: 0.14)
+            }
+            return
+        }
+
+        let key = url.absoluteString as NSString
+        if let cachedImage = ImageCache.shared.object(forKey: key) {
+            let uiColor = cachedImage.dominantColor()
+            withAnimation(.easeInOut(duration: 0.5)) {
+                currentPlayerColor = Color(uiColor)
+            }
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            guard
+                let data,
+                let image = UIImage(data: data)
+            else { return }
+
+            let uiColor = image.dominantColor()
+
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    currentPlayerColor = Color(uiColor)
+                }
+            }
+        }.resume()
+    }
     @StateObject private var playerService = AudioPlayerService.shared
     @EnvironmentObject var themeManager: ThemeManager
     
@@ -66,6 +99,7 @@ struct MainPlayerView: View {
     @State private var isShowingSettings = false
     @State private var isShowingPlayerDetail = false
     @State private var isLoading = false
+    @State private var currentPlayerColor: Color = Color(red: 0.13, green: 0.13, blue: 0.14)
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var selectedAlbum: Album? = nil
     enum LibraryTab: String {
@@ -189,11 +223,12 @@ struct MainPlayerView: View {
             bottomTabBar()
             
             if isShowingPlayerDetail {
-                PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail)
+                PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail, artworkColor: $currentPlayerColor)
                     .environmentObject(themeManager)
                     .preferredColorScheme(.dark)
                     .transition(.move(edge: .bottom))
                     .zIndex(10)
+                    .ignoresSafeArea()
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
@@ -206,6 +241,10 @@ struct MainPlayerView: View {
             serverInput = apiService.serverAddress
             documentInput = apiService.documentName
             reloadLibrary()
+            updateMainArtworkColor()
+        }
+        .onChange(of: playerService.currentTrackIndex) { _ in
+            updateMainArtworkColor()
         }
     }
     
@@ -851,47 +890,16 @@ struct PlayerDetailView: View {
     @Binding var isPresented: Bool
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.verticalSizeClass) var verticalSizeClass
+    @Binding var artworkColor: Color
     
     @State private var isDraggingSlider = false
     @State private var progress: Double = 0
-    @State private var artworkColor: Color = Color(red: 0.08, green: 0.08, blue: 0.09)
     @State private var isShowingQueue = false
     @State private var dragOffset: CGFloat = 0
     @State private var isDraggingArtwork = false
     @State private var verticalDragOffset: CGFloat = 0.0
     @State private var isDraggingVertically = false
-    private func updateArtworkColor() {
-        guard let url = playerService.currentTrack?.fullArtworkUrl else {
-            withAnimation(.easeInOut(duration: 0.5)) {
-                artworkColor = Color(red: 0.08, green: 0.08, blue: 0.09)
-            }
-            return
-        }
 
-        let key = url.absoluteString as NSString
-        if let cachedImage = ImageCache.shared.object(forKey: key) {
-            let uiColor = cachedImage.dominantColor()
-            withAnimation(.easeInOut(duration: 0.5)) {
-                artworkColor = Color(uiColor)
-            }
-            return
-        }
-
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard
-                let data,
-                let image = UIImage(data: data)
-            else { return }
-
-            let uiColor = image.dominantColor()
-
-            DispatchQueue.main.async {
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    artworkColor = Color(uiColor)
-                }
-            }
-        }.resume()
-    }
     var body: some View {
         let artworkScale = playerService.isPlaying ? 1.20 : 1.0
         let artworkShadowRadius = playerService.isPlaying ? 15.0 : 8.0
@@ -1210,7 +1218,6 @@ struct PlayerDetailView: View {
                     }
                 }
                 .offset(y: verticalDragOffset)
-                .scaleEffect(verticalDragOffset > 0 ? max(0.92, 1.0 - (verticalDragOffset / (geometry.size.height * 2.5))) : 1.0)
                 .cornerRadius(32)
                 .clipped()
                 .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.86), value: verticalDragOffset)
@@ -1277,13 +1284,7 @@ struct PlayerDetailView: View {
                         }
                 )
 
-        .onAppear {
-            updateArtworkColor()
-        }
-        
-        .onChange(of: playerService.currentTrackIndex) { _ in
-            updateArtworkColor()
-        }
+
         .onReceive(playerService.$currentTime) { newTime in
             if !isDraggingSlider {
                 progress = newTime
