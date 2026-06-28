@@ -187,17 +187,21 @@ struct MainPlayerView: View {
             }
             // Bottom Bar with Mini Player and Icon Segmented Picker
             bottomTabBar()
+            
+            if isShowingPlayerDetail {
+                PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail)
+                    .environmentObject(themeManager)
+                    .preferredColorScheme(.dark)
+                    .transition(.move(edge: .bottom))
+                    .zIndex(10)
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .sheet(isPresented: $isShowingSettings) {
             SettingsSheetView(serverInput: $serverInput, documentInput: $documentInput, isPresented: $isShowingSettings, onSave: saveServerSettings)
                 .environmentObject(themeManager)
         }
-        .fullScreenCover(isPresented: $isShowingPlayerDetail) {
-            PlayerDetailView(playerService: playerService, isPresented: $isShowingPlayerDetail)
-                .environmentObject(themeManager)
-                .preferredColorScheme(.dark)
-        }
+
         .onAppear {
             serverInput = apiService.serverAddress
             documentInput = apiService.documentName
