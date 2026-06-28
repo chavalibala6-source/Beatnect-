@@ -421,44 +421,62 @@ struct MainPlayerView: View {
 
     @ViewBuilder
     private func horizontalAlbumRow(title: String, albumsToDisplay: [Album]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Section Header with See All
-            HStack(alignment: .center) {
-                Text(title)
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(themeManager.primaryTextColor)
-                
-                Spacer()
-                
-                NavigationLink(destination: AlbumsGridView(title: title, albums: albumsToDisplay).environmentObject(themeManager)) {
-                    HStack(spacing: 4) {
-                        Text("See All")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.blue)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.blue)
-                    }
-                }
-            }
-            .padding(.horizontal, 24)
+        GeometryReader { geo in
+            // Calculate how many 180pt cards fit in the available width
+            // cardWidth(180) + spacing(18), minus 24pt leading padding
+            let cardWidth: CGFloat = 180
+            let spacing: CGFloat = 18
+            let sidePadding: CGFloat = 24
+            let availableWidth = geo.size.width - sidePadding
+            let visibleCount = max(1, Int((availableWidth + spacing) / (cardWidth + spacing)))
+            let showSeeAll = albumsToDisplay.count > visibleCount
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 18) {
-                    ForEach(albumsToDisplay) { album in
-                        AlbumCardView(album: album,
-                                      currentTrack: playerService.currentTrack,
-                                      isPlaying: playerService.isPlaying)
-                            .frame(width: 180)
+            VStack(alignment: .leading, spacing: 10) {
+                // Section Header
+                HStack(alignment: .center) {
+                    Text(title)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(themeManager.primaryTextColor)
+
+                    Spacer()
+
+                    if showSeeAll {
+                        NavigationLink(
+                            destination: AlbumsGridView(title: title, albums: albumsToDisplay)
+                                .environmentObject(themeManager)
+                        ) {
+                            HStack(spacing: 4) {
+                                Text("See All")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.blue)
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.blue)
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.vertical, 4)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: spacing) {
+                        ForEach(albumsToDisplay) { album in
+                            AlbumCardView(album: album,
+                                          currentTrack: playerService.currentTrack,
+                                          isPlaying: playerService.isPlaying)
+                                .frame(width: cardWidth)
+                        }
+                    }
+                    .padding(.horizontal, sidePadding)
+                    .padding(.vertical, 4)
+                }
             }
+            .padding(.vertical, 10)
         }
-        .padding(.vertical, 10)
+        // Give the GeometryReader a fixed height so the VStack is not collapsed
+        .frame(height: 260)
     }
     
     private func reloadLibrary() {
