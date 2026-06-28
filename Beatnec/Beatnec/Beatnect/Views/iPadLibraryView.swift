@@ -43,15 +43,15 @@ struct iPadLibraryView: View {
     @ObservedObject var playerService: AudioPlayerService
     @StateObject private var store = PlaylistStore.shared
     @Binding var isShowingPlayerDetail: Bool
+    @Binding var selectedSection: LibrarySection
+    @Binding var selectedPlaylist: Playlist?
+    @Binding var showNewPlaylistAlert: Bool
     
     @EnvironmentObject var themeManager: ThemeManager
     
-    @State private var selectedSection: LibrarySection = .songs
-    @State private var selectedPlaylist: Playlist? = nil
     @State private var searchText: String = ""
     @State private var sortColumn: SongColumn = .title
     @State private var sortAscending: Bool = true
-    @State private var showNewPlaylistAlert = false
     @State private var newPlaylistName = ""
     @State private var dropTargetPlaylist: UUID? = nil
     
@@ -91,18 +91,9 @@ struct iPadLibraryView: View {
     }
     
     var body: some View {
-        HStack(spacing: 0) {
-            // ── LEFT SIDEBAR ────────────────────────────────────────────
-            sidebar
-            
-            Rectangle()
-                .fill(Color.primary.opacity(0.1))
-                .frame(width: 1)
-            
-            // ── RIGHT CONTENT ────────────────────────────────────────────
-            contentArea
-        }
-        .background(themeManager.backgroundColor.ignoresSafeArea())
+        contentArea
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(themeManager.backgroundColor.ignoresSafeArea())
         .alert("New Playlist", isPresented: $showNewPlaylistAlert) {
             TextField("Playlist Name", text: $newPlaylistName)
             Button("Create") {
@@ -210,6 +201,116 @@ struct iPadLibraryView: View {
         }
         .frame(width: 210)
         .background(themeManager.secondaryBackgroundColor.opacity(themeManager.isDarkMode ? 0.95 : 1.0))
+    }
+
+    private var compactBottomBar: some View {
+        VStack(spacing: 0) {
+            Divider().opacity(0.25)
+
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    Text("Beatnect")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    Button(action: { showNewPlaylistAlert = true }) {
+                        Label("New Playlist", systemImage: "plus")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(Capsule().fill(Color.primary.opacity(0.06)))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Button(action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                            themeManager.isDarkMode.toggle()
+                        }
+                    }) {
+                        Image(systemName: themeManager.isDarkMode ? "sun.max.fill" : "moon.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.secondary)
+                            .frame(width: 32, height: 32)
+                            .background(Circle().fill(Color.primary.opacity(0.06)))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(LibrarySection.allCases) { section in
+                            Button(action: {
+                                selectedSection = section
+                                if section != .playlists {
+                                    selectedPlaylist = nil
+                                }
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: section.icon)
+                                        .font(.system(size: 12, weight: .semibold))
+                                    Text(section.rawValue)
+                                        .font(.system(size: 12, weight: .semibold))
+                                }
+                                .foregroundColor(selectedSection == section && selectedPlaylist == nil ? .white : .secondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(selectedSection == section && selectedPlaylist == nil ? Color.accentColor : Color.primary.opacity(0.06))
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                }
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        Button(action: {
+                            selectedSection = .playlists
+                            selectedPlaylist = nil
+                        }) {
+                            Text("All Playlists")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(selectedSection == .playlists && selectedPlaylist == nil ? .white : .secondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(selectedSection == .playlists && selectedPlaylist == nil ? Color.accentColor : Color.primary.opacity(0.06))
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+
+                        ForEach(store.playlists) { playlist in
+                            Button(action: {
+                                selectedSection = .playlists
+                                selectedPlaylist = playlist
+                            }) {
+                                Text(playlist.name)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(selectedPlaylist?.id == playlist.id ? .white : .secondary)
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        Capsule()
+                                            .fill(selectedPlaylist?.id == playlist.id ? Color.accentColor : Color.primary.opacity(0.06))
+                                    )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 2)
+                }
+            }
+            .background(themeManager.secondaryBackgroundColor.opacity(themeManager.isDarkMode ? 0.95 : 1.0))
+        }
     }
     
     private func sidebarRow(section: LibrarySection, isSelected: Bool) -> some View {

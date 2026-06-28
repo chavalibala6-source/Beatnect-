@@ -102,6 +102,9 @@ struct MainPlayerView: View {
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var selectedAlbum: Album? = nil
     @State private var selectedArtist: String? = nil
+    @State private var iPadSelectedSection: LibrarySection = .songs
+    @State private var iPadSelectedPlaylist: Playlist? = nil
+    @State private var iPadShowNewPlaylistAlert = false
     enum LibraryTab: String {
         case albums, songs, playlists
     }
@@ -194,7 +197,13 @@ struct MainPlayerView: View {
                         } else {
                             if UIDevice.current.userInterfaceIdiom == .pad {
                                 // iPad: full iTunes-style sidebar + table
-                                iPadLibraryView(playerService: playerService, isShowingPlayerDetail: $isShowingPlayerDetail)
+                                iPadLibraryView(
+                                    playerService: playerService,
+                                    isShowingPlayerDetail: $isShowingPlayerDetail,
+                                    selectedSection: $iPadSelectedSection,
+                                    selectedPlaylist: $iPadSelectedPlaylist,
+                                    showNewPlaylistAlert: $iPadShowNewPlaylistAlert
+                                )
                             } else if verticalSizeClass == .compact {
                                 CoverFlowView(albums: albums, selectedAlbum: $selectedAlbum)
                             } else {
@@ -372,7 +381,125 @@ struct MainPlayerView: View {
     
     @ViewBuilder
     private func bottomTabBar() -> some View {
-        if verticalSizeClass != .compact {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            VStack(spacing: 10) {
+                if let currentTrack = playerService.currentTrack {
+                    MiniPlayerBar(track: currentTrack,
+                                  isPlaying: playerService.isPlaying,
+                                  onToggle: { playerService.togglePlayPause() },
+                                  onTap: { isShowingPlayerDetail = true })
+                        .transition(.move(edge: .bottom))
+                        .padding(.horizontal, 16)
+                }
+
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        Text("Beatnect")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(themeManager.primaryTextColor)
+
+                        Spacer()
+
+                        Button(action: { iPadShowNewPlaylistAlert = true }) {
+                            Label("New Playlist", systemImage: "plus")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 7)
+                                .background(Capsule().fill(Color.primary.opacity(0.06)))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                                themeManager.isDarkMode.toggle()
+                            }
+                        }) {
+                            Image(systemName: themeManager.isDarkMode ? "sun.max.fill" : "moon.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.secondary)
+                                .frame(width: 32, height: 32)
+                                .background(Circle().fill(Color.primary.opacity(0.06)))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(LibrarySection.allCases) { section in
+                                Button(action: {
+                                    iPadSelectedSection = section
+                                    if section != .playlists {
+                                        iPadSelectedPlaylist = nil
+                                    }
+                                }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: section.icon)
+                                            .font(.system(size: 12, weight: .semibold))
+                                        Text(section.rawValue)
+                                            .font(.system(size: 12, weight: .semibold))
+                                    }
+                                    .foregroundColor(iPadSelectedSection == section && iPadSelectedPlaylist == nil ? .white : .secondary)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        Capsule()
+                                            .fill(iPadSelectedSection == section && iPadSelectedPlaylist == nil ? Color.accentColor : Color.primary.opacity(0.06))
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                    }
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            Button(action: {
+                                iPadSelectedSection = .playlists
+                                iPadSelectedPlaylist = nil
+                            }) {
+                                Text("All Playlists")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(iPadSelectedSection == .playlists && iPadSelectedPlaylist == nil ? .white : .secondary)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        Capsule()
+                                            .fill(iPadSelectedSection == .playlists && iPadSelectedPlaylist == nil ? Color.accentColor : Color.primary.opacity(0.06))
+                                    )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+
+                            ForEach(playlistStore.playlists) { playlist in
+                                Button(action: {
+                                    iPadSelectedSection = .playlists
+                                    iPadSelectedPlaylist = playlist
+                                }) {
+                                    Text(playlist.name)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(iPadSelectedPlaylist?.id == playlist.id ? .white : .secondary)
+                                        .lineLimit(1)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            Capsule()
+                                                .fill(iPadSelectedPlaylist?.id == playlist.id ? Color.accentColor : Color.primary.opacity(0.06))
+                                        )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 2)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+            }
+            .padding(.top, 8)
+            .background(themeManager.backgroundColor.opacity(0.9).ignoresSafeArea())
+        } else if verticalSizeClass != .compact {
             VStack(spacing: 12) {
                 if let currentTrack = playerService.currentTrack {
                     MiniPlayerBar(track: currentTrack,
@@ -1144,6 +1271,7 @@ struct PlayerDetailView: View {
                         isDraggingSlider: $isDraggingSlider,
                         progress: $progress
                     )
+                    .preferredColorScheme(.dark)
                     .background(ArtworkBackground(color: artworkColor).ignoresSafeArea())
                 } else if verticalSizeClass == .compact {
                     landscapeLayoutView(geometry: geometry, isSmallScreen: isSmallScreen, artworkScale: artworkScale, artworkShadowRadius: artworkShadowRadius, artworkShadowOpacity: artworkShadowOpacity)
@@ -1806,11 +1934,6 @@ struct iPadPlayerDetailView: View {
                     height: geometry.size.height
                 )
 
-                // ── DIVIDER ───────────────────────────────────────────────
-                Rectangle()
-                    .fill(Color.white.opacity(0.1))
-                    .frame(width: 1)
-
                 // ── RIGHT: Up Next ────────────────────────────────────────
                 iPadUpNextPane(
                     playerService: playerService,
@@ -1835,34 +1958,30 @@ struct iPadPlayerLeftPane: View {
 
     @EnvironmentObject var themeManager: ThemeManager
 
-    var artworkSize: CGFloat { min(width * 0.72, height * 0.44) }
+    var artworkSize: CGFloat { min(width * 0.68, height * 0.40) }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 14) {
             // Handle
             Capsule()
-                .fill(Color.primary.opacity(0.35))
+                .fill(Color.white.opacity(0.35))
                 .frame(width: 40, height: 5)
-                .padding(.top, 20)
-
-            Spacer(minLength: 20)
+                .padding(.top, 18)
 
             // Album Artwork
             artworkView
 
-            Spacer(minLength: 16)
-
             // Track info
             if let track = playerService.currentTrack {
-                VStack(spacing: 6) {
+                VStack(spacing: 3) {
                     Text(track.displayName)
-                        .font(.custom("SF Pro Display", size: 24).weight(.bold))
-                        .foregroundColor(.primary)
+                        .font(.custom("SF Pro Display", size: 22).weight(.bold))
+                        .foregroundColor(.white)
                         .lineLimit(1)
                         .padding(.horizontal, 32)
 
                     Text(track.displayArtist)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white)
                         .lineLimit(1)
                 }
@@ -1871,7 +1990,7 @@ struct iPadPlayerLeftPane: View {
            
 
             // Progress
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 PlayerProgressSlider(
                     value: $progress,
                     range: 0...max(playerService.duration, 1),
@@ -1880,56 +1999,53 @@ struct iPadPlayerLeftPane: View {
                         if !editing { playerService.seek(to: progress) }
                     }
                 )
-                .padding(.horizontal, 36)
+                .padding(.horizontal, 32)
 
                 HStack {
                     Text(formatTime(playerService.currentTime))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.65))
                     Spacer()
                     Text(formatTime(playerService.duration))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.65))
                 }
-                .padding(.horizontal, 36)
+                .padding(.horizontal, 32)
             }
-
-            Spacer(minLength: 16)
 
             // Controls
             PlayerToolbar(playerService: playerService, isSmallScreen: false)
-
-            Spacer(minLength: 12)
 
             // Volume + shuffle/repeat row
             HStack(spacing: 20) {
                 Button(action: { playerService.toggleShuffle() }) {
                     Image(systemName: "shuffle")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(playerService.isShuffleEnabled ? .teal : Color.primary.opacity(0.3))
+                        .foregroundColor(playerService.isShuffleEnabled ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white.opacity(0.35))
                 }
 
                 HStack(spacing: 8) {
                     Image(systemName: "speaker.fill")
                         .font(.system(size: 11))
-                        .foregroundColor(themeManager.secondaryTextColor)
-                    VolumeSlider(tintColor: themeManager.isDarkMode ? .white : .black)
+                        .foregroundColor(.white.opacity(0.6))
+                    VolumeSlider(tintColor: .white)
                         .frame(maxWidth: .infinity, minHeight: 22, maxHeight: 22)
                     Image(systemName: "speaker.wave.3.fill")
                         .font(.system(size: 11))
-                        .foregroundColor(themeManager.secondaryTextColor)
+                        .foregroundColor(.white.opacity(0.6))
                 }
 
                 Button(action: { playerService.toggleRepeat() }) {
                     Image(systemName: playerService.isRepeatEnabled ? "repeat.1" : "repeat")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(playerService.isRepeatEnabled ? .purple : Color.primary.opacity(0.3))
+                        .foregroundColor(playerService.isRepeatEnabled ? Color(red: 0.65, green: 0.8, blue: 0.22) : .white.opacity(0.35))
                 }
             }
-            .padding(.horizontal, 36)
-            .padding(.bottom, 32)
+            .padding(.horizontal, 32)
+            .padding(.bottom, 24)
         }
         .frame(width: width, height: height)
+        .padding(.horizontal, 8)
         .gesture(
             DragGesture().onEnded { value in
                 if value.translation.height > 50 {
@@ -2019,31 +2135,25 @@ struct iPadUpNextPane: View {
             HStack {
                 Text("Up Next")
                     .font(.custom("SF Pro Display", size: 26).weight(.bold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.white)
                 Spacer()
                 Text("\(upNextTracks.count) songs")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.65))
             }
             .padding(.horizontal, 24)
             .padding(.top, 36)
             .padding(.bottom, 16)
-
-            Rectangle()
-                .fill(Color.primary.opacity(0.08))
-                .frame(height: 1)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
 
             if upNextTracks.isEmpty {
                 Spacer()
                 VStack(spacing: 12) {
                     Image(systemName: "music.note.list")
                         .font(.system(size: 48))
-                        .foregroundColor(.secondary.opacity(0.5))
+                        .foregroundColor(.white.opacity(0.35))
                     Text("No upcoming tracks")
                         .font(.headline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.7))
                 }
                 .frame(maxWidth: .infinity)
                 Spacer()
@@ -2069,7 +2179,7 @@ struct iPadUpNextPane: View {
             // Index number
             Text("\(index)")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.secondary)
+                .foregroundColor(.white.opacity(0.6))
                 .frame(width: 22, alignment: .trailing)
 
             // Artwork
@@ -2083,9 +2193,9 @@ struct iPadUpNextPane: View {
                     .clipped()
                 } else {
                     Image(systemName: "music.note")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.45))
                         .frame(width: 48, height: 48)
-                        .background(Color(.secondarySystemBackground))
+                        .background(Color.white.opacity(0.08))
                         .cornerRadius(8)
                 }
             }
@@ -2094,11 +2204,11 @@ struct iPadUpNextPane: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(track.displayName)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.white)
                     .lineLimit(1)
                 Text(track.displayArtist)
                     .font(.system(size: 13))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.65))
                     .lineLimit(1)
             }
             Spacer()
@@ -3278,15 +3388,15 @@ struct PortraitBottomControlsView: View {
                 )
                 .frame(height: 20)
                 
-                HStack {
-                    Text(playerService.currentTime.formattedTimeString)
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.6))
-                    Spacer()
-                    Text("-" + (playerService.duration - playerService.currentTime).formattedTimeString)
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.6))
-                }
+                            HStack {
+                                Text(playerService.currentTime.formattedTimeString)
+                                    .font(.caption2)
+                                    .foregroundColor(.white.opacity(0.6))
+                                Spacer()
+                                Text("-" + (playerService.duration - playerService.currentTime).formattedTimeString)
+                                    .font(.caption2)
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
             }
             
             Spacer().frame(height: 24)
@@ -3386,5 +3496,3 @@ struct QueueDropDelegate: DropDelegate {
         }
     }
 }
-
-
