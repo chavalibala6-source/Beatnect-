@@ -1,8 +1,15 @@
 import Foundation
 import Combine
 
+struct LyricLine: Identifiable, Equatable {
+    let id = UUID()
+    let time: TimeInterval
+    let text: String
+}
+
 class LyricsService: ObservableObject {
     @Published var lyrics: String? = nil
+    @Published var syncedLines: [LyricLine] = []
     @Published var isLoading: Bool = false
     @Published var error: String? = nil
     
@@ -13,6 +20,7 @@ class LyricsService: ObservableObject {
         
         // Clear previous state
         self.lyrics = nil
+        self.syncedLines = []
         self.error = nil
         self.isLoading = true
         
@@ -52,12 +60,19 @@ class LyricsService: ObservableObject {
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200, let data = data {
                 do {
                     if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                       let lyricsText = json["plainLyrics"] as? String, !lyricsText.isEmpty {
+                       let plainLyrics = json["plainLyrics"] as? String, !plainLyrics.isEmpty {
+                        
+                        let syncedLyrics = json["syncedLyrics"] as? String
+                        
                         DispatchQueue.main.async {
                             self?.isLoading = false
-                            self?.lyrics = lyricsText
+                            self?.lyrics = plainLyrics
                                 .replacingOccurrences(of: "\r\n", with: "\n")
                                 .trimmingCharacters(in: .whitespacesAndNewlines)
+                            
+                            if let syncedLyrics = syncedLyrics, !syncedLyrics.isEmpty {
+                                self?.syncedLines = self?.parseSyncedLyrics(syncedLyrics) ?? []
+                            }
                         }
                         return
                     }
@@ -112,5 +127,31 @@ class LyricsService: ObservableObject {
             self?.currentTask?.resume()
         }
         currentTask?.resume()
+    }
+    
+    private func parseSyncedLyrics(_ syncedLyrics: String) -> [LyricLine] {
+        var lines: [LyricLine] = []
+        let pattern = "\\[(\\d{2,}):(\\d{2}\\.\\d{2,3})\\](.*)"
+        let regex = try? NSRegularExpression(pattern: pattern)
+        
+        let stringLines = syncedLyrics.components(separatedBy: .newlines)
+        for line in stringLines {
+            let nsRange = NSRange(line.startIndex..<line.endIndex, in: line)
+            if let match = regex?.firstMatch(in: line, options: [], range: nsRange) {
+                if let minRange = Range(match.range(at: 1), in: line),
+                   let secRange = Range(match.range(at: 2), in: line),
+                   let textRange = Range(match.range(at: 3), in: line) {
+                    let minStr = line[minRange]
+                    let secStr = line[secRange]
+                    let text = String(line[textRange]).trimmingCharacters(in: .whitespaces)
+                    
+                    if let min = Double(minStr), let sec = Double(secStr) {
+                        let time = (min * 60) + sec
+                        lines.append(LyricLine(time: time, text: text))
+                    }
+                }
+            }
+        }
+        return lines.sorted { $0.time < $1.time }
     }
 }

@@ -2138,7 +2138,7 @@ struct iPadUpNextPane: View {
                     }
                 }
             } else {
-                LyricsView(track: playerService.currentTrack)
+                LyricsView(playerService: playerService)
             }
         }
         .frame(width: width, height: height)
@@ -3341,7 +3341,7 @@ struct QueueListView: View {
                 .padding(.bottom, 40)
             }
             } else {
-                LyricsView(track: playerService.currentTrack)
+                LyricsView(playerService: playerService)
             }
         }
     }
