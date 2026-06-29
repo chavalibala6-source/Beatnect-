@@ -1,8 +1,11 @@
 import SwiftUI
+import Combine
 
 struct LyricsView: View {
     @StateObject private var lyricsService = LyricsService()
     @ObservedObject var playerService: AudioPlayerService
+    
+    @State private var activeLineId: UUID? = nil
     
     var body: some View {
         ZStack {
@@ -26,7 +29,7 @@ struct LyricsView: View {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 20) {
                                 ForEach(lyricsService.syncedLines) { line in
-                                    let isActive = isLineActive(line)
+                                    let isActive = (line.id == activeLineId)
                                     Text(line.text)
                                         .font(.system(size: 26, weight: .bold, design: .default))
                                         .foregroundColor(isActive ? .white : .white.opacity(0.4))
@@ -36,17 +39,13 @@ struct LyricsView: View {
                                         .id(line.id)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .padding(.horizontal, 24)
-                                        .onChange(of: playerService.currentTime) { _ in
-                                            if isActive {
-                                                withAnimation(.easeInOut(duration: 0.5)) {
-                                                    proxy.scrollTo(line.id, anchor: .center)
-                                                }
-                                            }
-                                        }
                                 }
                             }
                             .padding(.vertical, 40)
                             .padding(.bottom, 60)
+                        }
+                        .onReceive(playerService.$currentTime) { time in
+                            updateActiveLine(time: time, proxy: proxy)
                         }
                     }
                 } else if let lyrics = lyricsService.lyrics {
@@ -78,15 +77,33 @@ struct LyricsView: View {
     }
     
     private func fetchLyrics() {
+        activeLineId = nil
         guard let track = playerService.currentTrack else { return }
         lyricsService.fetchLyrics(for: track.displayArtist, title: track.displayName)
     }
     
-    private func isLineActive(_ line: LyricLine) -> Bool {
-        let currentTime = playerService.currentTime
-        guard let index = lyricsService.syncedLines.firstIndex(of: line) else { return false }
-        let nextTime = index + 1 < lyricsService.syncedLines.count ? lyricsService.syncedLines[index + 1].time : Double.infinity
+    private func updateActiveLine(time: TimeInterval, proxy: ScrollViewProxy) {
+        let lines = lyricsService.syncedLines
+        guard !lines.isEmpty else { return }
         
-        return currentTime >= line.time && currentTime < nextTime
+        // Find the line that should be active right now
+        var newActiveId: UUID? = nil
+        for (index, line) in lines.enumerated() {
+            let nextTime = index + 1 < lines.count ? lines[index + 1].time : Double.infinity
+            if time >= line.time && time < nextTime {
+                newActiveId = line.id
+                break
+            }
+        }
+        
+        // Only update state and scroll if the active line actually changed!
+        if newActiveId != activeLineId {
+            activeLineId = newActiveId
+            if let id = newActiveId {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    proxy.scrollTo(id, anchor: .center)
+                }
+            }
+        }
     }
 }
