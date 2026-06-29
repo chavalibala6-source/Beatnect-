@@ -38,7 +38,12 @@ class LyricsService: ObservableObject {
             return
         }
         
-        currentTask = URLSession.shared.dataTask(with: lrclibURL) { [weak self] data, response, error in
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 8
+        config.timeoutIntervalForResource = 8
+        let session = URLSession(configuration: config)
+        
+        currentTask = session.dataTask(with: lrclibURL) { [weak self] data, response, error in
             if let error = error as? URLError, error.code == .cancelled {
                 return
             }
@@ -72,7 +77,7 @@ class LyricsService: ObservableObject {
                 return
             }
             
-            self?.currentTask = URLSession.shared.dataTask(with: ovhURL) { [weak self] data, response, error in
+            self?.currentTask = session.dataTask(with: ovhURL) { [weak self] data, response, error in
                 DispatchQueue.main.async {
                     self?.isLoading = false
                     
@@ -106,8 +111,6 @@ class LyricsService: ObservableObject {
             }
             self?.currentTask?.resume()
         }
-        currentTask?.resume()
-        
         currentTask?.resume()
     }
 }
