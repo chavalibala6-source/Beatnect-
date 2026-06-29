@@ -18,7 +18,7 @@ class LyricsService: ObservableObject {
         
         let cleanedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "\\.mp3(?i)", with: "", options: .regularExpression)
-            .replacingOccurrences(of: "^\\d{1,2}_", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "^\\d{1,2}[_\\.\\s]+", with: "", options: .regularExpression)
             .replacingOccurrences(of: "_", with: " ")
             .replacingOccurrences(of: "(?i)\\s*\\(.*?\\)", with: "", options: .regularExpression)
             .replacingOccurrences(of: "(?i)\\s*\\[.*?\\]", with: "", options: .regularExpression)
