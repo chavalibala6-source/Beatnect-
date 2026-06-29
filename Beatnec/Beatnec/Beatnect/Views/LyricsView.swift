@@ -2,7 +2,7 @@ import SwiftUI
 import Combine
 
 struct LyricsView: View {
-    @StateObject private var lyricsService = LyricsService()
+    @ObservedObject private var lyricsService = LyricsService.shared
     @ObservedObject var playerService: AudioPlayerService
     
     @State private var activeLineId: UUID? = nil
@@ -79,7 +79,7 @@ struct LyricsView: View {
     private func fetchLyrics() {
         activeLineId = nil
         guard let track = playerService.currentTrack else { return }
-        lyricsService.fetchLyrics(for: track.displayArtist, title: track.displayName)
+        lyricsService.fetchLyrics(for: track)
     }
     
     private func updateActiveLine(time: TimeInterval, proxy: ScrollViewProxy) {

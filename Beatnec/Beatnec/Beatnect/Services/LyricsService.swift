@@ -8,14 +8,28 @@ struct LyricLine: Identifiable, Equatable {
 }
 
 class LyricsService: ObservableObject {
+    static let shared = LyricsService()
+    
     @Published var lyrics: String? = nil
     @Published var syncedLines: [LyricLine] = []
     @Published var isLoading: Bool = false
     @Published var error: String? = nil
     
     private var currentTask: URLSessionDataTask?
+    private var currentQuery: String?
     
-    func fetchLyrics(for artist: String, title: String) {
+    private init() {}
+    
+    func fetchLyrics(for track: Track) {
+        let artist = track.displayArtist
+        let title = track.displayName
+        let queryKey = "\(artist)-\(title)"
+        
+        if currentQuery == queryKey && (lyrics != nil || !syncedLines.isEmpty || isLoading) {
+            return // Already fetched or fetching for this track
+        }
+        
+        currentQuery = queryKey
         currentTask?.cancel()
         
         // Clear previous state
@@ -27,12 +41,11 @@ class LyricsService: ObservableObject {
         let cleanedTitle = title
         let cleanedArtist = artist
         
-        guard let encodedArtist = cleanedArtist.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let encodedTitle = cleanedTitle.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let lrclibURL = URL(string: "https://lrclib.net/api/get?artist_name=\(encodedArtist)&track_name=\(encodedTitle)") else {
+        guard let query = "\(cleanedArtist) \(cleanedTitle)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let lrclibURL = URL(string: "https://lrclib.net/api/search?q=\(query)") else {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.error = "Invalid track information"
+                self.error = "Invalid track information."
             }
             return
         }
@@ -50,10 +63,11 @@ class LyricsService: ObservableObject {
             // Success from LRCLIB
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200, let data = data {
                 do {
-                    if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                       let plainLyrics = json["plainLyrics"] as? String, !plainLyrics.isEmpty {
+                    if let jsonArray = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]],
+                       let firstMatch = jsonArray.first(where: { ($0["plainLyrics"] as? String)?.isEmpty == false }),
+                       let plainLyrics = firstMatch["plainLyrics"] as? String {
                         
-                        let syncedLyrics = json["syncedLyrics"] as? String
+                        let syncedLyrics = firstMatch["syncedLyrics"] as? String
                         
                         DispatchQueue.main.async {
                             self?.isLoading = false
