@@ -23,7 +23,13 @@ struct LyricsView: View {
                         Text(error)
                             .font(.headline)
                             .foregroundColor(.white.opacity(0.7))
+                        if let query = lyricsService.currentQuery {
+                            Text("Searched: \(query)")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.4))
+                        }
                     }
+                    .padding()
                 } else if !lyricsService.syncedLines.isEmpty {
                     ScrollViewReader { proxy in
                         ScrollView {
