@@ -22,8 +22,9 @@ class LyricsService: ObservableObject {
     
     private init() {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 8
-        config.timeoutIntervalForResource = 8
+        config.timeoutIntervalForRequest = 15
+        config.timeoutIntervalForResource = 30
+        config.httpMaximumConnectionsPerHost = 10
         session = URLSession(configuration: config)
     }
     
