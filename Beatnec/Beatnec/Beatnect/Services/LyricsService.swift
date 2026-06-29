@@ -18,6 +18,7 @@ class LyricsService: ObservableObject {
     private var currentTask: URLSessionDataTask?
     private var currentQuery: String?
     private let session: URLSession
+    private var debounceWorkItem: DispatchWorkItem?
     
     private init() {
         let config = URLSessionConfiguration.default
@@ -35,14 +36,28 @@ class LyricsService: ObservableObject {
             return // Already fetched or fetching for this track
         }
         
+        debounceWorkItem?.cancel()
+        
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.performFetch(queryKey: queryKey, artist: artist, title: title)
+        }
+        
+        debounceWorkItem = workItem
+        // Delay fetch by 0.75 seconds to debounce rapid track skipping
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75, execute: workItem)
+    }
+    
+    private func performFetch(queryKey: String, artist: String, title: String) {
         currentQuery = queryKey
         currentTask?.cancel()
         
         // Clear previous state
-        self.lyrics = nil
-        self.syncedLines = []
-        self.error = nil
-        self.isLoading = true
+        DispatchQueue.main.async {
+            self.lyrics = nil
+            self.syncedLines = []
+            self.error = nil
+            self.isLoading = true
+        }
         
         let cleanedTitle = title
         let cleanedArtist = artist
