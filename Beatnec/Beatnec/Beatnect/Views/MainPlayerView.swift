@@ -1178,7 +1178,11 @@ struct PlayerDetailView: View {
                         playerService: playerService,
                         isPresented: $isPresented,
                         isDraggingSlider: $isDraggingSlider,
-                        progress: $progress
+                        progress: $progress,
+                        onEllipsisTapped: { track in
+                            self.menuTrack = track
+                            withAnimation { self.showingOptionsMenu = true }
+                        }
                     )
                     .preferredColorScheme(.dark)
                     .background(ArtworkBackground(color: artworkColor).ignoresSafeArea())
@@ -1842,6 +1846,7 @@ struct iPadPlayerDetailView: View {
     @Binding var isPresented: Bool
     @Binding var isDraggingSlider: Bool
     @Binding var progress: Double
+    var onEllipsisTapped: (Track) -> Void
 
     var body: some View {
         GeometryReader { geometry in
@@ -1854,7 +1859,8 @@ struct iPadPlayerDetailView: View {
                         isDraggingSlider: $isDraggingSlider,
                         progress: $progress,
                         width: geometry.size.width * 0.55,
-                        height: geometry.size.height
+                        height: geometry.size.height,
+                        onEllipsisTapped: onEllipsisTapped
                     )
                     
                     // ── RIGHT: Up Next ────────────────────────────────────────
@@ -1896,6 +1902,7 @@ struct iPadPlayerLeftPane: View {
     @Binding var progress: Double
     let width: CGFloat
     let height: CGFloat
+    var onEllipsisTapped: (Track) -> Void
 
     @EnvironmentObject var themeManager: ThemeManager
 
@@ -1908,17 +1915,30 @@ struct iPadPlayerLeftPane: View {
 
             // Track info
             if let track = playerService.currentTrack {
-                VStack(spacing: 3) {
-                    Text(track.displayName)
-                        .font(.custom("SF Pro Display", size: 22).weight(.bold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .padding(.horizontal, 32)
+                HStack {
+                    Spacer()
+                    VStack(spacing: 3) {
+                        Text(track.displayName)
+                            .font(.custom("SF Pro Display", size: 22).weight(.bold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .padding(.horizontal, 32)
 
-                    Text(track.displayArtist)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
+                        Text(track.displayArtist)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                    }
+                    
+                    Button(action: {
+                        onEllipsisTapped(track)
+                    }) {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(8)
+                    }
+                    Spacer()
                 }
             }
 
@@ -2058,6 +2078,11 @@ struct iPadUpNextPane: View {
     let width: CGFloat
     let height: CGFloat
     @State private var draggedTrack: Track? = nil
+    
+    enum PaneTab {
+        case upNext, lyrics
+    }
+    @State private var selectedTab: PaneTab = .upNext
 
     var upNextTracks: [Track] {
         guard let idx = playerService.currentTrackIndex,
@@ -2069,40 +2094,51 @@ struct iPadUpNextPane: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack {
-                Text("Up Next")
-                    .font(.custom("SF Pro Display", size: 26).weight(.bold))
-                    .foregroundColor(.white)
+                Picker("Tab", selection: $selectedTab) {
+                    Text("Up Next").tag(PaneTab.upNext)
+                    Text("Lyrics").tag(PaneTab.lyrics)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .frame(width: 200)
+                
                 Spacer()
-                Text("\(upNextTracks.count) songs")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.65))
+                
+                if selectedTab == .upNext {
+                    Text("\(upNextTracks.count) songs")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.65))
+                }
             }
             .padding(.horizontal, 24)
             .padding(.top, 36)
             .padding(.bottom, 16)
 
-            if upNextTracks.isEmpty {
-                Spacer()
-                VStack(spacing: 12) {
-                    Image(systemName: "music.note.list")
-                        .font(.system(size: 48))
-                        .foregroundColor(.white.opacity(0.35))
-                    Text("No upcoming tracks")
-                        .font(.headline)
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                .frame(maxWidth: .infinity)
-                Spacer()
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 4) {
-                        ForEach(Array(upNextTracks.enumerated()), id: \.element.id) { offset, track in
-                            upNextRow(track: track, index: offset + 1)
-                        }
+            if selectedTab == .upNext {
+                if upNextTracks.isEmpty {
+                    Spacer()
+                    VStack(spacing: 12) {
+                        Image(systemName: "music.note.list")
+                            .font(.system(size: 48))
+                            .foregroundColor(.white.opacity(0.35))
+                        Text("No upcoming tracks")
+                            .font(.headline)
+                            .foregroundColor(.white.opacity(0.7))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 32)
+                    .frame(maxWidth: .infinity)
+                    Spacer()
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 4) {
+                            ForEach(Array(upNextTracks.enumerated()), id: \.element.id) { offset, track in
+                                upNextRow(track: track, index: offset + 1)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 32)
+                    }
                 }
+            } else {
+                LyricsView(track: playerService.currentTrack)
             }
         }
         .frame(width: width, height: height)
@@ -3155,6 +3191,11 @@ struct QueueListView: View {
     let onEllipsisTapped: (Track) -> Void
     @State private var draggedTrack: Track? = nil
     
+    enum QueueTab {
+        case queue, lyrics
+    }
+    @State private var selectedTab: QueueTab = .queue
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -3198,6 +3239,16 @@ struct QueueListView: View {
                 .padding(.top, isSmallScreen ? 12 : 24)
                 .padding(.bottom, 20)
             }
+            
+            Picker("Tab", selection: $selectedTab) {
+                Text("Up Next").tag(QueueTab.queue)
+                Text("Lyrics").tag(QueueTab.lyrics)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.horizontal, 24)
+            .padding(.bottom, 20)
+            
+            if selectedTab == .queue {
             
             // 3 Action Buttons
             HStack(spacing: 12) {
@@ -3288,6 +3339,9 @@ struct QueueListView: View {
                     }
                 }
                 .padding(.bottom, 40)
+            }
+            } else {
+                LyricsView(track: playerService.currentTrack)
             }
         }
     }

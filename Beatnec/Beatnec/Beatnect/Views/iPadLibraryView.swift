@@ -464,45 +464,39 @@ struct iPadLibraryView: View {
         .padding(.horizontal, 4)
     }
     
-    // MARK: - Albums Grid
+    // MARK: - Albums Categories
+    
+    private var recentlyAddedAlbums: [Album] {
+        Array(albums.suffix(6).reversed())
+    }
+    
+    private var artistGroupedAlbums: [(artist: String, albums: [Album])] {
+        var dict = [String: [Album]]()
+        for album in albums {
+            let artist = album.artist.isEmpty ? "Unknown Artist" : album.artist
+            dict[artist, default: []].append(album)
+        }
+        return dict.map { (artist: $0.key, albums: $0.value.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })) }
+            .sorted(by: { $0.artist.lowercased() < $1.artist.lowercased() })
+    }
     
     private var albumsGrid: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 Color.clear.frame(height: 1).id("top")
-                LazyVGrid(
-                columns: [
-                    GridItem(.adaptive(minimum: 190, maximum: 220), spacing: 24)
-                ],
-                spacing: 24
-            ){
-                ForEach(albums) { album in
-                    AppleMusicAlbumCard(
-                        album: album,
-                        isCurrent: album.tracks.contains {
-                            $0.id == playerService.currentTrack?.id
-                        },
-                        isPlaying:
-                            playerService.isPlaying &&
-                        album.tracks.contains {
-                            $0.id == playerService.currentTrack?.id
-                        }
-                    )
-                    .onTapGesture {
-                        if let firstTrack = album.tracks.first,
-                           let globalIndex = playerService.libraryTracks.firstIndex(
-                            where: { $0.id == firstTrack.id }
-                           ) {
-                            playerService.setPlaylist(
-                                tracks: playerService.libraryTracks,
-                                startAtIndex: globalIndex
-                            )
-                        }
+                
+                VStack(spacing: 30) {
+                    if !recentlyAddedAlbums.isEmpty {
+                        horizontalAlbumRow(title: "Recently Added", albumsToDisplay: recentlyAddedAlbums)
+                    }
+                    
+                    ForEach(artistGroupedAlbums, id: \.artist) { group in
+                        horizontalAlbumRow(title: group.artist, albumsToDisplay: group.albums)
                     }
                 }
+                .padding(.top, 20)
+                .padding(.bottom, contentBottomInset)
             }
-            .padding(20)
-            .padding(.bottom, contentBottomInset)
             .onChange(of: scrollToTopTrigger) { _ in
                 withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                     proxy.scrollTo("top", anchor: .top)
@@ -510,7 +504,68 @@ struct iPadLibraryView: View {
             }
         }
     }
-}
+    
+    @ViewBuilder
+    private func horizontalAlbumRow(title: String, albumsToDisplay: [Album]) -> some View {
+        GeometryReader { geo in
+            let cardWidth: CGFloat = 190
+            let spacing: CGFloat = 24
+            let sidePadding: CGFloat = 20
+            let availableWidth = geo.size.width - sidePadding
+            let visibleCount = max(1, Int((availableWidth + spacing) / (cardWidth + spacing)))
+            let showSeeAll = albumsToDisplay.count > visibleCount
+            
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center) {
+                    Text(title)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(themeManager.primaryTextColor)
+                    
+                    Spacer()
+                    
+                    if showSeeAll {
+                        NavigationLink(
+                            destination: AlbumsGridView(title: title, albums: albumsToDisplay)
+                                .environmentObject(themeManager)
+                        ) {
+                            HStack(spacing: 4) {
+                                Text("See All")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.blue)
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, sidePadding)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: spacing) {
+                        ForEach(albumsToDisplay) { album in
+                            AppleMusicAlbumCard(
+                                album: album,
+                                isCurrent: album.tracks.contains { $0.id == playerService.currentTrack?.id },
+                                isPlaying: playerService.isPlaying && album.tracks.contains { $0.id == playerService.currentTrack?.id }
+                            )
+                            .frame(width: cardWidth)
+                            .onTapGesture {
+                                if let firstTrack = album.tracks.first,
+                                   let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == firstTrack.id }) {
+                                    playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, sidePadding)
+                }
+            }
+        }
+        .frame(height: 250) // Adjust height as necessary to fit the AppleMusicAlbumCard
+    }
     
     // MARK: - Artists List
     
