@@ -32,9 +32,7 @@ struct Track: Identifiable, Codable, Equatable {
             .replacingOccurrences(of: "_", with: " ")
             .replacingOccurrences(of: "(?i)\\s*\\(.*?\\)", with: "", options: .regularExpression)
             .replacingOccurrences(of: "(?i)\\s*\\[.*?\\]", with: "", options: .regularExpression)
-            .replacingOccurrences(of: "SenSongsMp3.Com", with: "", options: .caseInsensitive)
-            .replacingOccurrences(of: "NaaSongs.com", with: "", options: .caseInsensitive)
-            .replacingOccurrences(of: "- SenSongsMp3.co", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: "(?i)\\s*-?\\s*(www\\.)?(sensongsmp3|naasongs)\\.(com|co|in|net|org)", with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return clean.isEmpty ? name : clean
     }
@@ -43,8 +41,7 @@ struct Track: Identifiable, Codable, Equatable {
         let clean = (artist ?? "Unknown Artist").trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "(?i)\\s*\\(.*?\\)", with: "", options: .regularExpression)
             .replacingOccurrences(of: "(?i)\\s*\\[.*?\\]", with: "", options: .regularExpression)
-            .replacingOccurrences(of: "SenSongsMp3.Com", with: "", options: .caseInsensitive)
-            .replacingOccurrences(of: "NaaSongs.com", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: "(?i)\\s*-?\\s*(www\\.)?(sensongsmp3|naasongs)\\.(com|co|in|net|org)", with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return clean.isEmpty ? "Unknown Artist" : clean
     }
@@ -53,8 +50,7 @@ struct Track: Identifiable, Codable, Equatable {
         let clean = (album ?? "Unknown Album").trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "(?i)\\s*\\(.*?\\)", with: "", options: .regularExpression)
             .replacingOccurrences(of: "(?i)\\s*\\[.*?\\]", with: "", options: .regularExpression)
-            .replacingOccurrences(of: "SenSongsMp3.Com", with: "", options: .caseInsensitive)
-            .replacingOccurrences(of: "NaaSongs.com", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: "(?i)\\s*-?\\s*(www\\.)?(sensongsmp3|naasongs)\\.(com|co|in|net|org)", with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return clean.isEmpty ? "Unknown Album" : clean
     }
