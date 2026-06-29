@@ -17,8 +17,14 @@ class LyricsService: ObservableObject {
     
     private var currentTask: URLSessionDataTask?
     private var currentQuery: String?
+    private let session: URLSession
     
-    private init() {}
+    private init() {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 8
+        config.timeoutIntervalForResource = 8
+        session = URLSession(configuration: config)
+    }
     
     func fetchLyrics(for track: Track) {
         let artist = track.displayArtist
@@ -49,11 +55,6 @@ class LyricsService: ObservableObject {
             }
             return
         }
-        
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 8
-        config.timeoutIntervalForResource = 8
-        let session = URLSession(configuration: config)
         
         currentTask = session.dataTask(with: lrclibURL) { [weak self] data, response, error in
             if let error = error as? URLError, error.code == .cancelled {
@@ -97,7 +98,7 @@ class LyricsService: ObservableObject {
                 return
             }
             
-            self?.currentTask = session.dataTask(with: ovhURL) { [weak self] data, response, error in
+            self?.currentTask = self?.session.dataTask(with: ovhURL) { [weak self] data, response, error in
                 DispatchQueue.main.async {
                     self?.isLoading = false
                     
