@@ -26,17 +26,37 @@ struct Track: Identifiable, Codable, Equatable {
     }
     
     var displayName: String {
-        return name.replacingOccurrences(of: ".mp3", with: "")
-                   .replacingOccurrences(of: ".wav", with: "")
-                   .replacingOccurrences(of: "_", with: " ")
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\\.(mp3|wav|flac|m4a|aac|ogg)(?i)$", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "^\\d{1,2}[_\\.\\s-]+", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "(?i)\\s*\\(.*?\\)", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "(?i)\\s*\\[.*?\\]", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "SenSongsMp3.Com", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: "NaaSongs.com", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: "- SenSongsMp3.co", with: "", options: .caseInsensitive)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return clean.isEmpty ? name : clean
     }
     
     var displayArtist: String {
-        return artist ?? "Unknown Artist"
+        let clean = (artist ?? "Unknown Artist").trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "(?i)\\s*\\(.*?\\)", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "(?i)\\s*\\[.*?\\]", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "SenSongsMp3.Com", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: "NaaSongs.com", with: "", options: .caseInsensitive)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return clean.isEmpty ? "Unknown Artist" : clean
     }
     
     var displayAlbum: String {
-        return album ?? "Unknown Album"
+        let clean = (album ?? "Unknown Album").trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "(?i)\\s*\\(.*?\\)", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "(?i)\\s*\\[.*?\\]", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "SenSongsMp3.Com", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: "NaaSongs.com", with: "", options: .caseInsensitive)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return clean.isEmpty ? "Unknown Album" : clean
     }
     
     var fullArtworkUrl: URL? {
