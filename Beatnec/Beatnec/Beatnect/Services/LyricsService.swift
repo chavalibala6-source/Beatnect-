@@ -76,84 +76,117 @@ class LyricsService: ObservableObject {
             if let error = error as? URLError, error.code == .cancelled {
                 return
             }
-            
-            // Success from LRCLIB Strategy 1
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200, let data = data {
-                do {
-                    if let jsonArray = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]],
-                       let firstMatch = jsonArray.first(where: { ($0["plainLyrics"] as? String)?.isEmpty == false }),
-                       let plainLyrics = firstMatch["plainLyrics"] as? String {
-                        
-                        let syncedLyrics = firstMatch["syncedLyrics"] as? String
-                        
-                        DispatchQueue.main.async {
-                            self?.isLoading = false
-                            self?.lyrics = plainLyrics
-                                .replacingOccurrences(of: "\r\n", with: "\n")
-                                .trimmingCharacters(in: .whitespacesAndNewlines)
-                            
-                            if let syncedLyrics = syncedLyrics, !syncedLyrics.isEmpty {
-                                self?.syncedLines = self?.parseSyncedLyrics(syncedLyrics) ?? []
-                            }
-                        }
-                        return
-                    }
-                } catch {
-                    // Fallthrough to next strategy
-                }
-            }
-            
-            // Strategy 2: Title Only
-            guard let titleQuery = cleanedTitle.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-                  let titleLRCLIBURL = URL(string: "https://lrclib.net/api/search?q=\(titleQuery)") else {
-                self?.fallbackToOVH(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle)
+            if let error = error {
+                self?.fallbackToNextStrategy(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "NetErr1: \(error.localizedDescription)")
                 return
             }
             
-            self?.currentTask = self?.session.dataTask(with: titleLRCLIBURL) { [weak self] data2, response2, error2 in
-                if let error2 = error2 as? URLError, error2.code == .cancelled {
-                    return
-                }
-                
-                if let httpResponse = response2 as? HTTPURLResponse, httpResponse.statusCode == 200, let data2 = data2 {
+            // Success from LRCLIB Strategy 1
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200, let data = data {
                     do {
-                        if let jsonArray = try JSONSerialization.jsonObject(with: data2, options: []) as? [[String: Any]],
-                           let firstMatch = jsonArray.first(where: { ($0["plainLyrics"] as? String)?.isEmpty == false }),
-                           let plainLyrics = firstMatch["plainLyrics"] as? String {
-                            
-                            let syncedLyrics = firstMatch["syncedLyrics"] as? String
-                            
-                            DispatchQueue.main.async {
-                                self?.isLoading = false
-                                self?.lyrics = plainLyrics
-                                    .replacingOccurrences(of: "\r\n", with: "\n")
-                                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                        if let jsonArray = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] {
+                            if let firstMatch = jsonArray.first(where: { ($0["plainLyrics"] as? String)?.isEmpty == false }),
+                               let plainLyrics = firstMatch["plainLyrics"] as? String {
                                 
-                                if let syncedLyrics = syncedLyrics, !syncedLyrics.isEmpty {
-                                    self?.syncedLines = self?.parseSyncedLyrics(syncedLyrics) ?? []
+                                let syncedLyrics = firstMatch["syncedLyrics"] as? String
+                                DispatchQueue.main.async {
+                                    self?.isLoading = false
+                                    self?.lyrics = plainLyrics
+                                        .replacingOccurrences(of: "\r\n", with: "\n")
+                                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                                    
+                                    if let syncedLyrics = syncedLyrics, !syncedLyrics.isEmpty {
+                                        self?.syncedLines = self?.parseSyncedLyrics(syncedLyrics) ?? []
+                                    }
                                 }
+                                return
+                            } else {
+                                self?.fallbackToNextStrategy(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "ParseErr1: No plainLyrics in array (\(jsonArray.count) items)")
+                                return
                             }
+                        } else {
+                            self?.fallbackToNextStrategy(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "ParseErr1: Invalid JSON format")
                             return
                         }
                     } catch {
-                        // Fallthrough to OVH API
+                        self?.fallbackToNextStrategy(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "ParseErr1: \(error.localizedDescription)")
+                        return
                     }
+                } else {
+                    self?.fallbackToNextStrategy(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "HTTP1: \(httpResponse.statusCode)")
+                    return
                 }
-                
-                self?.fallbackToOVH(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle)
             }
-            self?.currentTask?.resume()
+            self?.fallbackToNextStrategy(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "Unknown1")
         }
         currentTask?.resume()
     }
             
-    private func fallbackToOVH(cleanedArtist: String, cleanedTitle: String) {
+    private func fallbackToNextStrategy(cleanedArtist: String, cleanedTitle: String, lastError: String) {
+        guard let titleQuery = cleanedTitle.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let titleLRCLIBURL = URL(string: "https://lrclib.net/api/search?q=\(titleQuery)") else {
+            self.fallbackToOVH(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "\(lastError) | TitleQueryFail")
+            return
+        }
+        
+        self.currentTask = self.session.dataTask(with: titleLRCLIBURL) { [weak self] data2, response2, error2 in
+            if let error2 = error2 as? URLError, error2.code == .cancelled {
+                return
+            }
+            if let error2 = error2 {
+                self?.fallbackToOVH(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "\(lastError) | NetErr2: \(error2.localizedDescription)")
+                return
+            }
+            
+            if let httpResponse = response2 as? HTTPURLResponse {
+                if httpResponse.statusCode == 200, let data2 = data2 {
+                    do {
+                        if let jsonArray = try JSONSerialization.jsonObject(with: data2, options: []) as? [[String: Any]] {
+                            if let firstMatch = jsonArray.first(where: { ($0["plainLyrics"] as? String)?.isEmpty == false }),
+                               let plainLyrics = firstMatch["plainLyrics"] as? String {
+                                
+                                let syncedLyrics = firstMatch["syncedLyrics"] as? String
+                                DispatchQueue.main.async {
+                                    self?.isLoading = false
+                                    self?.lyrics = plainLyrics
+                                        .replacingOccurrences(of: "\r\n", with: "\n")
+                                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                                    
+                                    if let syncedLyrics = syncedLyrics, !syncedLyrics.isEmpty {
+                                        self?.syncedLines = self?.parseSyncedLyrics(syncedLyrics) ?? []
+                                    }
+                                }
+                                return
+                            } else {
+                                self?.fallbackToOVH(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "\(lastError) | ParseErr2: No plainLyrics in array (\(jsonArray.count) items)")
+                                return
+                            }
+                        } else {
+                            self?.fallbackToOVH(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "\(lastError) | ParseErr2: Invalid JSON format")
+                            return
+                        }
+                    } catch {
+                        self?.fallbackToOVH(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "\(lastError) | ParseErr2: \(error.localizedDescription)")
+                        return
+                    }
+                } else {
+                    self?.fallbackToOVH(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "\(lastError) | HTTP2: \(httpResponse.statusCode)")
+                    return
+                }
+            }
+            self?.fallbackToOVH(cleanedArtist: cleanedArtist, cleanedTitle: cleanedTitle, lastError: "\(lastError) | Unknown2")
+        }
+        self.currentTask?.resume()
+    }
+            
+    private func fallbackToOVH(cleanedArtist: String, cleanedTitle: String, lastError: String) {
         guard let ovhArtist = cleanedArtist.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
               let ovhTitle = cleanedTitle.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
               let ovhURL = URL(string: "https://api.lyrics.ovh/v1/\(ovhArtist)/\(ovhTitle)") else {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.error = "No lyrics found."
+                self.error = "No lyrics found. [\(lastError) | OVHQueryFail]"
             }
             return
         }
@@ -165,14 +198,18 @@ class LyricsService: ObservableObject {
                 if let error = error as? URLError, error.code == .cancelled {
                     return
                 }
+                if let error = error {
+                    self?.error = "No lyrics found. [\(lastError) | OVHNetErr: \(error.localizedDescription)]"
+                    return
+                }
                 
                 if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-                    self?.error = "No lyrics found."
+                    self?.error = "No lyrics found. [\(lastError) | OVHHTTP: \(httpResponse.statusCode)]"
                     return
                 }
                 
                 guard let data = data else {
-                    self?.error = "No lyrics found."
+                    self?.error = "No lyrics found. [\(lastError) | OVHNoData]"
                     return
                 }
                 
@@ -183,10 +220,10 @@ class LyricsService: ObservableObject {
                             .replacingOccurrences(of: "\r\n", with: "\n")
                             .trimmingCharacters(in: .whitespacesAndNewlines)
                     } else {
-                        self?.error = "No lyrics found."
+                        self?.error = "No lyrics found. [\(lastError) | OVHNoLyricsText]"
                     }
                 } catch {
-                    self?.error = "No lyrics found."
+                    self?.error = "No lyrics found. [\(lastError) | OVHParseErr]"
                 }
             }
         }
