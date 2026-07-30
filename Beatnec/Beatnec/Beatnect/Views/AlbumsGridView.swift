@@ -3,6 +3,8 @@ import SwiftUI
 struct AlbumsGridView: View {
     let title: String
     let albums: [Album]
+    @Binding var selectedAlbum: Album?
+    
     @StateObject private var playerService = AudioPlayerService.shared
     @EnvironmentObject var themeManager: ThemeManager
 
@@ -19,7 +21,10 @@ struct AlbumsGridView: View {
                         AlbumCardView(
                             album: album,
                             currentTrack: playerService.currentTrack,
-                            isPlaying: playerService.isPlaying
+                            isPlaying: playerService.isPlaying,
+                            onLongPress: {
+                                selectedAlbum = album
+                            }
                         )
                     }
                 }

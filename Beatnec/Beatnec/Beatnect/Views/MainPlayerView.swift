@@ -245,7 +245,7 @@ struct MainPlayerView: View {
                         }
                     }
                 )
-                .searchable(text: $searchText, prompt: "Search music")
+                .conditionalSearchable(text: $searchText, isEnabled: verticalSizeClass != .compact, prompt: "Search music")
             }
             // Bottom Bar with Mini Player and Icon Segmented Picker
             bottomTabBar()
@@ -482,7 +482,7 @@ struct MainPlayerView: View {
 
                     if showSeeAll {
                         NavigationLink(
-                            destination: AlbumsGridView(title: title, albums: albumsToDisplay)
+                            destination: AlbumsGridView(title: title, albums: albumsToDisplay, selectedAlbum: $selectedAlbum)
                                 .environmentObject(themeManager)
                         ) {
                             HStack(spacing: 4) {
@@ -504,7 +504,10 @@ struct MainPlayerView: View {
                         ForEach(albumsToDisplay) { album in
                             AlbumCardView(album: album,
                                           currentTrack: playerService.currentTrack,
-                                          isPlaying: playerService.isPlaying)
+                                          isPlaying: playerService.isPlaying,
+                                          onLongPress: {
+                                              self.selectedAlbum = album
+                                          })
                                 .frame(width: cardWidth)
                         }
                     }
@@ -578,6 +581,7 @@ struct AlbumCardView: View {
     let album: Album
     let currentTrack: Track?
     let isPlaying: Bool
+    var onLongPress: (() -> Void)? = nil
     
     @State private var isHovering = false
     @StateObject private var playerService = AudioPlayerService.shared
@@ -726,6 +730,9 @@ struct AlbumCardView: View {
                let globalIndex = playerService.libraryTracks.firstIndex(where: { $0.id == firstTrack.id }) {
                 playerService.setPlaylist(tracks: playerService.libraryTracks, startAtIndex: globalIndex)
             }
+        }
+        .onLongPressGesture {
+            onLongPress?()
         }
     }
 }
